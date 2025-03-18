@@ -8,5 +8,5 @@ class School extends Model
 {
      use HasFactory;
 
-    protected $fillable = ['name', 'email', 'contact', 'document_path'];
+    protected $fillable = ['name', 'email', 'contact'];
 }
