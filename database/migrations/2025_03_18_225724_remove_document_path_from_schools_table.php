@@ -12,7 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('schools', function (Blueprint $table) {
-            $table->dropColumn('document');
+            // Drop both 'document' and 'document_path' columns if they exist
+            if (Schema::hasColumn('schools', 'document')) {
+                $table->dropColumn('document');
+            }
+            if (Schema::hasColumn('schools', 'document_path')) {
+                $table->dropColumn('document_path');
+            }
         });
     }
 
@@ -22,7 +28,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('schools', function (Blueprint $table) {
+            // Recreate both columns in the reverse migration
             $table->string('document')->nullable();
+            $table->string('document_path')->nullable();
         });
     }
 };
