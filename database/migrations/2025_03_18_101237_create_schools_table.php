@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('schools', function (Blueprint $table) {
-         
+            $table->id();
             $table->string('name');
             $table->string('email')->unique();
             $table->string('contact');
-            $table->string('document'); // File path
+           
             $table->timestamps();
         });
     }
