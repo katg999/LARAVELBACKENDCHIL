@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\School;
+use Illuminate\Support\Facades\Log; // Add this import
 
 class SchoolController extends Controller
 {
@@ -40,5 +41,15 @@ class SchoolController extends Controller
         Log::info('School registered successfully:', ['school' => $school]);
 
         return response()->json(['message' => 'School registered successfully', 'school' => $school]);
+    }
+
+
+     // New method for fetching schools
+    public function getSchools()
+    {
+        // Fetch all schools from the database
+        $schools = School::all();
+
+        return response()->json($schools);
     }
 }
