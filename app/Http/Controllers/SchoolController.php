@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\School;
-use Illuminate\Support\Facades\Log; // Add this import
+use Illuminate\Support\Facades\Log; 
 
 class SchoolController extends Controller
 {
@@ -24,27 +24,31 @@ class SchoolController extends Controller
             'name' => 'required|string',
             'email' => 'required|email|unique:schools,email', // Ensure the email is unique
             'contact' => 'required|string',
-
+            'file_url' => 'nullable|url', // Validate the file URL (optional)
         ]);
 
         // Save the school data
-        $school = new School();
-        $school->name = $validated['name'];
-        $school->email = $validated['email'];
-        $school->contact = $validated['contact'];
-
-
-        // Save the school data
-        $school->save();
+        $school = School::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'contact' => $validated['contact'],
+            'file_url' => $validated['file_url'] ?? null, // Store the file URL if provided
+        ]);
 
         // Log the successful registration
         Log::info('School registered successfully:', ['school' => $school]);
 
-        return response()->json(['message' => 'School registered successfully', 'school' => $school]);
+        return response()->json([
+            'message' => 'School registered successfully',
+            'school' => $school
+        ], 201);
     }
 
-
-     // New method for fetching schools
+    /**
+     * Fetch all schools.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function getSchools()
     {
         // Fetch all schools from the database
