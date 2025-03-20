@@ -18,5 +18,9 @@ Route::get('/', function () {
 });
 
 Route::get('/home', 'HomeController@index')->name('home');
+// routes/web.php
+use App\Http\Controllers\ApiDashboardController;
+
+Route::get('/api-dashboard', [ApiDashboardController::class, 'index'])->name('api-dashboard');
 
 

@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use App\Models\School; // Add this import
+use App\Http\Controllers\SchoolController; 
 
 /*
 |----------------------------------------------------------------------
@@ -45,3 +46,6 @@ Route::post('/register-school', function (Request $request) {
         'school' => $school
     ], 201);
 });
+
+// New GET route for fetching schools
+Route::get('/schools', [SchoolController::class, 'getSchools']);
