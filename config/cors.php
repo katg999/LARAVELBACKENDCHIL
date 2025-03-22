@@ -14,8 +14,7 @@ return [
     | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
     |
     */
-
-    'paths' => ['api/*'], // Apply CORS to all API routes
+ 'paths' => ['api/*'], // Apply CORS to all API routes
     'allowed_methods' => ['*'], // Allow all HTTP methods
     'allowed_origins' => ['*'], // Allow requests from all origins (temporarily for testing)
     'allowed_origins_patterns' => [],
