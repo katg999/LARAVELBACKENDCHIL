@@ -15,23 +15,29 @@ class Cors
      */
     public function handle($request, Closure $next)
     {
-        // Allow requests from specific origin (replace with your frontend URL)
-        header('Access-Control-Allow-Origin: http://localhost:5173/');
+        $allowedOrigins = [
+            'http://localhost:5173',
+            'https://laravelbackendchil.onrender.com'
+        ];
 
+        $origin = $request->header('Origin');
+        
+        if (in_array($origin, $allowedOrigins)) {
+            header('Access-Control-Allow-Origin: ' . $origin);
+            header('Access-Control-Allow-Credentials: true');
+        }
+        
         // Allow specific headers
         header('Access-Control-Allow-Headers: Content-Type, X-Auth-Token, Authorization, Origin');
-
+        
         // Allow specific HTTP methods
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-
-        // Allow credentials (if needed)
-        header('Access-Control-Allow-Credentials: true');
-
+        
         // Handle preflight requests
         if ($request->getMethod() === "OPTIONS") {
             return response()->json();
         }
-
+        
         return $next($request);
     }
 }

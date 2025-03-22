@@ -1,12 +1,13 @@
 <?php
 
 use Illuminate\Http\Request;
-use App\Http\Controllers\SchoolController;
+use App\Models\School; // Add this import
+use App\Http\Controllers\SchoolController; 
 
 /*
-|--------------------------------------------------------------------------
+|----------------------------------------------------------------------
 | API Routes
-|--------------------------------------------------------------------------
+|----------------------------------------------------------------------
 |
 | Here is where you can register API routes for your application. These
 | routes are loaded by the RouteServiceProvider within a group which
@@ -14,18 +15,23 @@ use App\Http\Controllers\SchoolController;
 |
 */
 
-// Example route for testing
+Route::middleware('auth:api')->get('/user', function (Request $request) {
+    return $request->user();
+});
+
 Route::get('/hello', function () {
     return 'Hello, Laravel!';
 });
 
-// Register a school (with CORS support)
+// Use the SchoolController method for /register-school
 Route::post('/register-school', [SchoolController::class, 'registerSchool']);
 
-// Fetch all schools
+// New GET route for fetching schools
 Route::get('/schools', [SchoolController::class, 'getSchools']);
 
-// Optional: Handle OPTIONS requests for CORS preflight
-Route::options('/register-school', function () {
-    return response()->json();
-});
+// New endpoint for Finance Loan Data
+Route::post('/finance-loan-data', [FinanceLoanController::class, 'storeFinanceLoanData']);
+
+
+
+
