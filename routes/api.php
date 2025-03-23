@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use App\Models\School; // Add this import
 use App\Http\Controllers\SchoolController; 
+use App\Http\Controllers\FinanceLoanController; // Add this import
 
 /*
 |----------------------------------------------------------------------
