@@ -55,23 +55,6 @@
                 @endforeach
             </tbody>
         </table>
-
-        <!-- Pagination -->
-        @if (isset($pagination))
-        <div class="d-flex justify-content-center">
-            <nav aria-label="Page navigation">
-                <ul class="pagination">
-                    @foreach ($pagination['links'] as $link)
-                    <li class="page-item {{ $link['active'] ? 'active' : '' }} {{ $link['url'] ? '' : 'disabled' }}">
-                        <a class="page-link" href="{{ $link['url'] ? $link['url'] : '#' }}">
-                            {!! $link['label'] !!}
-                        </a>
-                    </li>
-                    @endforeach
-                </ul>
-            </nav>
-        </div>
-        @endif
     </div>
 </body>
 </html>
