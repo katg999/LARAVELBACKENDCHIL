@@ -22,5 +22,5 @@ ENV COMPOSER_ALLOW_SUPERUSER 1
 RUN mkdir -p /var/www/html/storage/app/public && \
     php artisan storage:link
 
-# Start the application
-CMD php artisan serve --host=0.0.0.0 --port=$PORT
+# Start the application using the start.sh script
+CMD ["/start.sh"]
