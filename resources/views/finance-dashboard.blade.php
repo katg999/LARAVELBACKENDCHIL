@@ -9,14 +9,14 @@
 <body>
     <div class="container mt-5">
         <h1>Finance Loan Submissions</h1>
-
+        
         <!-- Display error message if API call fails -->
         @if (isset($error))
             <div class="alert alert-danger">
                 {{ $error }}
             </div>
         @endif
-
+        
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -41,12 +41,12 @@
                     <td>{{ $loan['email'] }}</td>
                     <td>{{ $loan['facility_name'] }}</td>
                     <td>
-                        <a href="/storage/{{ $loan['facility_report_path'] }}" target="_blank">
+                        <a href="{{ $loan['facility_report_path'] }}" target="_blank">
                             View Facility Report
                         </a>
                     </td>
                     <td>
-                        <a href="/storage/{{ $loan['license_path'] }}" target="_blank">
+                        <a href="{{ $loan['license_path'] }}" target="_blank">
                             View License
                         </a>
                     </td>

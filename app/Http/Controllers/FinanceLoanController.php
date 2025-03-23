@@ -52,12 +52,18 @@ class FinanceLoanController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // New method to fetch data
-    public function getFinanceLoanData()
+   public function getFinanceLoanData()
     {
         // Fetch all finance loan data
         $loans = FinanceLoan::all();
-
+        
+        // Transform to include full URLs for the files
+        $loans->transform(function ($loan) {
+            $loan->facility_report_path = url('storage/' . $loan->facility_report_path);
+            $loan->license_path = url('storage/' . $loan->license_path);
+            return $loan;
+        });
+        
         // Return the data as JSON
         return response()->json([
             'message' => 'Finance Loan Data fetched successfully!',
