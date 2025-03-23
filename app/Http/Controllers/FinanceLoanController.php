@@ -42,4 +42,26 @@ class FinanceLoanController extends Controller
             'data' => $financeLoan,
         ], 201);
     }
+
+
+
+
+     /**
+     * Fetch all schools.
+     *
+     * @return \Illuminate\Http\Response
+     */
+
+    // New method to fetch data
+    public function getFinanceLoanData()
+    {
+        // Fetch all finance loan data
+        $loans = FinanceLoan::all();
+
+        // Return the data as JSON
+        return response()->json([
+            'message' => 'Finance Loan Data fetched successfully!',
+            'data' => $loans,
+        ], 200);
+    }
 }
