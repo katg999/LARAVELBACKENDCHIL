@@ -33,6 +33,12 @@ Route::get('/schools', [SchoolController::class, 'getSchools']);
 // New endpoint for Finance Loan Data
 Route::post('/finance-loan-data', [FinanceLoanController::class, 'storeFinanceLoanData']);
 
+// New endpoint for Finance Loan Data
+Route::post('/finance-loan-data', [FinanceLoanController::class, 'storeFinanceLoanData']);
+
+// New GET route for fetching finance loan data
+Route::get('/finance-loan-data', [FinanceLoanController::class, 'getFinanceLoanData']);
+
 
 
 
