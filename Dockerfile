@@ -1,12 +1,6 @@
 FROM richarvey/nginx-php-fpm:3.1.6
 
-# Copy only Composer files for dependency installation
-COPY composer.json composer.lock /var/www/html/
-
-# Install Composer dependencies
-RUN composer install --no-dev --optimize-autoloader
-
-# Copy the rest of the application files
+# Copy application files
 COPY . /var/www/html/
 
 # Image config
@@ -23,9 +17,9 @@ ENV LOG_CHANNEL stderr
 # Allow composer to run as root
 ENV COMPOSER_ALLOW_SUPERUSER 1
 
-# Create storage directory and symbolic link
+# Create storage directory and manually create the symbolic link
 RUN mkdir -p /var/www/html/storage/app/public && \
-    php artisan storage:link
+    ln -s /var/www/html/storage/app/public /var/www/html/public/storage
 
 # Start the application using the start.sh script
 CMD ["/start.sh"]
