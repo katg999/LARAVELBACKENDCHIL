@@ -1,10 +1,15 @@
 FROM richarvey/nginx-php-fpm:3.1.6
 
-# Copy application files
-COPY . .
+# Copy only Composer files for dependency installation
+COPY composer.json composer.lock /var/www/html/
+
+# Install Composer dependencies
+RUN composer install --no-dev --optimize-autoloader
+
+# Copy the rest of the application files
+COPY . /var/www/html/
 
 # Image config
-ENV SKIP_COMPOSER 1
 ENV WEBROOT /var/www/html/public
 ENV PHP_ERRORS_STDERR 1
 ENV RUN_SCRIPTS 1
