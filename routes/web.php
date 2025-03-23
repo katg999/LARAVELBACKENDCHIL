@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\FinanceDashboardController;
+use App\Http\Controllers\ApiDashboardController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -19,12 +22,13 @@ Route::get('/', function () {
 
 Route::get('/home', 'HomeController@index')->name('home');
 // routes/web.php
-use App\Http\Controllers\ApiDashboardController;
-use App\Http\Controllers\FinanceDashboardController;
+
+
 
 Route::get('/api-dashboard', [ApiDashboardController::class, 'index'])->name('api-dashboard');
 // New route for fetching data
 
-Route::get('/finance-loan-data', [FinanceDashboardController::class, 'getFinanceLoanData']);
+// Route for the Finance Dashboard
+Route::get('/finance-dashboard', [FinanceDashboardController::class, 'index'])->name('finance-dashboard');
 
 
