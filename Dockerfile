@@ -1,5 +1,6 @@
 FROM richarvey/nginx-php-fpm:3.1.6
 
+# Copy application files
 COPY . .
 
 # Image config
@@ -17,4 +18,9 @@ ENV LOG_CHANNEL stderr
 # Allow composer to run as root
 ENV COMPOSER_ALLOW_SUPERUSER 1
 
-CMD ["/start.sh"]
+# Create storage directory and symbolic link
+RUN mkdir -p /var/www/html/storage/app/public && \
+    php artisan storage:link
+
+# Start the application
+CMD php artisan serve --host=0.0.0.0 --port=$PORT
