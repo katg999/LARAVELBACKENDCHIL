@@ -12,67 +12,42 @@ use Illuminate\Support\Str;
 class NewsletterController extends Controller
 {
     public function subscribe(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email|max:255|unique:newsletter_subscribers,email',
-        ]);
+{
+    $validator = Validator::make($request->all(), [
+        'email' => 'required|email|unique:newsletter_subscribers,email',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
 
-        $verificationToken = Str::random(60);
+    DB::beginTransaction();
 
+    try {
         $subscriber = NewsletterSubscriber::create([
             'email' => $request->email,
-            'verification_token' => $verificationToken,
+            'verification_token' => Str::random(60),
         ]);
 
-        try {
-            Mail::to($request->email)->send(new VerifyNewsletterSubscription($subscriber));
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to send verification email. Please try again later.'
-            ], 500);
-        }
+        // Queue the email instead of sending synchronously
+        dispatch(function () use ($subscriber) {
+            Mail::to($subscriber->email)
+               ->send(new VerifyNewsletterSubscription($subscriber));
+        })->afterResponse(); // Don't wait for send to complete
+
+        DB::commit();
 
         return response()->json([
             'success' => true,
-            'message' => 'Thank you for subscribing! Please check your email to verify your subscription.',
-        ]);
-    }
-
-    public function verify($token)
-    {
-        $subscriber = NewsletterSubscriber::where('verification_token', $token)->first();
-
-        if (!$subscriber) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid verification token.'
-            ], 404);
-        }
-
-        if ($subscriber->verified_at) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Email already verified.'
-            ]);
-        }
-
-        $subscriber->update([
-            'verified_at' => now(),
-            'is_active' => true,
-            'verification_token' => null,
+            'message' => 'Subscription successful!'
         ]);
 
+    } catch (\Exception $e) {
+        DB::rollBack();
         return response()->json([
-            'success' => true,
-            'message' => 'Email successfully verified. Thank you for subscribing to our newsletter!'
-        ]);
+            'success' => false,
+            'message' => 'Service temporarily unavailable'
+        ], 503);
     }
+}
 }
