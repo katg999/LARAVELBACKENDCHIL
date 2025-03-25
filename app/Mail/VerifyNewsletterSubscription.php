@@ -20,16 +20,13 @@ class VerifyNewsletterSubscription extends Mailable implements ShouldQueue
     public function __construct(NewsletterSubscriber $subscriber)
     {
         $this->subscriber = $subscriber;
-        $this->verificationUrl = route('newsletter.verify', ['token' => $subscriber->verification_token]);
+        $this->verificationUrl = url("/verify-newsletter/{$subscriber->verification_token}");
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Verify Your Keti AI Newsletter Subscription',
-            metadata: [
-                'marketing' => 'newsletter',
-            ]
+            subject: 'Verify Your Newsletter Subscription'
         );
     }
 
@@ -38,17 +35,8 @@ class VerifyNewsletterSubscription extends Mailable implements ShouldQueue
         return new Content(
             markdown: 'emails.verify-newsletter',
             with: [
-                'verificationUrl' => $this->verificationUrl,
-                'appName' => config('app.name')
+                'verificationUrl' => $this->verificationUrl
             ]
         );
-    }
-
-    public function build()
-    {
-        return $this->withSwiftMessage(function ($message) {
-            $headers = $message->getHeaders();
-            $headers->addTextHeader('List-Unsubscribe', '<mailto:unsubscribe@yourdomain.com>');
-        });
     }
 }

@@ -44,7 +44,8 @@ Route::get('/finance-loan-data', [FinanceLoanController::class, 'getFinanceLoanD
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
     ->middleware('throttle:3,1'); // 5 requests per minute
 
-Route::get('/newsletter/verify/{token}', [NewsletterController::class, 'verify']);
+Route::get('/verify-newsletter/{token}', [NewsletterController::class, 'verify'])
+    ->name('newsletter.verify');
 
 
 

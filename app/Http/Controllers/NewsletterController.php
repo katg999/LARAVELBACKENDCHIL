@@ -7,8 +7,8 @@ use App\Models\NewsletterSubscriber;
 use App\Mail\VerifyNewsletterSubscription;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class NewsletterController extends Controller
 {
