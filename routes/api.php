@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use App\Models\School; // Add this import
 use App\Http\Controllers\SchoolController; 
 use App\Http\Controllers\FinanceLoanController; // Add this import
+use App\Http\Controllers\NewsletterController;
 
 /*
 |----------------------------------------------------------------------
@@ -38,6 +39,12 @@ Route::post('/finance-loan-data', [FinanceLoanController::class, 'storeFinanceLo
 
 // New GET route for fetching finance loan data
 Route::get('/finance-loan-data', [FinanceLoanController::class, 'getFinanceLoanData']);
+
+//Subscribe Newsletter Functionality
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
+    ->middleware('throttle:3,1'); // 5 requests per minute
+
+Route::get('/newsletter/verify/{token}', [NewsletterController::class, 'verify']);
 
 
 

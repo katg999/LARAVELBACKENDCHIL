@@ -17,6 +17,7 @@ class Cors
     {
         $allowedOrigins = [
             'http://localhost:5173',
+            'http://laravelbackendchil.onrender.com/api/newsletter/subscribe',
             'http://localhost:5173/asset-finance-loans',
             'https://laravelbackendchil.onrender.com'
         ];
