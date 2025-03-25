@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\NewsletterSubscriber;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -9,7 +10,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class VerifyNewsletterSubscription extends Mailable
+class VerifyNewsletterSubscription extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -22,9 +23,20 @@ class VerifyNewsletterSubscription extends Mailable
         $this->verificationUrl = url("/verify-newsletter/{$subscriber->verification_token}");
     }
 
-    public function build()
+    public function envelope(): Envelope
     {
-        return $this->subject('Verify Your Newsletter Subscription')
-                    ->markdown('emails.verify-newsletter');
+        return new Envelope(
+            subject: 'Verify Your Newsletter Subscription'
+        );
+    }
+
+    public function content(): Content
+    {
+        return new Content(
+            markdown: 'emails.verify-newsletter',
+            with: [
+                'verificationUrl' => $this->verificationUrl
+            ]
+        );
     }
 }
