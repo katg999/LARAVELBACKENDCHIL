@@ -16,7 +16,7 @@ return [
     */
  'paths' => ['api/*', 'sanctum/csrf-cookie'], // Apply CORS to all API routes
     'allowed_methods' => ['*'], // Allow all HTTP methods
-    'allowed_origins' => ['*'], // Allow requests from all origins (temporarily for testing)
+    'allowed_origins' => ['https://chilketiai.netlify.app'], // Allow requests from all origins (temporarily for testing)
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'], // Allow all headers
     'exposed_headers' => [],
