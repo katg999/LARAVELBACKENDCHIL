@@ -20,7 +20,8 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
         \App\Http\Middleware\TrustProxies::class,
         \App\Http\Middleware\Cors::class, // Custom CORS Middleware
-        \Fruitcake\Cors\HandleCors::class, // Laravel's CORS Middleware
+         \Illuminate\Http\Middleware\HandleCors::class,
+        
     ];
 
     /**
