@@ -24,7 +24,7 @@ class SchoolController extends Controller
             'name' => 'required|string',
             'email' => 'required|email|unique:schools,email', // Ensure the email is unique
             'contact' => 'required|string',
-            'file_url' => 'required|url', // Validate the file URL (required)
+            'file_url' => 'required|string', // Validate the file URL (required)
         ]);
 
         // Check if a school with the provided email already exists
