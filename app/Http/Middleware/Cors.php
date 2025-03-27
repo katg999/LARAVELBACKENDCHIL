@@ -16,7 +16,7 @@ class Cors
     public function handle($request, Closure $next)
     {
         // Allow requests from specific origin (replace with your frontend URL)
-        header('Access-Control-Allow-Origin: http://localhost:5173/');
+        header('Access-Control-Allow-Origin: http://localhost:5173');
 
         // Allow specific headers
         header('Access-Control-Allow-Headers: Content-Type, X-Auth-Token, Authorization, Origin');
