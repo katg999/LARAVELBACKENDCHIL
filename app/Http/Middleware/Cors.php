@@ -15,8 +15,20 @@ class Cors
      */
     public function handle($request, Closure $next)
     {
-        // Allow requests from specific origin (replace with your frontend URL)
-        header('Access-Control-Allow-Origin: http://localhost:5173');
+        // List of allowed origins (add your frontend URLs here)
+        $allowedOrigins = [
+            'http://localhost:5173',
+            'http://127.0.0.1:5173',
+            'https://ketiai.com' // Add your production frontend URL
+        ];
+
+        // Get the request origin
+        $origin = $request->headers->get('Origin');
+
+        // Check if the origin is allowed
+        if (in_array($origin, $allowedOrigins)) {
+            header("Access-Control-Allow-Origin: $origin");
+        }
 
         // Allow specific headers
         header('Access-Control-Allow-Headers: Content-Type, X-Auth-Token, Authorization, Origin');
@@ -29,7 +41,7 @@ class Cors
 
         // Handle preflight requests
         if ($request->getMethod() === "OPTIONS") {
-            return response()->json();
+            return response()->json([], 204);
         }
 
         return $next($request);
