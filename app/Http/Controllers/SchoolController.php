@@ -9,26 +9,18 @@ use Illuminate\Support\Facades\Log;
 class SchoolController extends Controller
 {
     /**
-     * Handle the registration of a school or updating the file URL.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * Register a new school
      */
     public function registerSchool(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:schools',
             'contact' => 'required|string|max:20',
             'file_url' => 'nullable|string'
         ]);
 
-        $school = School::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'contact' => $request->contact,
-            'file_url' => $request->file_url
-        ]);
+        $school = School::create($validated);
 
         return response()->json([
             'message' => 'School registered successfully',
@@ -37,15 +29,64 @@ class SchoolController extends Controller
     }
 
     /**
-     * Fetch all schools.
-     *
-     * @return \Illuminate\Http\Response
+     * Get all schools
      */
     public function getSchools()
     {
-        // Fetch all schools from the database
-        $schools = School::all();
+        return response()->json(School::all());
+    }
 
-        return response()->json($schools);
+    /**
+     * Update file URL for most recently created school
+     * (New dedicated endpoint for your Voiceflow integration)
+     */
+    public function updateLatestSchoolFile(Request $request)
+    {
+        $school = School::latest()->first();
+
+        if (!$school) {
+            return response()->json([
+                'message' => 'No school records found to update'
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'file_url' => 'required|string|url' // Ensures valid URL format
+        ]);
+
+        $school->update(['file_url' => $validated['file_url']]);
+
+        Log::info('Latest school file URL updated', [
+            'school_id' => $school->id,
+            'file_url' => $validated['file_url']
+        ]);
+
+        return response()->json([
+            'message' => 'File URL updated for most recent school',
+            'school_id' => $school->id,
+            'file_url' => $school->file_url
+        ]);
+    }
+
+    /**
+     * Update specific school by ID (original functionality)
+     */
+    public function updateSchool(Request $request, $id)
+    {
+        $school = School::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|unique:schools,email,'.$school->id,
+            'contact' => 'sometimes|string|max:20',
+            'file_url' => 'nullable|string'
+        ]);
+
+        $school->update($validated);
+
+        return response()->json([
+            'message' => 'School updated successfully',
+            'school' => $school
+        ]);
     }
 }

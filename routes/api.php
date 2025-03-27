@@ -31,6 +31,9 @@ Route::post('/register-school', [SchoolController::class, 'registerSchool']);
 // New GET route for fetching schools
 Route::get('/schools', [SchoolController::class, 'getSchools']);
 
+Route::patch('/update-latest-school-file', [SchoolController::class, 'updateLatestSchoolFile']);
+
+
 // New endpoint for Finance Loan Data
 Route::post('/finance-loan-data', [FinanceLoanController::class, 'storeFinanceLoanData']);
 
