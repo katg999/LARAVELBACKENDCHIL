@@ -34,7 +34,7 @@ class Cors
         header('Access-Control-Allow-Headers: Content-Type, X-Auth-Token, Authorization, Origin');
 
         // Allow specific HTTP methods
-        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH,  DELETE, OPTIONS');
 
         // Allow credentials (if needed)
         header('Access-Control-Allow-Credentials: true');
