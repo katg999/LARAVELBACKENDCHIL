@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\FinanceDashboardController;
 use App\Http\Controllers\ApiDashboardController;
 use App\Models\NewsletterSubscriber;
+use App\Http\Controllers\ContactController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +30,14 @@ Route::get('/api-dashboard', [ApiDashboardController::class, 'index'])->name('ap
 
 // Finance Dashboard Route
 Route::get('/finance-dashboard', [FinanceDashboardController::class, 'index'])->name('finance-dashboard');
+
+
+// If you need a web view for admin purposes
+Route::get('/admin/contact-submissions', function () {
+    return view('contact-submissions');
+});
+
+
 
 // ✅ Email Verification Route for Newsletter
 Route::get('/verify-newsletter/{token}', function ($token) {

@@ -5,6 +5,7 @@ use App\Models\School; // Add this import
 use App\Http\Controllers\SchoolController; 
 use App\Http\Controllers\FinanceLoanController; // Add this import
 use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\ContactController;
 
 /*
 |----------------------------------------------------------------------
@@ -49,6 +50,11 @@ Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
 
 Route::get('/verify-newsletter/{token}', [NewsletterController::class, 'verify'])
     ->name('newsletter.verify');
+
+
+    // Contact form routes
+Route::post('/contact-submissions', [ContactController::class, 'store']);
+Route::get('/contact-submissions', [ContactController::class, 'index']); // Optional: if you need to fetch submissions
 
 
 
