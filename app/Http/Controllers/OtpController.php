@@ -6,15 +6,24 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SchoolOtpMail;
+use Illuminate\Support\Facades\Validator;
 
 class OtpController extends Controller
 {
     public function sendOtp(Request $request)
     {
-        $validated = $request->validate([
+        // Laravel 11 validation approach
+        $validator = Validator::make($request->all(), [
             'school_id' => 'required|exists:schools,id',
             'email' => 'required|email'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         // Generate 6-digit OTP
         $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -47,5 +56,3 @@ class OtpController extends Controller
         }
     }
 }
-
-   
