@@ -173,43 +173,51 @@
     <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 
     <script>
-    $(document).ready(function() {
-        $('.send-otp').click(function() {
-            const button = $(this);
-            const schoolId = button.data('school-id');
-            const email = button.data('email');
-            
-            button.prop('disabled', true);
-            button.find('i').removeClass('fa-paper-plane').addClass('fa-spinner fa-spin');
-            button.siblings('.otp-status').text('Sending...').removeClass('text-muted text-success text-danger').addClass('text-info');
+   $(document).ready(function() {
+    // Set up CSRF token for all AJAX requests
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
+    
+    $('.send-otp').click(function() {
+        const button = $(this);
+        const schoolId = button.data('school-id');
+        const email = button.data('email');
+        
+        button.prop('disabled', true);
+        button.find('i').removeClass('fa-paper-plane').addClass('fa-spinner fa-spin');
+        button.siblings('.otp-status').text('Sending...').removeClass('text-muted text-success text-danger').addClass('text-info');
 
-            $.post('/send-otp', {
-                school_id: schoolId,
-                email: email,
-                _token: '{{ csrf_token() }}'
-            })
-            .done(function(response) {
-                if(response.success) {
-                    button.siblings('.otp-status').text('OTP sent! Valid for 24 hours').addClass('text-success');
-                } else {
-                    button.siblings('.otp-status').text('Error: ' + response.message).addClass('text-danger');
-                }
-            })
-            .fail(function(xhr) {
-                const error = xhr.responseJSON?.message || 'Failed to send OTP';
-                button.siblings('.otp-status').text(error).addClass('text-danger');
-            })
-            .always(function() {
-                button.prop('disabled', false);
-                button.find('i').removeClass('fa-spinner fa-spin').addClass('fa-paper-plane');
-                
-                // Clear status after 5 seconds
-                setTimeout(() => {
-                    button.siblings('.otp-status').text('').removeClass('text-success text-danger text-info');
-                }, 5000);
-            });
+        $.post('/send-otp', {
+            school_id: schoolId,
+            email: email
+        })
+        .done(function(response) {
+            console.log("Success response:", response);
+            if(response.success) {
+                button.siblings('.otp-status').text('OTP sent! Valid for 24 hours').addClass('text-success');
+            } else {
+                button.siblings('.otp-status').text('Error: ' + response.message).addClass('text-danger');
+            }
+        })
+        .fail(function(xhr) {
+            console.log("Error response:", xhr);
+            const error = xhr.responseJSON?.message || 'Failed to send OTP';
+            button.siblings('.otp-status').text(error).addClass('text-danger');
+        })
+        .always(function() {
+            button.prop('disabled', false);
+            button.find('i').removeClass('fa-spinner fa-spin').addClass('fa-paper-plane');
+            
+            // Clear status after 5 seconds
+            setTimeout(() => {
+                button.siblings('.otp-status').text('').removeClass('text-success text-danger text-info');
+            }, 5000);
         });
     });
+});
     </script>
 </body>
 </html>

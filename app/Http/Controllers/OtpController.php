@@ -43,16 +43,22 @@ class OtpController extends Controller
 
         // Send email
         try {
-            Mail::to($request->email)->send(new SchoolOtpMail($otp));
-            return response()->json([
-                'success' => true,
-                'message' => 'OTP sent successfully'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to send OTP: ' . $e->getMessage()
-            ], 500);
-        }
+    \Log::info('Attempting to send OTP to: ' . $request->email);
+    Mail::to($request->email)->send(new SchoolOtpMail($otp));
+    \Log::info('OTP sent successfully');
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'OTP sent successfully'
+    ]);
+} catch (\Exception $e) {
+    \Log::error('OTP Email Error: ' . $e->getMessage());
+    \Log::error($e->getTraceAsString()); // Log stack trace
+    
+    return response()->json([
+        'success' => false,
+        'message' => 'Failed to send OTP: ' . $e->getMessage()
+    ], 500);
+}
     }
 }
