@@ -59,4 +59,4 @@ Route::get('/verify-newsletter/{token}', function ($token) {
     return response()->json(['message' => 'Email confirmed!']);
 })->name('verify-newsletter');
 
-Route::post('/send-otp', [OtpController::class, 'sendOtp']);
+Route::post('/send-otp', [App\Http\Controllers\OtpController::class, 'sendOtp']);
