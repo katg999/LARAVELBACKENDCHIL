@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Http\Request; // MUST be Illuminate\Http\Request
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SchoolOtpMail;
-use Illuminate\Support\Facades\Validator;
 
 class OtpController extends Controller
 {
     public function sendOtp(Request $request)
     {
-        // Laravel 11 validation approach
+        // Explicit validation using Validator facade
         $validator = Validator::make($request->all(), [
             'school_id' => 'required|exists:schools,id',
             'email' => 'required|email'
