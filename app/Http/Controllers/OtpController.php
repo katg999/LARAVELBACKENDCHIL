@@ -39,6 +39,8 @@ class OtpController extends Controller
     );
 
     try {
+
+
         \Log::info('Attempting to send OTP to: ' . $request->email);
         
         // Send immediately (bypass queue for testing)
@@ -65,5 +67,6 @@ class OtpController extends Controller
             'message' => 'Failed to send OTP. Please try again later.'
         ], 500);
     }
+
 }
 }
