@@ -177,7 +177,12 @@
     // Set up CSRF token for all AJAX requests
     $.ajaxSetup({
         headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        crossDomain: true,
+        xhrFields: {
+            withCredentials: true
         }
     });
 
@@ -190,12 +195,21 @@
         button.find('i').removeClass('fa-paper-plane').addClass('fa-spinner fa-spin');
         button.siblings('.otp-status').text('Sending...').removeClass('text-muted text-success text-danger').addClass('text-info');
 
-        // Update the API endpoint to reflect the deployed URL on Render
         const apiUrl = 'https://laravelbackendchil.onrender.com/api/send-otp';
 
-        $.post(apiUrl, {
-            school_id: schoolId,
-            email: email
+        // Use $.ajax instead of $.post for better control
+        $.ajax({
+            url: apiUrl,
+            type: 'POST',
+            data: {
+                school_id: schoolId,
+                email: email
+            },
+            dataType: 'json',
+            crossDomain: true,
+            xhrFields: {
+                withCredentials: true
+            }
         })
         .done(function(response) {
             console.log("Success response:", response);
@@ -214,7 +228,6 @@
             button.prop('disabled', false);
             button.find('i').removeClass('fa-spinner fa-spin').addClass('fa-paper-plane');
             
-            // Clear status after 5 seconds
             setTimeout(() => {
                 button.siblings('.otp-status').text('').removeClass('text-success text-danger text-info');
             }, 5000);
