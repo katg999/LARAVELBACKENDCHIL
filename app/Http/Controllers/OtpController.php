@@ -39,25 +39,34 @@ class OtpController extends Controller
     );
 
     try {
-    Mail::to($request->email)->send(new SchoolOtpMail($otp));
 
-    if (count(Mail::failures()) > 0) {
-        \Log::error('Mail delivery failed for: ' . $request->email);
-        return response()->json(['success' => false, 'message' => 'Mail delivery failed'], 500);
+
+        \Log::info('Attempting to send OTP to: ' . $request->email);
+        
+        // Send immediately (bypass queue for testing)
+        Mail::to($request->email)->send(new SchoolOtpMail($otp));
+        
+        // Verify no failures
+        if (count(Mail::failures()) > 0) {
+            throw new \Exception('Failed to deliver to recipient');
+        }
+        
+        \Log::info('OTP sent successfully');
+        return response()->json(['success' => true, 'message' => 'OTP sent']);
+        
+    } catch (\Exception $e) {
+        \Log::error('OTP Email Error', [
+            'message' => $e->getMessage(),
+            'exception' => $e,
+            'trace' => $e->getTraceAsString(),
+            'mail_config' => config('mail') // Log current mail config
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to send OTP. Please try again later.'
+        ], 500);
     }
-
-    return response()->json(['success' => true]);
-} catch (\Exception $e) {
-    \Log::error('OTP Send Failure', [
-        'error' => $e->getMessage(),
-        'trace' => $e->getTraceAsString(),
-    ]);
-
-    return response()->json([
-        'success' => false,
-        'message' => 'Failed to send OTP. Please try again later.',
-    ], 500);
-}
 
 }
 }
