@@ -19,8 +19,11 @@ class Cors
         $allowedOrigins = [
             'http://localhost:5173',
             'http://127.0.0.1:5173',
+            'http://127.0.0.1:8000/api-dashboard',
             'https://ketiai.com' // Add your production frontend URL
         ];
+
+       
 
         // Get the request origin
         $origin = $request->headers->get('Origin');
