@@ -180,23 +180,26 @@
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         }
     });
-    
+
     $('.send-otp').click(function() {
         const button = $(this);
         const schoolId = button.data('school-id');
         const email = button.data('email');
-        
+
         button.prop('disabled', true);
         button.find('i').removeClass('fa-paper-plane').addClass('fa-spinner fa-spin');
         button.siblings('.otp-status').text('Sending...').removeClass('text-muted text-success text-danger').addClass('text-info');
 
-        $.post('/send-otp', {
+        // Update the API endpoint to reflect the deployed URL on Render
+        const apiUrl = 'https://laravelbackendchil.onrender.com/api/send-otp';
+
+        $.post(apiUrl, {
             school_id: schoolId,
             email: email
         })
         .done(function(response) {
             console.log("Success response:", response);
-            if(response.success) {
+            if (response.success) {
                 button.siblings('.otp-status').text('OTP sent! Valid for 24 hours').addClass('text-success');
             } else {
                 button.siblings('.otp-status').text('Error: ' + response.message).addClass('text-danger');
@@ -218,6 +221,7 @@
         });
     });
 });
+
     </script>
 </body>
 </html>
