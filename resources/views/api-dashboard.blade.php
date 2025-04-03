@@ -174,18 +174,9 @@
 
     <script>
    $(document).ready(function() {
-    // Set up CSRF token for all AJAX requests
-    $.ajaxSetup({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        crossDomain: true,
-        xhrFields: {
-            withCredentials: true
-        }
-    });
-
+    // Get CSRF token from meta tag
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
     $('.send-otp').click(function() {
         const button = $(this);
         const schoolId = button.data('school-id');
@@ -197,34 +188,40 @@
 
         const apiUrl = 'https://laravelbackendchil.onrender.com/api/send-otp';
 
-        // Use $.ajax instead of $.post for better control
-        $.ajax({
-            url: apiUrl,
-            type: 'POST',
-            data: {
+        // Use fetch API for better CORS handling
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
                 school_id: schoolId,
                 email: email
-            },
-            dataType: 'json',
-            crossDomain: true,
-            xhrFields: {
-                withCredentials: true
-            }
+            }),
+            credentials: 'include' // Important for cookies/sessions
         })
-        .done(function(response) {
-            console.log("Success response:", response);
-            if (response.success) {
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Success response:", data);
+            if (data.success) {
                 button.siblings('.otp-status').text('OTP sent! Valid for 24 hours').addClass('text-success');
             } else {
-                button.siblings('.otp-status').text('Error: ' + response.message).addClass('text-danger');
+                button.siblings('.otp-status').text('Error: ' + data.message).addClass('text-danger');
             }
         })
-        .fail(function(xhr) {
-            console.log("Error response:", xhr);
-            const error = xhr.responseJSON?.message || 'Failed to send OTP';
-            button.siblings('.otp-status').text(error).addClass('text-danger');
+        .catch(error => {
+            console.log("Error:", error);
+            button.siblings('.otp-status').text('Failed to send OTP').addClass('text-danger');
         })
-        .always(function() {
+        .finally(() => {
             button.prop('disabled', false);
             button.find('i').removeClass('fa-spinner fa-spin').addClass('fa-paper-plane');
             
@@ -234,7 +231,6 @@
         });
     });
 });
-
     </script>
 </body>
 </html>

@@ -15,40 +15,35 @@ class Cors
      */
     public function handle($request, Closure $next)
     {
-        // List of allowed origins (add your frontend URLs here)
+        // List of allowed origins
         $allowedOrigins = [
             'http://localhost:5173',
             'http://127.0.0.1:5173',
             'http://127.0.0.1:8000',
             'http://127.0.0.1:8000/api-dashboard',
             'https://laravelbackendchil.onrender.com',
-            'https://ketiai.com' // Add your production frontend URL
+            'https://ketiai.com'
         ];
-
-       
 
         // Get the request origin
         $origin = $request->headers->get('Origin');
 
-        // Check if the origin is allowed
-        if (in_array($origin, $allowedOrigins)) {
-            header("Access-Control-Allow-Origin: $origin");
-        }
-
-        // Allow specific headers
-        header('Access-Control-Allow-Headers: Content-Type, X-Auth-Token, Authorization, Origin');
-
-        // Allow specific HTTP methods
-        header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH,  DELETE, OPTIONS');
-
-        // Allow credentials (if needed)
-        header('Access-Control-Allow-Credentials: true');
-
         // Handle preflight requests
-        if ($request->getMethod() === "OPTIONS") {
-            return response()->json([], 204);
+        if ($request->isMethod('OPTIONS')) {
+            $response = response()->json([], 204);
+        } else {
+            $response = $next($request);
         }
 
-        return $next($request);
+        // Add headers if origin is allowed
+        if (in_array($origin, $allowedOrigins)) {
+            $response->headers->set('Access-Control-Allow-Origin', $origin);
+            $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+            $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, X-Auth-Token, Authorization, Origin, X-Requested-With, X-CSRF-TOKEN, X-CSRFToken');
+            $response->headers->set('Access-Control-Allow-Credentials', 'true');
+            $response->headers->set('Access-Control-Expose-Headers', 'X-CSRF-TOKEN');
+        }
+
+        return $response;
     }
 }
