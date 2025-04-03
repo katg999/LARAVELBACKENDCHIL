@@ -6,6 +6,8 @@ use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\FinanceLoanController; // Add this import
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\OtpController;
+
 
 /*
 |----------------------------------------------------------------------
@@ -56,6 +58,5 @@ Route::get('/verify-newsletter/{token}', [NewsletterController::class, 'verify']
 Route::post('/contact-submissions', [ContactController::class, 'store']);
 Route::get('/contact-submissions', [ContactController::class, 'index']); // Optional: if you need to fetch submissions
 
-
-
+Route::post('/send-otp', [OtpController::class, 'sendOtp']);
 
