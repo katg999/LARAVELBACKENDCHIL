@@ -60,3 +60,7 @@ Route::get('/contact-submissions', [ContactController::class, 'index']); // Opti
 
 Route::post('/send-otp', [OtpController::class, 'sendOtp']);
 
+// For VoiceFlow login OTP
+Route::post('/voiceflow/send-login-otp', [OtpController::class, 'sendLoginOtp']);
+Route::post('/voiceflow/verify-otp', [OtpController::class, 'verifyOtp']);
+

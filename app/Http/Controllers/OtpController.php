@@ -127,4 +127,109 @@ class OtpController extends Controller
             'template_exists' => view()->exists('emails.otp')
         ]);
     }
+
+
+
+
+/**
+ * Handle OTP request from VoiceFlow (email only)
+ */
+public function sendLoginOtp(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'email' => 'required|email|exists:schools,email'
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid email address'
+        ], 422);
+    }
+
+    try {
+        $school = DB::table('schools')->where('email', $request->email)->first();
+        
+        if (!$school->is_approved) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is not yet approved'
+            ], 403);
+        }
+
+        // Generate and send OTP
+        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $expiresAt = now()->addHours(24);
+
+        DB::table('otps')->updateOrInsert(
+            ['school_id' => $school->id],
+            [
+                'code' => $otp,
+                'expires_at' => $expiresAt,
+                'used' => false,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]
+        );
+
+        Mail::to($request->email)->send(new SchoolOtpMail($otp));
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'OTP sent successfully'
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('VoiceFlow OTP Error: '.$e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to send OTP'
+        ], 500);
+    }
+}
+
+/**
+ * Verify OTP from VoiceFlow
+ */
+public function verifyOtp(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'email' => 'required|email|exists:schools,email',
+        'otp' => 'required|digits:6'
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid input'
+        ], 422);
+    }
+
+    $otpRecord = DB::table('otps')
+        ->join('schools', 'otps.school_id', '=', 'schools.id')
+        ->where('schools.email', $request->email)
+        ->where('otps.code', $request->otp)
+        ->where('otps.used', false)
+        ->where('otps.expires_at', '>', now())
+        ->select('otps.*')
+        ->first();
+
+    if (!$otpRecord) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid or expired OTP'
+        ], 401);
+    }
+
+    // Mark OTP as used
+    DB::table('otps')
+        ->where('id', $otpRecord->id)
+        ->update(['used' => true]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Login successful',
+        'school_id' => $otpRecord->school_id
+    ]);
+}
 }
