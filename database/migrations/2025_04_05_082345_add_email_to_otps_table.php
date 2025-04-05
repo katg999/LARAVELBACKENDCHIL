@@ -12,9 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('otps', function (Blueprint $table) {
-            $table->string('email'); // Removed ->after('id') for safety
-            $table->dropConstrainedForeignId('school_id'); // Safer method
+            // Add the email column as nullable first
+            $table->string('email')->nullable(); // Set it nullable initially
+            $table->dropConstrainedForeignId('school_id');
         });
+
+        // Update existing records with a default email
+        DB::table('otps')->update(['email' => 'briankuberwa@gmail.com']);
     }
 
     /**
@@ -23,8 +27,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('otps', function (Blueprint $table) {
-            $table->foreignId('school_id')->constrained()->onDelete('cascade');
+            // Drop the email column
             $table->dropColumn('email');
+            $table->foreignId('school_id')->constrained()->onDelete('cascade');
         });
     }
 };
