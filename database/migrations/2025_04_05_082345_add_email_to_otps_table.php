@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('otps', function (Blueprint $table) {
-            $table->string('email')->after('id'); 
+            $table->string('email'); // Removed ->after('id') for safety
+            $table->dropConstrainedForeignId('school_id'); // Safer method
         });
     }
 
@@ -22,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('otps', function (Blueprint $table) {
-             $table->foreignId('school_id')->constrained()->onDelete('cascade');
+            $table->foreignId('school_id')->constrained()->onDelete('cascade');
             $table->dropColumn('email');
         });
     }
