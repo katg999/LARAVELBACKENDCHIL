@@ -181,24 +181,75 @@ public function sendLoginOtp(Request $request)
  */
 public function verifyOtp(Request $request)
 {
-    $otp = DB::table('otps')
+    \Log::info('OTP Verification Request Received', [
+        'email' => $request->email,
+        'otp_received' => $request->otp,
+        'time' => now()->toDateTimeString()
+    ]);
+
+    // Debug: Log all parameters received
+    \Log::debug('Full Request Payload:', $request->all());
+
+    $otpRecord = DB::table('otps')
+          ->where('email', $request->email)
+          ->first();
+
+    if (!$otpRecord) {
+        \Log::warning('No OTP record found for email', [
+            'email' => $request->email
+        ]);
+        return response()->json([
+            'success' => false,
+            'message' => 'No OTP record found for this email'
+        ], 401);
+    }
+
+    \Log::debug('Database OTP Record:', (array)$otpRecord);
+
+    $verification = DB::table('otps')
           ->where('email', $request->email)
           ->where('code', $request->otp)
           ->where('expires_at', '>', now())
           ->where('used', false)
           ->first();
 
-    if (!$otp) {
+    if (!$verification) {
+        \Log::warning('OTP Verification Failed', [
+            'possible_reasons' => [
+                'code_mismatch' => $request->otp != $otpRecord->code,
+                'expired' => $otpRecord->expires_at <= now(),
+                'already_used' => $otpRecord->used == true,
+                'types' => [
+                    'received_otp_type' => gettype($request->otp),
+                    'stored_otp_type' => gettype($otpRecord->code)
+                ],
+                'values' => [
+                    'received' => $request->otp,
+                    'stored' => $otpRecord->code
+                ]
+            ]
+        ]);
+        
         return response()->json([
             'success' => false,
-            'message' => 'Invalid or expired OTP'
+            'message' => 'Invalid or expired OTP',
+            'debug' => [
+                'received_otp' => $request->otp,
+                'stored_otp' => $otpRecord->code,
+                'expired' => $otpRecord->expires_at <= now(),
+                'used' => $otpRecord->used
+            ]
         ], 401);
     }
 
     // Mark as used
     DB::table('otps')
-      ->where('id', $otp->id)
+      ->where('id', $otpRecord->id)
       ->update(['used' => true]);
+
+    \Log::info('OTP Verified Successfully', [
+        'email' => $request->email
+    ]);
 
     return response()->json([
         'success' => true,
