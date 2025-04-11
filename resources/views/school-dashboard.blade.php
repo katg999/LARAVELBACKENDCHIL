@@ -100,7 +100,7 @@
                     <!-- Add Student Tab -->
                     <div class="tab-pane fade" id="add-student">
                         <h2 class="mb-4">Add New Student</h2>
-                        <form id="student-form" method="POST" action="{{ route('api.students.store') }}">
+                        <form id="student-form" method="POST" action="{{ url('/api/students') }}">
                             @csrf
                             <input type="hidden" name="school_id" value="{{ $school->id }}">
                             
