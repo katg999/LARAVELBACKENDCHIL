@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SchoolOtpMail;
 use App\Models\Otp;
+use App\Models\School;
 
 class OtpController extends Controller
 {
@@ -128,133 +129,137 @@ class OtpController extends Controller
         ]);
     }
 
-
-
-
-/**
- * Handle OTP request from VoiceFlow (email only)
- */
-public function sendLoginOtp(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'email' => 'required|email|exists:schools,email'
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Invalid email address'
-        ], 422);
-    }
-
-    try {
-        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        $expiresAt = now()->addHours(24);
-
-        // Store OTP with email (no school_id)
-        DB::table('otps')->updateOrInsert(
-            ['email' => $request->email],
-            [
-                'code' => $otp,
-                'expires_at' => $expiresAt,
-                'used' => false,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]
-        );
-
-        Mail::to($request->email)->send(new SchoolOtpMail($otp));
-        
-        return response()->json(['success' => true]);
-
-    } catch (\Exception $e) {
-        \Log::error('OTP Error: '.$e->getMessage());
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to send OTP'
-        ], 500);
-    }
-}
-
-/**
- * Verify OTP from VoiceFlow
- */
-public function verifyOtp(Request $request)
-{
-    \Log::info('OTP Verification Request Received', [
-        'email' => $request->email,
-        'otp_received' => $request->otp,
-        'time' => now()->toDateTimeString()
-    ]);
-
-    // Debug: Log all parameters received
-    \Log::debug('Full Request Payload:', $request->all());
-
-    $otpRecord = DB::table('otps')
-          ->where('email', $request->email)
-          ->first();
-
-    if (!$otpRecord) {
-        \Log::warning('No OTP record found for email', [
-            'email' => $request->email
+    /**
+     * Handle OTP request from VoiceFlow (email only)
+     */
+    public function sendLoginOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:schools,email'
         ]);
-        return response()->json([
-            'success' => false,
-            'message' => 'No OTP record found for this email'
-        ], 401);
-    }
 
-    \Log::debug('Database OTP Record:', (array)$otpRecord);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid email address'
+            ], 422);
+        }
 
-    $verification = DB::table('otps')
-          ->where('email', $request->email)
-          ->where('code', $request->otp)
-          ->where('expires_at', '>', now())
-          ->where('used', false)
-          ->first();
+        try {
+            $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $expiresAt = now()->addHours(24);
 
-    if (!$verification) {
-        \Log::warning('OTP Verification Failed', [
-            'possible_reasons' => [
-                'code_mismatch' => $request->otp != $otpRecord->code,
-                'expired' => $otpRecord->expires_at <= now(),
-                'already_used' => $otpRecord->used == true,
-                'types' => [
-                    'received_otp_type' => gettype($request->otp),
-                    'stored_otp_type' => gettype($otpRecord->code)
-                ],
-                'values' => [
-                    'received' => $request->otp,
-                    'stored' => $otpRecord->code
+            // Store OTP with email (no school_id)
+            DB::table('otps')->updateOrInsert(
+                ['email' => $request->email],
+                [
+                    'code' => $otp,
+                    'expires_at' => $expiresAt,
+                    'used' => false,
+                    'created_at' => now(),
+                    'updated_at' => now()
                 ]
-            ]
-        ]);
-        
-        return response()->json([
-            'success' => false,
-            'message' => 'Invalid or expired OTP',
-            'debug' => [
-                'received_otp' => $request->otp,
-                'stored_otp' => $otpRecord->code,
-                'expired' => $otpRecord->expires_at <= now(),
-                'used' => $otpRecord->used
-            ]
-        ], 401);
+            );
+
+            Mail::to($request->email)->send(new SchoolOtpMail($otp));
+            
+            return response()->json(['success' => true]);
+
+        } catch (\Exception $e) {
+            \Log::error('OTP Error: '.$e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send OTP'
+            ], 500);
+        }
     }
 
-    // Mark as used
-    DB::table('otps')
-      ->where('id', $otpRecord->id)
-      ->update(['used' => true]);
+    /**
+     * Verify OTP from VoiceFlow
+     */
+    public function verifyOtp(Request $request)
+    {
+        \Log::info('OTP Verification Request Received', [
+            'email' => $request->email,
+            'otp_received' => $request->otp,
+            'time' => now()->toDateTimeString()
+        ]);
 
-    \Log::info('OTP Verified Successfully', [
-        'email' => $request->email
-    ]);
+        // Debug: Log all parameters received
+        \Log::debug('Full Request Payload:', $request->all());
 
-    return response()->json([
-        'success' => true,
-        'message' => 'OTP verified'
-    ]);
-}
+        $otpRecord = DB::table('otps')
+              ->where('email', $request->email)
+              ->first();
 
+        if (!$otpRecord) {
+            \Log::warning('No OTP record found for email', [
+                'email' => $request->email
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'No OTP record found for this email'
+            ], 401);
+        }
+
+        \Log::debug('Database OTP Record:', (array)$otpRecord);
+
+        $verification = DB::table('otps')
+              ->where('email', $request->email)
+              ->where('code', $request->otp)
+              ->where('expires_at', '>', now())
+              ->where('used', false)
+              ->first();
+
+        if (!$verification) {
+            \Log::warning('OTP Verification Failed', [
+                'possible_reasons' => [
+                    'code_mismatch' => $request->otp != $otpRecord->code,
+                    'expired' => $otpRecord->expires_at <= now(),
+                    'already_used' => $otpRecord->used == true,
+                    'types' => [
+                        'received_otp_type' => gettype($request->otp),
+                        'stored_otp_type' => gettype($otpRecord->code)
+                    ],
+                    'values' => [
+                        'received' => $request->otp,
+                        'stored' => $otpRecord->code
+                    ]
+                ]
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired OTP',
+                'debug' => [
+                    'received_otp' => $request->otp,
+                    'stored_otp' => $otpRecord->code,
+                    'expired' => $otpRecord->expires_at <= now(),
+                    'used' => $otpRecord->used
+                ]
+            ], 401);
+        }
+
+        // Mark as used
+        DB::table('otps')
+          ->where('id', $otpRecord->id)
+          ->update(['used' => true]);
+
+        // Get the school information
+        $school = School::where('email', $request->email)->first();
+
+        \Log::info('OTP Verified Successfully', [
+            'email' => $request->email,
+            'school_id' => $school ? $school->id : null
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'OTP verified successfully. Access your dashboard below.',
+            'dashboard_url' => 'https://laravelbackendchil.onrender.com/school-dashboard/'.$school->id,
+            // Optional: Add these for Voiceflow debugging
+            'school_id' => $school->id,
+            'school_name' => $school->name
+        ]);
+    }
 }
