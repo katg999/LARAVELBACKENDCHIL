@@ -60,3 +60,11 @@ Route::get('/verify-newsletter/{token}', function ($token) {
 })->name('verify-newsletter');
 
 Route::post('/send-otp', [App\Http\Controllers\OtpController::class, 'sendOtp']);
+
+// routes/web.php
+Route::get('/school-dashboard/{school}', function (App\Models\School $school) {
+    return view('school-dashboard', [
+        'school' => $school,
+        'students' => $school->students()->latest()->get()
+    ]);
+})->name('school.dashboard');

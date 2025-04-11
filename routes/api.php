@@ -64,3 +64,28 @@ Route::post('/send-otp', [OtpController::class, 'sendOtp']);
 Route::post('/voiceflow/send-login-otp', [OtpController::class, 'sendLoginOtp']);
 Route::post('/voiceflow/verify-otp', [OtpController::class, 'verifyOtp']);
 
+
+// routes/api.php
+Route::post('/students', function(Request $request) {
+    try {
+        $validated = $request->validate([
+            'school_id' => 'required|exists:schools,id',
+            'name' => 'required|string|max:255',
+            'grade' => 'required|string',
+            'birth_date' => 'required|date',
+            'parent_contact' => 'nullable|string'
+        ]);
+
+        $student = App\Models\Student::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'student' => $student
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+})->name('api.students.store');
