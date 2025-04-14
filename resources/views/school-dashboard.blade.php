@@ -216,7 +216,7 @@
                                             
                                             <div class="mb-3">
                                                 <label class="form-label">Doctor</label>
-                                                <select name="doctor_id" class="form-select" required>
+                                                <select name="doctor_id" class="form-select" >
                                                     <option value="">Select Doctor</option>
                                                     @foreach($doctors as $doctor)
                                                     <option value="{{ $doctor->id }}">Dr. {{ $doctor->name }} ({{ $doctor->specialization }})</option>
