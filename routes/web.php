@@ -62,9 +62,25 @@ Route::get('/verify-newsletter/{token}', function ($token) {
 Route::post('/send-otp', [App\Http\Controllers\OtpController::class, 'sendOtp']);
 
 // routes/web.php
+// Route::get('/school-dashboard/{school}', function (App\Models\School $school) {
+//     return view('school-dashboard', [
+//         'school' => $school,
+//         'students' => $school->students()->with(['appointments', 'labTests'])->latest()->get(),
+//         'appointments' => $school->appointments()->with(['student', 'doctor'])->latest()->get(),
+//         'labTests' => $school->labTests()->with('student')->latest()->get(),
+//         'doctors' => $school->doctors()->latest()->get()
+//     ]);
+// })->name('school.dashboard');
+
+
+
+
 Route::get('/school-dashboard/{school}', function (App\Models\School $school) {
     return view('school-dashboard', [
         'school' => $school,
-        'students' => $school->students()->latest()->get()
+        'students' => $school->students()->latest()->get(), // Removed with()
+        'appointments' => $school->appointments()->with(['student', 'doctor'])->latest()->get(),
+        'labTests' => $school->labTests()->with('student')->latest()->get(),
+        'doctors' => $school->doctors()->latest()->get()
     ]);
 })->name('school.dashboard');

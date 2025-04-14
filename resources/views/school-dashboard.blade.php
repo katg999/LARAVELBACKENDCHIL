@@ -20,6 +20,12 @@
             color: white;
             background: rgba(255,255,255,.1);
         }
+        .tab-content {
+            padding: 20px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
@@ -37,6 +43,12 @@
                     </a>
                     <a class="nav-link" href="#add-student" data-bs-toggle="tab">
                         <i class="fas fa-user-plus me-2"></i> Add Student
+                    </a>
+                    <a class="nav-link" href="#book-doctor" data-bs-toggle="tab">
+                        <i class="fas fa-user-md me-2"></i> Book Doctor
+                    </a>
+                    <a class="nav-link" href="#lab-tests" data-bs-toggle="tab">
+                        <i class="fas fa-flask me-2"></i> Lab Tests
                     </a>
                 </nav>
             </div>
@@ -131,6 +143,208 @@
                             </button>
                         </form>
                     </div>
+
+                    <!-- Book Doctor Tab -->
+                    <div class="tab-pane fade" id="book-doctor">
+                        <div class="d-flex justify-content-between mb-4">
+                            <h2>Doctor Appointments</h2>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newAppointmentModal">
+                                <i class="fas fa-plus me-2"></i> New Appointment
+                            </button>
+                        </div>
+
+                        @if($appointments->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Student</th>
+                                        <th>Doctor</th>
+                                        <th>Reason</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($appointments as $appointment)
+                                    <tr>
+                                        <td>{{ $appointment->appointment_time->format('M d, Y h:i A') }}</td>
+                                        <td>{{ $appointment->student->name }}</td>
+                                        <td>Dr. {{ $appointment->doctor->name }}</td>
+                                        <td>{{ $appointment->reason }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 
+                                                $appointment->status == 'approved' ? 'success' : 
+                                                ($appointment->status == 'pending' ? 'warning' : 'danger') 
+                                            }}">
+                                                {{ ucfirst($appointment->status) }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        @else
+                        <div class="alert alert-info">
+                            No appointments found.
+                        </div>
+                        @endif
+
+                        <!-- Appointment Modal -->
+                        <div class="modal fade" id="newAppointmentModal" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Book Doctor Appointment</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form id="appointment-form" action="{{ url('/api/appointments') }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="school_id" value="{{ $school->id }}">
+                                        
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Student</label>
+                                                <select name="student_id" class="form-select" required>
+                                                    <option value="">Select Student</option>
+                                                    @foreach($students as $student)
+                                                    <option value="{{ $student->id }}">{{ $student->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Doctor</label>
+                                                <select name="doctor_id" class="form-select" required>
+                                                    <option value="">Select Doctor</option>
+                                                    @foreach($doctors as $doctor)
+                                                    <option value="{{ $doctor->id }}">Dr. {{ $doctor->name }} ({{ $doctor->specialization }})</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Date & Time</label>
+                                                <input type="datetime-local" name="appointment_time" class="form-control" required>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Reason</label>
+                                                <textarea name="reason" class="form-control" rows="3" required></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary">Book Appointment</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lab Tests Tab -->
+                    <div class="tab-pane fade" id="lab-tests">
+                        <div class="d-flex justify-content-between mb-4">
+                            <h2>Lab Test Requests</h2>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newLabTestModal">
+                                <i class="fas fa-plus me-2"></i> New Request
+                            </button>
+                        </div>
+
+                        @if($labTests->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Request Date</th>
+                                        <th>Student</th>
+                                        <th>Test Type</th>
+                                        <th>Status</th>
+                                        <th>Results</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($labTests as $labTest)
+                                    <tr>
+                                        <td>{{ $labTest->created_at->format('M d, Y') }}</td>
+                                        <td>{{ $labTest->student->name }}</td>
+                                        <td>{{ $labTest->test_type }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 
+                                                $labTest->status == 'completed' ? 'success' : 
+                                                ($labTest->status == 'processing' ? 'warning' : 'secondary') 
+                                            }}">
+                                                {{ ucfirst($labTest->status) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($labTest->results)
+                                            <a href="#" class="btn btn-sm btn-info">View</a>
+                                            @else
+                                            <span class="text-muted">Pending</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        @else
+                        <div class="alert alert-info">
+                            No lab tests found.
+                        </div>
+                        @endif
+
+                        <!-- Lab Test Modal -->
+                        <div class="modal fade" id="newLabTestModal" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Request Lab Test</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form id="labtest-form" action="{{ url('/api/lab-tests') }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="school_id" value="{{ $school->id }}">
+                                        
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Student</label>
+                                                <select name="student_id" class="form-select" required>
+                                                    <option value="">Select Student</option>
+                                                    @foreach($students as $student)
+                                                    <option value="{{ $student->id }}">{{ $student->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Test Type</label>
+                                                <select name="test_type" class="form-select" required>
+                                                    <option value="">Select Test</option>
+                                                    <option value="Blood Test">Blood Test</option>
+                                                    <option value="Urine Test">Urine Test</option>
+                                                    <option value="X-Ray">X-Ray</option>
+                                                    <option value="Allergy Test">Allergy Test</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Notes</label>
+                                                <textarea name="notes" class="form-control" rows="3"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary">Submit Request</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -138,10 +352,17 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Simple form submission with fetch API
-        document.getElementById('student-form').addEventListener('submit', function(e) {
+        // Student Form Submission
+        document.getElementById('student-form').addEventListener('submit', handleFormSubmit);
+        
+        // Appointment Form Submission
+        document.getElementById('appointment-form').addEventListener('submit', handleFormSubmit);
+        
+        // Lab Test Form Submission
+        document.getElementById('labtest-form').addEventListener('submit', handleFormSubmit);
+
+        function handleFormSubmit(e) {
             e.preventDefault();
-            
             const form = e.target;
             const formData = new FormData(form);
             
@@ -156,18 +377,18 @@
             .then(response => response.json())
             .then(data => {
                 if(data.success) {
-                    alert('Student added successfully!');
+                    alert('Operation successful!');
                     form.reset();
-                    // You could refresh the student list here
+                    window.location.reload(); // Refresh to show new data
                 } else {
-                    alert('Error: ' + (data.message || 'Failed to add student'));
+                    alert('Error: ' + (data.message || 'Operation failed'));
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 alert('An error occurred');
             });
-        });
+        }
     </script>
 </body>
 </html>
