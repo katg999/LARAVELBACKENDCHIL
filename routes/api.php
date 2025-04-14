@@ -89,3 +89,43 @@ Route::post('/students', function(Request $request) {
         ], 500);
     }
 })->name('api.students.store');
+
+
+
+
+// Appointments
+Route::post('/appointments', function(Request $request) {
+    $validated = $request->validate([
+        'school_id' => 'required|exists:schools,id',
+        'student_id' => 'required|exists:students,id',
+        'doctor_id' => 'required|exists:doctors,id',
+        'appointment_time' => 'required|date',
+        'reason' => 'required|string'
+    ]);
+
+    $appointment = App\Models\Appointment::create($validated);
+
+    return response()->json([
+        'success' => true,
+        'appointment' => $appointment
+    ]);
+});
+
+// Lab Tests
+Route::post('/lab-tests', function(Request $request) {
+    $validated = $request->validate([
+        'school_id' => 'required|exists:schools,id',
+        'student_id' => 'required|exists:students,id',
+        'test_type' => 'required|string',
+        'notes' => 'nullable|string'
+    ]);
+
+    $labTest = App\Models\LabTest::create(array_merge($validated, [
+        'status' => 'pending'
+    ]));
+
+    return response()->json([
+        'success' => true,
+        'lab_test' => $labTest
+    ]);
+});
