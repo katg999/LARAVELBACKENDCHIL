@@ -34,6 +34,16 @@ return [
         'secret' => env('SPARKPOST_SECRET'),
     ],
 
+    'momo' => [
+    'base_url' => env('MTN_MOMO_BASE_URL', 'https://sandbox.momodeveloper.mtn.com'),
+    'primary_key' => env('MTN_MOMO_PRIMARY_KEY'),
+    'secondary_key' => env('MTN_MOMO_SECONDARY_KEY'),
+    'callback_url' => env('MTN_MOMO_CALLBACK_URL'),
+    'api_user_id' => env('MTN_MOMO_API_USER_ID'),
+    'env' => env('MTN_MOMO_ENV', 'sandbox'),
+],
+
+
     'stripe' => [
         'model' => App\User::class,
         'key' => env('STRIPE_KEY'),

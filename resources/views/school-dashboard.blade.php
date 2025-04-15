@@ -18,7 +18,7 @@
         }
         .sidebar .nav-link:hover, .sidebar .nav-link.active {
             color: white;
-            background: rgba(255,255,255,.1);
+            background: rgba(88, 14, 14, 0.1);
         }
         .tab-content {
             padding: 20px;
@@ -156,34 +156,38 @@
                         @if($appointments->count() > 0)
                         <div class="table-responsive">
                             <table class="table table-striped">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Student</th>
-                                        <th>Doctor</th>
-                                        <th>Reason</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($appointments as $appointment)
-                                    <tr>
-                                        <td>{{ $appointment->appointment_time->format('M d, Y h:i A') }}</td>
-                                        <td>{{ $appointment->student->name }}</td>
-                                        <td>Dr. {{ $appointment->doctor->name }}</td>
-                                        <td>{{ $appointment->reason }}</td>
-                                        <td>
-                                            <span class="badge bg-{{ 
-                                                $appointment->status == 'approved' ? 'success' : 
-                                                ($appointment->status == 'pending' ? 'warning' : 'danger') 
-                                            }}">
-                                                {{ ucfirst($appointment->status) }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+    <thead class="table-dark">
+        <tr>
+            <th>Date</th>
+            <th>Student</th>
+            <th>Doctor</th>
+            <th>Duration</th>
+            <th>Amount</th>
+            <th>Reason</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($appointments as $appointment)
+        <tr>
+            <td>{{ $appointment->appointment_time->format('M d, Y h:i A') }}</td>
+            <td>{{ $appointment->student->name }}</td>
+            <td>Dr. {{ $appointment->doctor->name }}</td>
+            <td>{{ $appointment->duration }} mins</td>
+            <td>{{ number_format($appointment->amount) }} UGX</td>
+            <td>{{ $appointment->reason }}</td>
+            <td>
+                <span class="badge bg-{{ 
+                    $appointment->status == 'confirmed' ? 'success' : 
+                    ($appointment->status == 'pending_payment' ? 'warning' : 'danger') 
+                }}">
+                    {{ ucfirst(str_replace('_', ' ', $appointment->status)) }}
+                </span>
+            </td>
+        </tr>
+        @endforeach
+    </tbody>
+</table>
                         </div>
                         @else
                         <div class="alert alert-info">
@@ -191,59 +195,79 @@
                         </div>
                         @endif
 
-                        <!-- Appointment Modal -->
-                        <div class="modal fade" id="newAppointmentModal" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Book Doctor Appointment</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <form id="appointment-form" action="{{ url('/api/appointments') }}" method="POST">
-                                        @csrf
-                                        <input type="hidden" name="school_id" value="{{ $school->id }}">
-                                        
-                                        <div class="modal-body">
-                                            <div class="mb-3">
-                                                <label class="form-label">Student</label>
-                                                <select name="student_id" class="form-select" required>
-                                                    <option value="">Select Student</option>
-                                                    @foreach($students as $student)
-                                                    <option value="{{ $student->id }}">{{ $student->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            
-                                            <div class="mb-3">
-                                                <label class="form-label">Doctor</label>
-                                                <select name="doctor_id" class="form-select" >
-                                                    <option value="">Select Doctor</option>
-                                                    @foreach($doctors as $doctor)
-                                                    <option value="{{ $doctor->id }}">Dr. {{ $doctor->name }} ({{ $doctor->specialization }})</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            
-                                            <div class="mb-3">
-                                                <label class="form-label">Date & Time</label>
-                                                <input type="datetime-local" name="appointment_time" class="form-control" required>
-                                            </div>
-                                            
-                                            <div class="mb-3">
-                                                <label class="form-label">Reason</label>
-                                                <textarea name="reason" class="form-control" rows="3" required></textarea>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                            <button type="submit" class="btn btn-primary">Book Appointment</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- Update the modal form -->
+<div class="modal fade" id="newAppointmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Book Doctor Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="appointment-form" action="{{ route('appointments.store') }}" method="POST">
+                @csrf
+                <input type="hidden" name="school_id" value="{{ $school->id }}">
+                <input type="hidden" name="amount" id="appointment-amount">
+                
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Student</label>
+                        <select name="student_id" class="form-select" required>
+                            <option value="">Select Student</option>
+                            @foreach($students as $student)
+                            <option value="{{ $student->id }}">{{ $student->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
-
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Doctor</label>
+                        <select name="doctor_id" id="doctor-select" class="form-select" required>
+                            <option value="">Select Doctor</option>
+                            @foreach($doctors as $doctor)
+                            <option value="{{ $doctor->id }}" data-specialization="{{ $doctor->specialization }}">
+                                Dr. {{ $doctor->name }} ({{ $doctor->specialization }})
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Duration</label>
+                        <select name="duration" id="duration-select" class="form-select" required>
+                            <option value="">Select Duration</option>
+                            <option value="15">15 minutes</option>
+                            <option value="20">20 minutes</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date & Time</label>
+                        <input type="datetime-local" name="appointment_time" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <textarea name="reason" class="form-control" rows="3" required></textarea>
+                    </div>
+                    
+                    <!-- Payment information display -->
+                    <div class="alert alert-info" id="payment-info" style="display: none;">
+                        <h5>Payment Details</h5>
+                        <p>Doctor Type: <span id="doctor-type-display"></span></p>
+                        <p>Duration: <span id="duration-display"></span> minutes</p>
+                        <p>Amount to Pay: <strong><span id="amount-display"></span> UGX</strong></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="initiate-payment-btn" class="btn btn-primary" disabled>
+                        <i class="fas fa-money-bill-wave me-2"></i> Pay with MoMo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
                     <!-- Lab Tests Tab -->
                     <div class="tab-pane fade" id="lab-tests">
                         <div class="d-flex justify-content-between mb-4">
@@ -352,43 +376,135 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Student Form Submission
-        document.getElementById('student-form').addEventListener('submit', handleFormSubmit);
+    // Calculate appointment cost based on doctor type and duration
+    function calculateAppointmentCost() {
+        const doctorSelect = document.getElementById('doctor-select');
+        const durationSelect = document.getElementById('duration-select');
+        const paymentInfo = document.getElementById('payment-info');
+        const payButton = document.getElementById('initiate-payment-btn');
+        const amountInput = document.getElementById('appointment-amount');
         
-        // Appointment Form Submission
-        document.getElementById('appointment-form').addEventListener('submit', handleFormSubmit);
+        if (!doctorSelect.value || !durationSelect.value) {
+            paymentInfo.style.display = 'none';
+            payButton.disabled = true;
+            return;
+        }
         
-        // Lab Test Form Submission
-        document.getElementById('labtest-form').addEventListener('submit', handleFormSubmit);
+        const selectedOption = doctorSelect.options[doctorSelect.selectedIndex];
+        const isSpecialist = selectedOption.dataset.specialization !== 'General Practitioner';
+        const duration = parseInt(durationSelect.value);
+        
+        // Pricing structure
+        const amount = isSpecialist 
+            ? (duration === 15 ? 100000 : 150000)
+            : (duration === 15 ? 30000 : 45000);
+        
+        // Update display
+        document.getElementById('doctor-type-display').textContent = 
+            isSpecialist ? 'Specialist' : 'General Doctor';
+        document.getElementById('duration-display').textContent = duration;
+        document.getElementById('amount-display').textContent = amount.toLocaleString();
+        amountInput.value = amount;
+        
+        paymentInfo.style.display = 'block';
+        payButton.disabled = false;
+    }
 
-        function handleFormSubmit(e) {
-            e.preventDefault();
-            const form = e.target;
-            const formData = new FormData(form);
-            
-            fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: formData
-            })
+    // Add event listeners for dynamic pricing
+    document.getElementById('doctor-select').addEventListener('change', calculateAppointmentCost);
+    document.getElementById('duration-select').addEventListener('change', calculateAppointmentCost);
+
+    // Handle payment initiation
+    document.getElementById('initiate-payment-btn').addEventListener('click', function() {
+        const form = document.getElementById('appointment-form');
+        const formData = new FormData(form);
+        
+        // Disable button during processing
+        const payButton = this;
+        const originalText = payButton.innerHTML;
+        payButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processing...';
+        payButton.disabled = true;
+        
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.payment_reference) {
+                    // Start checking payment status
+                    checkPaymentStatus(data.payment_reference);
+                } else {
+                    alert('Appointment booked successfully!');
+                    window.location.reload();
+                }
+            } else {
+                alert('Error: ' + (data.message || 'Operation failed'));
+                payButton.innerHTML = originalText;
+                payButton.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred');
+            payButton.innerHTML = originalText;
+            payButton.disabled = false;
+        });
+    });
+
+    // Check payment status periodically
+    function checkPaymentStatus(referenceId) {
+        const statusInterval = setInterval(() => {
+            fetch(`/api/momo/payment-status/${referenceId}`)
             .then(response => response.json())
             .then(data => {
-                if(data.success) {
-                    alert('Operation successful!');
-                    form.reset();
-                    window.location.reload(); // Refresh to show new data
-                } else {
-                    alert('Error: ' + (data.message || 'Operation failed'));
+                if (data.status === 'SUCCESSFUL' || data.status === 'successful') {
+                    clearInterval(statusInterval);
+                    alert('Payment successful! Appointment confirmed.');
+                    window.location.reload();
+                } else if (data.status === 'FAILED' || data.status === 'failed') {
+                    clearInterval(statusInterval);
+                    alert('Payment failed. Please try again.');
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred');
+                // else continue checking
             });
-        }
-    </script>
+        }, 3000); // Check every 3 seconds
+    }
+
+    // General form submission handler
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                alert('Operation successful!');
+                form.reset();
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Operation failed'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred');
+        });
+    }
+</script>
 </body>
 </html>
