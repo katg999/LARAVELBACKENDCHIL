@@ -100,17 +100,36 @@ Route::post('/appointments', function(Request $request) {
         'school_id' => 'required|exists:schools,id',
         'student_id' => 'required|exists:students,id',
         'doctor_id' => 'required|exists:doctors,id',
+        'duration' => 'required|in:15,20',
         'appointment_time' => 'required|date',
-        'reason' => 'required|string'
+        'reason' => 'required|string|max:500'
     ]);
 
-    $appointment = App\Models\Appointment::create($validated);
+    // Calculate amount
+    $doctor = Doctor::find($validated['doctor_id']);
+    $isSpecialist = $doctor->specialization !== 'General Practitioner';
+    $amount = $isSpecialist 
+        ? ($validated['duration'] == 15 ? 100000 : 150000)
+        : ($validated['duration'] == 15 ? 30000 : 45000);
+
+    // Create appointment
+    $appointment = Appointment::create([
+        'school_id' => $validated['school_id'],
+        'student_id' => $validated['student_id'],
+        'doctor_id' => $validated['doctor_id'],
+        'appointment_time' => $validated['appointment_time'],
+        'duration' => $validated['duration'],
+        'reason' => $validated['reason'],
+        'amount' => $amount,
+        'status' => 'pending_payment'
+    ]);
 
     return response()->json([
         'success' => true,
-        'appointment' => $appointment
+        'appointment' => $appointment,
+        'amount_due' => $amount
     ]);
-});
+})->name('api.appointments.store');
 
 // Lab Tests
 Route::post('/lab-tests', function(Request $request) {
