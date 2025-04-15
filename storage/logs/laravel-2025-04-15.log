@@ -1,0 +1,137 @@
+[2025-04-15 06:10:36] local.ERROR: Command "make:service" is not defined.
+
+Did you mean one of these?
+    make:cache-table
+    make:cast
+    make:channel
+    make:class
+    make:command
+    make:component
+    make:controller
+    make:enum
+    make:event
+    make:exception
+    make:factory
+    make:filament-cluster
+    make:filament-exporter
+    make:filament-importer
+    make:filament-issue
+    make:filament-page
+    make:filament-panel
+    make:filament-relation-manager
+    make:filament-resource
+    make:filament-theme
+    make:filament-user
+    make:filament-widget
+    make:form-field
+    make:form-layout
+    make:infolist-entry
+    make:infolist-layout
+    make:interface
+    make:job
+    make:job-middleware
+    make:listener
+    make:livewire
+    make:livewire-form
+    make:livewire-table
+    make:mail
+    make:middleware
+    make:migration
+    make:model
+    make:notification
+    make:notifications-table
+    make:observer
+    make:policy
+    make:provider
+    make:queue-batches-table
+    make:queue-failed-table
+    make:queue-table
+    make:request
+    make:resource
+    make:rule
+    make:scope
+    make:seeder
+    make:session-table
+    make:table-column
+    make:test
+    make:trait
+    make:view {"exception":"[object] (Symfony\\Component\\Console\\Exception\\CommandNotFoundException(code: 0): Command \"make:service\" is not defined.
+
+Did you mean one of these?
+    make:cache-table
+    make:cast
+    make:channel
+    make:class
+    make:command
+    make:component
+    make:controller
+    make:enum
+    make:event
+    make:exception
+    make:factory
+    make:filament-cluster
+    make:filament-exporter
+    make:filament-importer
+    make:filament-issue
+    make:filament-page
+    make:filament-panel
+    make:filament-relation-manager
+    make:filament-resource
+    make:filament-theme
+    make:filament-user
+    make:filament-widget
+    make:form-field
+    make:form-layout
+    make:infolist-entry
+    make:infolist-layout
+    make:interface
+    make:job
+    make:job-middleware
+    make:listener
+    make:livewire
+    make:livewire-form
+    make:livewire-table
+    make:mail
+    make:middleware
+    make:migration
+    make:model
+    make:notification
+    make:notifications-table
+    make:observer
+    make:policy
+    make:provider
+    make:queue-batches-table
+    make:queue-failed-table
+    make:queue-table
+    make:request
+    make:resource
+    make:rule
+    make:scope
+    make:seeder
+    make:session-table
+    make:table-column
+    make:test
+    make:trait
+    make:view at /home/briangilbert/LARAVEL1/php-laravel-docker/vendor/symfony/console/Application.php:726)
+[stacktrace]
+#0 /home/briangilbert/LARAVEL1/php-laravel-docker/vendor/symfony/console/Application.php(284): Symfony\\Component\\Console\\Application->find()
+#1 /home/briangilbert/LARAVEL1/php-laravel-docker/vendor/symfony/console/Application.php(193): Symfony\\Component\\Console\\Application->doRun()
+#2 /home/briangilbert/LARAVEL1/php-laravel-docker/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run()
+#3 /home/briangilbert/LARAVEL1/php-laravel-docker/artisan(35): Illuminate\\Foundation\\Console\\Kernel->handle()
+#4 {main}
+"} 
+[2025-04-15 08:32:02] local.ERROR: Failed to get API key: cURL error 3: URL using bad/illegal format or missing URL (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for /v1_0/apiuser//apikey  
+[2025-04-15 08:32:02] local.ERROR: Failed to get access token: cURL error 3: URL using bad/illegal format or missing URL (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for /collection/token/  
+[2025-04-15 08:32:02] local.ERROR: Payment request failed: cURL error 3: URL using bad/illegal format or missing URL (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for /collection/v1_0/requesttopay  
+[2025-04-15 08:43:38] local.ERROR: Failed to get API key: cURL error 3: URL using bad/illegal format or missing URL (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for /v1_0/apiuser/6356fab6-fe96-4df3-b92d-5453379a269b/apikey  
+[2025-04-15 08:43:44] local.ERROR: Failed to get access token: cURL error 3: URL using bad/illegal format or missing URL (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for /collection/token/  
+[2025-04-15 08:43:44] local.ERROR: Payment request failed: cURL error 3: URL using bad/illegal format or missing URL (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for /collection/v1_0/requesttopay  
+[2025-04-15 08:44:22] local.ERROR: Failed to get API key: cURL error 3: URL using bad/illegal format or missing URL (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for /v1_0/apiuser/6356fab6-fe96-4df3-b92d-5453379a269b/apikey  
+[2025-04-15 08:44:37] local.ERROR: Failed to get access token: cURL error 3: URL using bad/illegal format or missing URL (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for /collection/token/  
+[2025-04-15 08:44:37] local.ERROR: Payment request failed: cURL error 3: URL using bad/illegal format or missing URL (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for /collection/v1_0/requesttopay  
+[2025-04-15 08:44:47] local.ERROR: Failed to get access token: cURL error 3: URL using bad/illegal format or missing URL (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for /collection/token/  
+[2025-04-15 08:44:47] local.ERROR: Failed to check payment status: cURL error 3: URL using bad/illegal format or missing URL (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for /collection/v1_0/requesttopay/  
+[2025-04-15 08:59:17] local.ERROR: Payment request failed: Client error: `POST https://sandbox.momodeveloper.mtn.com/collection/v1_0/requesttopay` resulted in a `400 Bad Request` response  
+[2025-04-15 09:03:22] local.ERROR: Payment request failed: Client error: `POST https://sandbox.momodeveloper.mtn.com/collection/v1_0/requesttopay` resulted in a `400 Bad Request` response  
+[2025-04-15 09:04:13] local.ERROR: Payment request failed: Client error: `POST https://sandbox.momodeveloper.mtn.com/collection/v1_0/requesttopay` resulted in a `400 Bad Request` response  
+[2025-04-15 09:06:22] local.ERROR: Payment request failed: Client error: `POST https://sandbox.momodeveloper.mtn.com/collection/v1_0/requesttopay` resulted in a `400 Bad Request` response  

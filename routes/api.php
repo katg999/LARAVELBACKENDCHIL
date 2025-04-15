@@ -7,6 +7,7 @@ use App\Http\Controllers\FinanceLoanController; // Add this import
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\OtpController;
+use App\Http\Controllers\PaymentController;
 
 
 /*
@@ -128,4 +129,18 @@ Route::post('/lab-tests', function(Request $request) {
         'success' => true,
         'lab_test' => $labTest
     ]);
+});
+
+
+
+// Payment Routes
+Route::prefix('momo')->group(function () {
+    Route::post('/init', [PaymentController::class, 'initApiUser']); // One-time setup
+    Route::get('/user', [PaymentController::class, 'getApiUser']);
+    
+    Route::post('/request-payment', [PaymentController::class, 'requestPayment']);
+    Route::get('/payment-status/{referenceId}', [PaymentController::class, 'paymentStatus']);
+    Route::get('/balance', [PaymentController::class, 'accountBalance']);
+    
+    Route::post('/callback', [PaymentController::class, 'handleCallback']);
 });

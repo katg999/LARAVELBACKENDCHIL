@@ -9,9 +9,11 @@
     "license": "MIT",
     "require": {
         "php": "^8.0",
+        "doctrine/dbal": "^4.2",
         "filament/filament": "^3.3",
         "laravel/framework": "^11.0",
-        "laravel/tinker": "^2.9"
+        "laravel/tinker": "^2.9",
+        "ramsey/uuid": "^4.7"
     },
     "require-dev": {
         "filp/whoops": "^2.15",
