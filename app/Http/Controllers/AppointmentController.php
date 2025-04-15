@@ -17,66 +17,40 @@ class AppointmentController extends Controller
         $this->momoService = $momoService;
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'school_id' => 'required|exists:schools,id',
-            'student_id' => 'required|exists:students,id',
-            'doctor_id' => 'required|exists:doctors,id',
-            'duration' => 'required|in:15,20', // Added duration field
-            'appointment_time' => 'required|date',
-            'reason' => 'required|string'
-        ]);
+   public function store(Request $request)
+{
+    $validated = $request->validate([
+        'school_id' => 'required|exists:schools,id',
+        'student_id' => 'required|exists:students,id',
+        'doctor_id' => 'required|exists:doctors,id',
+        'duration' => 'required|in:15,20',
+        'appointment_time' => [
+            'required',
+            'date',
+            function ($attribute, $value, $fail) {
+                if (now()->diffInHours(\Carbon\Carbon::parse($value)) < 2) {
+                    $fail('Appointments must be scheduled at least 2 hours in advance.');
+                }
+            }
+        ],
+        'reason' => 'required|string|max:500'
+    ]);
 
-        // Get school and doctor
-        $school = School::find($validated['school_id']);
-        $doctor = Doctor::find($validated['doctor_id']);
+    // Check doctor availability
+    $conflictingAppointments = Appointment::where('doctor_id', $validated['doctor_id'])
+        ->where('appointment_time', '<=', \Carbon\Carbon::parse($validated['appointment_time'])->addMinutes($validated['duration']))
+        ->where('appointment_time', '>=', \Carbon\Carbon::parse($validated['appointment_time'])->subMinutes($validated['duration']))
+        ->exists();
 
-        // Calculate amount based on doctor type and duration
-        $isSpecialist = $doctor->specialization !== 'General Practitioner';
-        $amount = $isSpecialist 
-            ? ($validated['duration'] == 15 ? 100000 : 150000)
-            : ($validated['duration'] == 15 ? 30000 : 45000);
-
-        // Generate unique transaction ID
-        $externalId = 'APP-' . now()->format('YmdHis') . '-' . rand(100, 999);
-
-        // Request payment via MTN MoMo
-        $paymentResult = $this->momoService->requestToPay(
-            $amount,
-            $school->contact_number, // Using school's contact number
-            $externalId,
-            'Payment for doctor appointment',
-            'Appointment with Dr. ' . $doctor->name
-        );
-
-        if (!$paymentResult['success']) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Payment initiation failed: ' . ($paymentResult['message'] ?? 'Unknown error')
-            ], 400);
-        }
-
-        // Create appointment record
-        $appointment = Appointment::create([
-            'school_id' => $validated['school_id'],
-            'student_id' => $validated['student_id'],
-            'doctor_id' => $validated['doctor_id'],
-            'appointment_time' => $validated['appointment_time'],
-            'duration' => $validated['duration'],
-            'reason' => $validated['reason'],
-            'amount' => $amount,
-            'payment_reference' => $paymentResult['reference_id'],
-            'status' => 'pending_payment' // Will be updated via callback
-        ]);
-
+    if ($conflictingAppointments) {
         return response()->json([
-            'success' => true,
-            'appointment' => $appointment,
-            'payment_reference' => $paymentResult['reference_id'],
-            'check_status_url' => route('appointments.check-status', $paymentResult['reference_id'])
-        ]);
+            'success' => false,
+            'message' => 'Doctor is not available at the selected time'
+        ], 409);
     }
+
+    // Rest of your payment and creation logic...
+}
 
     public function index(School $school)
     {
@@ -87,38 +61,28 @@ class AppointmentController extends Controller
     }
 
     public function checkStatus($referenceId)
-    {
-        try {
-            $status = $this->momoService->getPaymentStatus($referenceId);
-            
-            // Find and update appointment
-            $appointment = Appointment::where('payment_reference', $referenceId)->firstOrFail();
-            
-            if ($status && $status['status'] === 'SUCCESSFUL') {
-                $appointment->update(['status' => 'confirmed']);
-                
-                // Send notifications
-                $this->sendAppointmentConfirmation($appointment);
-                
-                return response()->json([
-                    'status' => 'successful',
-                    'appointment' => $appointment
-                ]);
-            }
-            
-            return response()->json([
-                'status' => $status['status'] ?? 'pending',
-                'appointment' => $appointment
-            ]);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error checking payment status'
-            ], 500);
+{
+    $appointment = Appointment::where('payment_reference', $referenceId)
+        ->with(['student', 'doctor'])
+        ->firstOrFail();
+
+    // Only check with MoMo if status is still pending
+    if ($appointment->status === 'pending_payment') {
+        $status = $this->momoService->getPaymentStatus($referenceId);
+        
+        if ($status && $status['status'] === 'SUCCESSFUL') {
+            $appointment->update(['status' => 'confirmed']);
+            $this->sendAppointmentConfirmation($appointment);
+        } elseif ($status && $status['status'] === 'FAILED') {
+            $appointment->update(['status' => 'payment_failed']);
         }
     }
 
+    return response()->json([
+        'status' => $appointment->status,
+        'appointment' => $appointment
+    ]);
+}
     public function handleCallback(Request $request)
     {
         \Log::info('MoMo Callback Received:', $request->all());

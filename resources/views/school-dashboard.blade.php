@@ -203,7 +203,7 @@
                 <h5 class="modal-title">Book Doctor Appointment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="appointment-form" action="{{ route('appointments.store') }}" method="POST">
+            <form id="appointment-form" action="{{ route('api.appointments.store') }}" method="POST">
                 @csrf
                 <input type="hidden" name="school_id" value="{{ $school->id }}">
                 <input type="hidden" name="amount" id="appointment-amount">
