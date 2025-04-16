@@ -186,7 +186,7 @@
         button.find('i').removeClass('fa-paper-plane').addClass('fa-spinner fa-spin');
         button.siblings('.otp-status').text('Sending...').removeClass('text-muted text-success text-danger').addClass('text-info');
 
-        const apiUrl = 'https://laravelbackendchil.onrender.com/api/send-otp';
+        const apiUrl = 'https://laravelbackendchil.onrender.com/api/voiceflow/send-login-otp';
 
         // Use fetch API for better CORS handling
         fetch(apiUrl, {
