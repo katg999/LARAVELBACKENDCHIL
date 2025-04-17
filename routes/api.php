@@ -163,3 +163,8 @@ Route::prefix('momo')->group(function () {
     
     Route::post('/callback', [PaymentController::class, 'handleCallback']);
 });
+
+
+
+// School Actions Routes
+Route::post('/voiceflow/school-action', [SchoolActionController::class, 'handleSchoolAction']);
