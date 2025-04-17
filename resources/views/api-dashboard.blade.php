@@ -305,77 +305,84 @@
         });
         
         function sendActionRequest(schoolId, email, action, message = '') {
-            const button = $(`button[data-school-id="${schoolId}"].${action === 'accept' ? 'send-otp' : action === 'reject' ? 'reject-school' : 'query-school'}`);
-            const statusElement = button.closest('td').find('.action-status');
-            
-            button.prop('disabled', true);
-            
-            if (action === 'accept') {
-                button.find('i').removeClass('fa-check-circle').addClass('fa-spinner fa-spin');
-                statusElement.text('Sending OTP...').removeClass('text-muted text-success text-danger').addClass('text-info');
-            } else if (action === 'reject') {
-                statusElement.text('Processing rejection...').removeClass('text-muted text-success text-danger').addClass('text-info');
-            } else {
-                statusElement.text('Sending query...').removeClass('text-muted text-success text-danger').addClass('text-info');
-            }
-            
-            const apiUrl = 'https://laravelbackendchil.onrender.com/api/voiceflow/school-action';
-            const requestData = {
-                school_id: schoolId,
-                email: email,
-                action: action
-            };
-            
-            if (message) {
-                requestData.message = message;
-            }
-            
-            fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify(requestData),
-                credentials: 'include'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("Success response:", data);
-                if (data.success) {
-                    if (action === 'accept') {
-                        statusElement.text('OTP sent! Valid for 24 hours').addClass('text-success');
-                    } else if (action === 'reject') {
-                        statusElement.text('Rejection sent to school').addClass('text-success');
-                    } else {
-                        statusElement.text('Query sent to school').addClass('text-success');
-                    }
-                } else {
-                    statusElement.text('Error: ' + (data.message || 'Action failed')).addClass('text-danger');
-                }
-            })
-            .catch(error => {
-                console.log("Error:", error);
-                statusElement.text('Failed to process action').addClass('text-danger');
-            })
-            .finally(() => {
-                button.prop('disabled', false);
-                if (action === 'accept') {
-                    button.find('i').removeClass('fa-spinner fa-spin').addClass('fa-check-circle');
-                }
-                
-                setTimeout(() => {
-                    statusElement.text('').removeClass('text-success text-danger text-info');
-                }, 5000);
-            });
+    const button = $(`button[data-school-id="${schoolId}"].${action === 'accept' ? 'send-otp' : action === 'reject' ? 'reject-school' : 'query-school'}`);
+    const statusElement = button.closest('td').find('.action-status');
+
+    button.prop('disabled', true);
+
+    if (action === 'accept') {
+        button.find('i').removeClass('fa-check-circle').addClass('fa-spinner fa-spin');
+        statusElement.text('Sending OTP...').removeClass('text-muted text-success text-danger').addClass('text-info');
+    } else if (action === 'reject') {
+        statusElement.text('Processing rejection...').removeClass('text-muted text-success text-danger').addClass('text-info');
+    } else {
+        statusElement.text('Sending query...').removeClass('text-muted text-success text-danger').addClass('text-info');
+    }
+
+    // Different API URLs based on action
+    const apiUrl = action === 'accept' 
+        ? 'https://laravelbackendchil.onrender.com/api/voiceflow/send-login-otp'
+        : 'https://laravelbackendchil.onrender.com/api/voiceflow/school-action';
+
+    const requestData = {
+        school_id: schoolId,
+        email: email,
+    };
+
+    if (action !== 'accept') {
+        requestData.action = action;
+        if (message) {
+            requestData.message = message;
         }
+    }
+
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(requestData),
+        credentials: 'include'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("Success response:", data);
+        if (data.success) {
+            if (action === 'accept') {
+                statusElement.text('OTP sent! Valid for 24 hours').addClass('text-success');
+            } else if (action === 'reject') {
+                statusElement.text('Rejection sent to school').addClass('text-success');
+            } else {
+                statusElement.text('Query sent to school').addClass('text-success');
+            }
+        } else {
+            statusElement.text('Error: ' + (data.message || 'Action failed')).addClass('text-danger');
+        }
+    })
+    .catch(error => {
+        console.log("Error:", error);
+        statusElement.text('Failed to process action').addClass('text-danger');
+    })
+    .finally(() => {
+        button.prop('disabled', false);
+        if (action === 'accept') {
+            button.find('i').removeClass('fa-spinner fa-spin').addClass('fa-check-circle');
+        }
+        
+        setTimeout(() => {
+            statusElement.text('').removeClass('text-success text-danger text-info');
+        }, 5000);
+    });
+}
+
     });
     </script>
 </body>
