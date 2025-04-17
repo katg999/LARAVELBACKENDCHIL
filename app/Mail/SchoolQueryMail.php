@@ -10,17 +10,17 @@ class SchoolQueryMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $message;
+    public $queryMessage;
 
-    public function __construct($message)
+    public function __construct($queryMessage)
     {
-        $this->message = $message;
+        $this->queryMessage = $queryMessage;
     }
 
     public function build()
     {
         return $this->subject('Regarding Your School Registration')
                     ->view('emails.school_query')
-                    ->with(['message' => $this->message]);
+                    ->with(['queryMessage' => $this->queryMessage]);
     }
 }

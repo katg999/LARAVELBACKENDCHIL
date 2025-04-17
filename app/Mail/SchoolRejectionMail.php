@@ -10,17 +10,17 @@ class SchoolRejectionMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $message;
+    public $rejectionMessage;
 
-    public function __construct($message)
+    public function __construct($rejectionMessage)
     {
-        $this->message = $message;
+        $this->rejectionMessage = $rejectionMessage;
     }
 
     public function build()
     {
         return $this->subject('Your School Registration Status')
                     ->view('emails.school_rejection')
-                    ->with(['message' => $this->message]);
+                    ->with(['rejectionMessage' => $this->rejectionMessage]);
     }
 }
