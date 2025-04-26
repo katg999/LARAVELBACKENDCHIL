@@ -3,6 +3,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\FinanceDashboardController;
 use App\Http\Controllers\ApiDashboardController;
 use App\Models\NewsletterSubscriber;
@@ -84,3 +85,7 @@ Route::get('/school-dashboard/{school}', function (App\Models\School $school) {
         'doctors' => $school->doctors()->latest()->get()
     ]);
 })->name('school.dashboard');
+
+
+// Doctor Dashboard Route
+Route::get('/doctors-dashboard', [DoctorController::class, 'dashboard']);

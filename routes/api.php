@@ -169,3 +169,10 @@ Route::prefix('momo')->group(function () {
 
 // School Actions Routes
 Route::post('/voiceflow/school-action', [SchoolActionController::class, 'handleSchoolAction']);
+
+
+// Doctor routes
+Route::post('/register-doctor', [DoctorController::class, 'registerDoctor']);
+Route::get('/doctors', [DoctorController::class, 'getDoctors']);
+Route::patch('/update-latest-doctor-file', [DoctorController::class, 'updateLatestDoctorFile']);
+Route::patch('/doctors/{id}', [DoctorController::class, 'updateDoctor']);
