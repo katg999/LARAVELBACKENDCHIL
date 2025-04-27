@@ -9,6 +9,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\OtpController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SchoolActionController;
+use App\Http\Controllers\DoctorController;
 
 
 /*
