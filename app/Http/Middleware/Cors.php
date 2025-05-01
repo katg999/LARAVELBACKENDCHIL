@@ -17,6 +17,7 @@ class Cors
         $allowedOrigins = [
             'http://localhost:5173',
             'http://127.0.0.1:8000',
+            'http://127.0.0.1:5173',
             'https://laravelbackendchil.onrender.com',
             'https://ketiai.com',
             'https://voiceflow.com', // Add VoiceFlow domains
