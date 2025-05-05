@@ -72,32 +72,29 @@ class DoctorController extends Controller
      * Update file URL for most recently created doctor
      */
     public function updateLatestDoctorFile(Request $request)
-    {
-        $doctor = Doctor::latest()->first();
+{
+    $doctor = Doctor::latest()->first();
 
-        if (!$doctor) {
-            return response()->json([
-                'message' => 'No doctor records found to update'
-            ], 404);
-        }
-
-        $validated = $request->validate([
-            'file_url' => 'required|string|url'
-        ]);
-
-        $doctor->update(['file_url' => $validated['file_url']]);
-
-        Log::info('Latest doctor file URL updated', [
-            'doctor_id' => $doctor->id,
-            'file_url' => $validated['file_url']
-        ]);
-
+    if (!$doctor) {
         return response()->json([
-            'message' => 'File URL updated for most recent doctor',
-            'doctor_id' => $doctor->id,
-            'file_url' => $doctor->file_url
-        ]);
+            'message' => 'No doctor records found to update'
+        ], 404);
     }
+
+    $validated = $request->validate([
+        'file_url' => 'required|string'
+    ]);
+
+    $doctor->file_url = $validated['file_url'];
+    $doctor->save();
+
+    return response()->json([
+        'message' => 'File URL updated for most recent doctor',
+        'doctor_id' => $doctor->id,
+        'file_url' => $doctor->file_url
+    ]);
+}
+
 
     /**
      * Update specific doctor by ID
