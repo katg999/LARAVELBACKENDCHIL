@@ -71,7 +71,7 @@ class DoctorController extends Controller
     /**
      * Update file URL for most recently created doctor
      */
-    public function updateDoctorFile(Request $request, $id)
+    public function updateLatestDoctorFile(Request $request)
 {
     Log::info('Updating file for doctor ID: ' . $id);
 
@@ -95,7 +95,6 @@ class DoctorController extends Controller
         'file_url' => $doctor->file_url
     ]);
 }
-
 
     /**
      * Update specific doctor by ID
