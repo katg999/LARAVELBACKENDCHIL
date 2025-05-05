@@ -71,53 +71,42 @@ class DoctorController extends Controller
     /**
      * Update file URL for most recently created doctor
      */
-   public function updateLatestDoctorFile(Request $request)
+   /**
+ * Create a new doctor with file URL
+ * This replaces the previous implementation which was updating the same record
+ */
+public function updateLatestDoctorFile(Request $request)
 {
-    Log::info('Doctor file update method called');
-    
-    // Get the latest doctor by created_at timestamp
-    $doctor = Doctor::latest()->first();
-    
-    // Also get the highest ID doctor for comparison
-    $doctorByHighestId = Doctor::orderBy('id', 'desc')->first();
-    
-    Log::info('Doctor retrieved for update', [
-        'latest_by_timestamp' => [
-            'doctor_id' => $doctor ? $doctor->id : null,
-            'created_at' => $doctor ? $doctor->created_at : null
-        ],
-        'latest_by_id' => [
-            'doctor_id' => $doctorByHighestId ? $doctorByHighestId->id : null,
-            'created_at' => $doctorByHighestId ? $doctorByHighestId->created_at : null
-        ]
-    ]);
-    
-    if (!$doctor) {
-        Log::warning('No doctor found to update');
-        return response()->json([
-            'message' => 'No doctor records found to update'
-        ], 404);
-    }
+    Log::info('Doctor file upload method called');
     
     $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:doctors',
+        'contact' => 'required|string|max:20',
+        'specialization' => 'nullable|string|max:255',
         'file_url' => 'required|string|url'
     ]);
-    
-    $doctor->file_url = $validated['file_url'];
-    $doctor->save();
-    
-    Log::info('Doctor file updated', [
-        'doctor_id' => $doctor->id,
+
+    // Create a new doctor record instead of updating an existing one
+    $doctor = Doctor::create([
+        'name' => $validated['name'],
+        'email' => $validated['email'],
+        'contact' => $validated['contact'],
+        'specialization' => $validated['specialization'] ?? null,
         'file_url' => $validated['file_url']
     ]);
     
-    return response()->json([
-        'message' => 'File URL updated for most recent doctor',
+    Log::info('New doctor with file created', [
         'doctor_id' => $doctor->id,
         'file_url' => $doctor->file_url
     ]);
+    
+    return response()->json([
+        'message' => 'New doctor record created with file URL',
+        'doctor_id' => $doctor->id,
+        'doctor' => $doctor
+    ], 201);
 }
-
     /**
      * Update specific doctor by ID
      */
