@@ -18,7 +18,7 @@ class Cors
             'http://localhost:5173',
             'http://127.0.0.1:8000',
             'http://127.0.0.1:5173',
-            'http://localhost:5173/',
+            'http://localhost:5173',
             'https://laravelbackendchil.onrender.com',
             'https://ketiai.com',
             'https://voiceflow.com', // Add VoiceFlow domains
@@ -39,15 +39,38 @@ class Cors
     }
 
     protected function addCorsHeaders(Response $response, ?string $origin, array $allowedOrigins): Response
-    {
+{
+    // Check if origin exists and is in the allowed list, or if wildcard matches
+    if ($origin) {
+        $allowed = false;
+        
+        // Check exact matches
         if (in_array($origin, $allowedOrigins)) {
+            $allowed = true;
+        } 
+        
+        // Check wildcard matches (for *.voiceflow.com type entries)
+        if (!$allowed) {
+            foreach ($allowedOrigins as $allowedOrigin) {
+                if (strpos($allowedOrigin, '*') !== false) {
+                    $pattern = str_replace('*', '.*', preg_quote($allowedOrigin, '/'));
+                    if (preg_match('/' . $pattern . '/', $origin)) {
+                        $allowed = true;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if ($allowed) {
             $response->headers->set('Access-Control-Allow-Origin', $origin);
             $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
             $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN');
             $response->headers->set('Access-Control-Allow-Credentials', 'true');
             $response->headers->set('Access-Control-Max-Age', '86400'); // 24 hours
         }
-
-        return $response;
     }
+
+    return $response;
+}
 }
