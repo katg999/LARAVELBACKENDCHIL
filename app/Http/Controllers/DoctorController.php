@@ -71,26 +71,48 @@ class DoctorController extends Controller
     /**
      * Update file URL for most recently created doctor
      */
-    public function updateLatestDoctorFile(Request $request)
+   public function updateLatestDoctorFile(Request $request)
 {
-    Log::info('Updating file for doctor ID: ' . $id);
-
+    Log::info('Doctor file update method called');
+    
+    // Get the latest doctor by created_at timestamp
+    $doctor = Doctor::latest()->first();
+    
+    // Also get the highest ID doctor for comparison
+    $doctorByHighestId = Doctor::orderBy('id', 'desc')->first();
+    
+    Log::info('Doctor retrieved for update', [
+        'latest_by_timestamp' => [
+            'doctor_id' => $doctor ? $doctor->id : null,
+            'created_at' => $doctor ? $doctor->created_at : null
+        ],
+        'latest_by_id' => [
+            'doctor_id' => $doctorByHighestId ? $doctorByHighestId->id : null,
+            'created_at' => $doctorByHighestId ? $doctorByHighestId->created_at : null
+        ]
+    ]);
+    
+    if (!$doctor) {
+        Log::warning('No doctor found to update');
+        return response()->json([
+            'message' => 'No doctor records found to update'
+        ], 404);
+    }
+    
     $validated = $request->validate([
         'file_url' => 'required|string|url'
     ]);
-
-    $doctor = Doctor::findOrFail($id);
-
+    
     $doctor->file_url = $validated['file_url'];
     $doctor->save();
-
+    
     Log::info('Doctor file updated', [
         'doctor_id' => $doctor->id,
         'file_url' => $validated['file_url']
     ]);
-
+    
     return response()->json([
-        'message' => 'File URL updated for specific doctor',
+        'message' => 'File URL updated for most recent doctor',
         'doctor_id' => $doctor->id,
         'file_url' => $doctor->file_url
     ]);
