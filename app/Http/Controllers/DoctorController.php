@@ -73,13 +73,20 @@ class DoctorController extends Controller
      */
     public function updateLatestDoctorFile(Request $request)
 {
-    Log::info('Updating file for doctor ID: ' . $id);
+    Log::info('Doctor file update method called');
+
+    $doctor = Doctor::latest()->first();
+
+    if (!$doctor) {
+        Log::warning('No doctor found to update');
+        return response()->json([
+            'message' => 'No doctor records found to update'
+        ], 404);
+    }
 
     $validated = $request->validate([
         'file_url' => 'required|string|url'
     ]);
-
-    $doctor = Doctor::findOrFail($id);
 
     $doctor->file_url = $validated['file_url'];
     $doctor->save();
@@ -90,7 +97,7 @@ class DoctorController extends Controller
     ]);
 
     return response()->json([
-        'message' => 'File URL updated for specific doctor',
+        'message' => 'File URL updated for most recent doctor',
         'doctor_id' => $doctor->id,
         'file_url' => $doctor->file_url
     ]);
