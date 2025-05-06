@@ -3,6 +3,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\FinanceDashboardController;
 use App\Http\Controllers\ApiDashboardController;
@@ -89,3 +90,17 @@ Route::get('/school-dashboard/{school}', function (App\Models\School $school) {
 
 // Doctor Dashboard Route
 Route::get('/doctors-dashboard', [DoctorController::class, 'dashboard']);
+
+
+Route::middleware(['auth:doctor'])->group(function () {
+    Route::get('/doctor/dashboard', [DoctorController::class, 'authDashboard'])->name('doctor.dashboard');
+    // Add routes for other methods if not already defined
+});
+
+
+Route::get('/doctor-dashboard', function () {
+    return view('doctor-dashboard'); // points to resources/views/doctor-dashboard.blade.php
+});
+
+
+Route::get('/doctor-dashboard/{doctorId}', [DoctorController::class, 'showDoctorDashboard'])->name('doctor.dashboard');
