@@ -10,6 +10,8 @@ use App\Http\Controllers\OtpController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SchoolActionController;
 use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\DoctorAvailabilityController;
+
 
 
 /*
@@ -177,3 +179,22 @@ Route::post('/register-doctor', [DoctorController::class, 'registerDoctor']);
 Route::get('/doctors', [DoctorController::class, 'getDoctors']);
 Route::patch('/update-latest-doctor-file', [DoctorController::class, 'updateLatestDoctorFile']);
 Route::patch('/doctors/{id}', [DoctorController::class, 'updateDoctor']);
+
+
+Route::post('/doctors/{id}/update-meeting-link', [DoctorController::class, 'updateMeetingLink'])
+    ->name('api.doctors.update-meeting-link');
+
+Route::post('/doctors/{id}/update-availability', [DoctorController::class, 'updateAvailability'])
+     ->name('api.doctors.update-availability');
+
+Route::post('/doctors/{doctor}/availability', [DoctorAvailabilityController::class, 'update'])
+    ->name('doctors.update-availability');
+
+
+Route::post('/doctors/{doctor}/update', [DoctorController::class, 'update'])->name('api.doctors.update');
+Route::post('/doctors/{doctor}/change-password', [DoctorController::class, 'changePassword'])->name('api.doctors.change-password');
+Route::post('/doctors/{doctor}/update-notifications', [DoctorController::class, 'updateNotifications'])->name('api.doctors.update-notifications');
+Route::post('/doctors/{doctor}/update-payment', [DoctorController::class, 'updatePayment'])->name('api.doctors.update-payment');
+Route::post('/doctors/{doctor}/upload-image', [DoctorController::class, 'uploadImage'])->name('api.doctors.upload-image');
+Route::post('/doctors/{doctor}/send-link', [DoctorController::class, 'sendLink'])->name('api.doctors.send-link');
+Route::post('/doctors/{doctor}/update-online-status', [DoctorController::class, 'updateOnlineStatus'])->name('api.doctors.update-online-status');
