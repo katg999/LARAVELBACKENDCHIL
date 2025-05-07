@@ -6,6 +6,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\FinanceDashboardController;
+use App\Http\Controllers\HealthFacilityController;
 use App\Http\Controllers\ApiDashboardController;
 use App\Models\NewsletterSubscriber;
 use App\Http\Controllers\ContactController;
