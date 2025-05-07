@@ -10,6 +10,7 @@ use App\Http\Controllers\HealthFacilityController;
 use App\Http\Controllers\ApiDashboardController;
 use App\Models\NewsletterSubscriber;
 use App\Http\Controllers\ContactController;
+use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\OtpController;
 use Illuminate\Http\Request; 
 
@@ -107,15 +108,37 @@ Route::get('/doctor-dashboard', function () {
 Route::get('/doctor-dashboard/{doctorId}', [DoctorController::class, 'showDoctorDashboard'])->name('doctor.dashboard');
 
 
-Route::get('/health-facilities', function () {
-    try {
-        $response = Http::get(config('app.api_url').'/health-facilities');
-        $healthFacilities = $response->successful() ? $response->json() : [];
-    } catch (Exception $e) {
-        $healthFacilities = [];
-        $error = "Failed to fetch health facilities: ".$e->getMessage();
-    }
+// In your web.php routes file, add this route
 
+Route::get('/health-facilities-dashboard', function () {
+    try {
+        // Fetch data from the API endpoint
+        $response = Http::get('https://laravelbackendchil.onrender.com/api/health-facilities');
+        
+        // Check if the request was successful
+        if ($response->successful()) {
+            // Get the data from the response
+            $data = $response->json();
+            
+            // Check if we have health facilities data
+            $healthFacilities = $data['data'] ?? [];
+            
+            // If data is not in expected format, check if it's an array at root level
+            if (empty($healthFacilities) && is_array($data)) {
+                $healthFacilities = $data;
+            }
+        } else {
+            // Request failed, set empty array
+            $healthFacilities = [];
+            $error = 'Failed to fetch data from API: ' . ($response->json()['message'] ?? 'Unknown error');
+        }
+    } catch (\Exception $e) {
+        // Handle exceptions (network errors, etc.)
+        $healthFacilities = [];
+        $error = 'Exception occurred: ' . $e->getMessage();
+    }
+    
+    // Pass the data to the view
     return view('health_facilities', [
         'healthFacilities' => $healthFacilities ?? [],
         'error' => $error ?? null
