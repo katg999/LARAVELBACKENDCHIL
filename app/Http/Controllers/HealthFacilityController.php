@@ -31,10 +31,15 @@ class HealthFacilityController extends Controller
     /**
      * Get all health facilities
      */
-    public function getHealthFacilities()
-    {
-        return response()->json(HealthFacility::all());
-    }
+   public function getHealthFacilities()
+{
+    $healthFacilities = HealthFacility::all();
+    
+    return response()->json([
+        'success' => true,
+        'data' => $healthFacilities
+    ]);
+}
 
     /**
      * Update file URL for most recently created health facility
@@ -88,4 +93,6 @@ class HealthFacilityController extends Controller
             'health_facility' => $healthFacility
         ]);
     }
+
+    
 }

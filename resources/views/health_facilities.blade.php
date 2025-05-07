@@ -386,6 +386,41 @@
     });
 }
     });
+
+    // Function to fetch health facilities data
+    function fetchHealthFacilities() {
+        fetch('https://laravelbackendchil.onrender.com/api/health-facilities', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'include'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Health Facilities data:", data);
+            // Handle the data here or reload the page to display it
+            if (data.success) {
+                // If you want to reload the page to display the data
+                window.location.reload();
+            } else {
+                // Display error message
+                alert('Failed to load health facilities: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching health facilities:", error);
+            alert('Failed to fetch health facilities. Please try again later.');
+        });
+    }
+    
     </script>
 </body>
 </html>
