@@ -104,3 +104,19 @@ Route::get('/doctor-dashboard', function () {
 
 
 Route::get('/doctor-dashboard/{doctorId}', [DoctorController::class, 'showDoctorDashboard'])->name('doctor.dashboard');
+
+
+Route::get('/health-facilities', function () {
+    try {
+        $response = Http::get(config('app.api_url').'/health-facilities');
+        $healthFacilities = $response->successful() ? $response->json() : [];
+    } catch (Exception $e) {
+        $healthFacilities = [];
+        $error = "Failed to fetch health facilities: ".$e->getMessage();
+    }
+
+    return view('health_facilities', [
+        'healthFacilities' => $healthFacilities ?? [],
+        'error' => $error ?? null
+    ]);
+});

@@ -198,3 +198,14 @@ Route::post('/doctors/{doctor}/update-payment', [DoctorController::class, 'updat
 Route::post('/doctors/{doctor}/upload-image', [DoctorController::class, 'uploadImage'])->name('api.doctors.upload-image');
 Route::post('/doctors/{doctor}/send-link', [DoctorController::class, 'sendLink'])->name('api.doctors.send-link');
 Route::post('/doctors/{doctor}/update-online-status', [DoctorController::class, 'updateOnlineStatus'])->name('api.doctors.update-online-status');
+
+
+
+
+
+
+
+// Health Facility routes
+Route::post('/register-health-facility', [HealthFacilityController::class, 'registerHealthFacility']);
+Route::get('/health-facilities', [HealthFacilityController::class, 'getHealthFacilities']);
+Route::patch('/update-latest-health-facility-file', [HealthFacilityController::class, 'updateLatestHealthFacilityFile']);
