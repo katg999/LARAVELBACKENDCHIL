@@ -11,4 +11,11 @@ class HealthFacility extends Model
 
     use HasFactory;
      protected $fillable = ['name', 'email', 'contact', 'file_url'];
+
+
+     public function patients()
+{
+    return $this->hasMany(Patient::class);
+}
+
 }

@@ -14,6 +14,7 @@ class Doctor extends Model
         'file_url',
         'specialization',
         'email', 
+        'health_facility_id',
         'contact'
     ];
 
