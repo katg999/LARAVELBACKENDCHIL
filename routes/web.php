@@ -9,10 +9,12 @@ use App\Http\Controllers\FinanceDashboardController;
 use App\Http\Controllers\HealthFacilityController;
 use App\Http\Controllers\ApiDashboardController;
 use App\Models\NewsletterSubscriber;
+use App\Models\PatientController;
 use App\Http\Controllers\ContactController;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\OtpController;
 use Illuminate\Http\Request; 
+
 
 /*
 |--------------------------------------------------------------------------
@@ -144,3 +146,15 @@ Route::get('/health-facilities-dashboard', function () {
         'error' => $error ?? null
     ]);
 });
+
+
+
+Route::get('/health-facility/dashboard/{id}', [HealthFacilityController::class, 'showDashboard']);
+
+
+
+Route::put('/health-facilities/{id}', [HealthFacilityController::class, 'updateHealthFacility'])->name('health-facilities.update');
+Route::post('/health-facilities/{id}/change-password', [HealthFacilityController::class, 'changePassword'])->name('health-facilities.change-password');
+Route::post('/health-facilities/{id}/upload-logo', [HealthFacilityController::class, 'uploadLogo'])->name('health-facilities.upload-logo');
+Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
+Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
