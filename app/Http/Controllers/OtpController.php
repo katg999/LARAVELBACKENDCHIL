@@ -262,4 +262,97 @@ class OtpController extends Controller
             'school_name' => $school->name
         ]);
     }
+    public function verifyDoctorOtp(Request $request)
+    {
+        \Log::info('Doctor OTP Verification Request', [
+            'email' => $request->email,
+            'otp_received' => $request->otp,
+            'time' => now()->toDateTimeString()
+        ]);
+    
+        // Validate input
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:doctors,email',
+            'otp' => 'required|string|min:6|max:6'
+        ]);
+    
+        if ($validator->fails()) {
+            \Log::warning('Doctor OTP Validation Failed', [
+                'errors' => $validator->errors()->toArray()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+    
+        try {
+            // Check OTP record (using same structure as school verification)
+            $otpRecord = DB::table('otps')
+                ->where('email', $request->email)
+                ->first();
+    
+            if (!$otpRecord) {
+                \Log::warning('No OTP record found for doctor', [
+                    'email' => $request->email
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No OTP record found'
+                ], 401);
+            }
+    
+            // Verify OTP
+            $verification = DB::table('otps')
+                ->where('email', $request->email)
+                ->where('code', $request->otp)
+                ->where('expires_at', '>', now())
+                ->where('used', false)
+                ->exists();
+    
+            if (!$verification) {
+                \Log::warning('Doctor OTP Verification Failed', [
+                    'email' => $request->email,
+                    'reason' => $otpRecord->code != $request->otp ? 'code_mismatch' : 
+                               ($otpRecord->expires_at <= now() ? 'expired' : 'already_used')
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid or expired OTP'
+                ], 401);
+            }
+    
+            // Mark as used
+            DB::table('otps')
+                ->where('email', $request->email)
+                ->update(['used' => true]);
+    
+            // Get doctor details
+            $doctor = Doctor::where('email', $request->email)->first();
+    
+            \Log::info('Doctor OTP Verified Successfully', [
+                'doctor_id' => $doctor->id,
+                'email' => $request->email
+            ]);
+    
+            return response()->json([
+                'success' => true,
+                'message' => 'OTP verified successfully',
+                'dashboard_url' => url("/doctor-dashboard/{$doctor->id}"),
+                'doctor_id' => $doctor->id,
+                'doctor_name' => $doctor->name
+            ]);
+    
+        } catch (\Exception $e) {
+            \Log::error('Doctor OTP Verification Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error during verification'
+            ], 500);
+        }
+    }
 }
