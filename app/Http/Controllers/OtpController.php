@@ -9,6 +9,7 @@ use App\Mail\SchoolOtpMail;
 use App\Models\Otp;
 use App\Models\School;
 use App\Models\Doctor;
+use App\Models\HealthFacility;
 
 class OtpController extends Controller
 {
@@ -356,4 +357,98 @@ class OtpController extends Controller
             ], 500);
         }
     }
+
+    public function verifyHealthFacilityOtp(Request $request)
+{
+    \Log::info('Health Facility OTP Verification Request', [
+        'email' => $request->email,
+        'otp_received' => $request->otp,
+        'time' => now()->toDateTimeString()
+    ]);
+
+    // Validate input
+    $validator = Validator::make($request->all(), [
+        'email' => 'required|email|exists:health_facilities,email',
+        'otp' => 'required|string|min:6|max:6'
+    ]);
+
+    if ($validator->fails()) {
+        \Log::warning('Health Facility OTP Validation Failed', [
+            'errors' => $validator->errors()->toArray()
+        ]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    try {
+        // Check OTP record
+        $otpRecord = DB::table('otps')
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$otpRecord) {
+            \Log::warning('No OTP record found for health facility', [
+                'email' => $request->email
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'No OTP record found'
+            ], 401);
+        }
+
+        // Verify OTP
+        $verification = DB::table('otps')
+            ->where('email', $request->email)
+            ->where('code', $request->otp)
+            ->where('expires_at', '>', now())
+            ->where('used', false)
+            ->exists();
+
+        if (!$verification) {
+            \Log::warning('Health Facility OTP Verification Failed', [
+                'email' => $request->email,
+                'reason' => $otpRecord->code != $request->otp ? 'code_mismatch' : 
+                           ($otpRecord->expires_at <= now() ? 'expired' : 'already_used')
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired OTP'
+            ], 401);
+        }
+
+        // Mark as used
+        DB::table('otps')
+            ->where('email', $request->email)
+            ->update(['used' => true]);
+
+        // Get health facility details
+        $healthFacility = HealthFacility::where('email', $request->email)->first();
+
+        \Log::info('Health Facility OTP Verified Successfully', [
+            'health_facility_id' => $healthFacility->id,
+            'email' => $request->email
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'OTP verified successfully',
+            'dashboard_url' => url("/health-facility/dashboard/{$healthFacility->id}"),
+            'health_facility_id' => $healthFacility->id,
+            'health_facility_name' => $healthFacility->name
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Health Facility OTP Verification Error', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Server error during verification'
+        ], 500);
+    }
+}
 }
