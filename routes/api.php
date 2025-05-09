@@ -74,6 +74,10 @@ Route::post('/voiceflow/verify-otp', [OtpController::class, 'verifyOtp']);
 Route::post('/voiceflow/verify-doctor-otp', [OtpController::class, 'verifyDoctorOtp']);
 
 
+// HealthFacility OTP verification for Voiceflow
+Route::post('/voiceflow/verify-health-facility-otp', [OtpController::class, 'verifyHealthFacilityOtp']);
+
+
 // routes/api.php
 Route::post('/students', function(Request $request) {
     try {
