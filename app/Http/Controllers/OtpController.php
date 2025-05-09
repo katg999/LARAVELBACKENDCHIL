@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\SchoolOtpMail;
 use App\Models\Otp;
 use App\Models\School;
+use App\Models\Doctor;
 
 class OtpController extends Controller
 {
