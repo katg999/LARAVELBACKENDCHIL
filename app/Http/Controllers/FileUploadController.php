@@ -32,8 +32,7 @@ class FileUploadController extends Controller
 
         // Get the S3 client directly from the disk configuration
         $client = Storage::disk('s3')->getClient();
-         // Force DigitalOcean Spaces endpoint
-        $client->getEndpoint()->setHost(config('filesystems.disks.s3.endpoint'));
+         
 
         $command = $client->getCommand('PutObject', [
             'Bucket' => config('filesystems.disks.s3.bucket'),
