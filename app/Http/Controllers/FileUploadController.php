@@ -28,7 +28,7 @@ class FileUploadController extends Controller
         $cleanFileName = preg_replace('/[^a-zA-Z0-9\-\._]/', '', $fileName);
         $path = "{$uploadType}/" . Str::uuid() . "_" . $cleanFileName;
 
-        $client = Storage::disk('spaces')->getDriver()->getAdapter()->getClient();
+        $client = Storage::disk('s3')->getDriver()->getAdapter()->getClient();
 
         $command = $client->getCommand('PutObject', [
             'Bucket' => env('DO_SPACES_BUCKET'),
