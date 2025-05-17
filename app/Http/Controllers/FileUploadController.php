@@ -21,29 +21,32 @@ class FileUploadController extends Controller
             'upload_type' => 'sometimes|string|in:doctor,school',
             'content_type' => 'sometimes|string',
         ]);
-
+    
         $fileName = $request->input('filename');
         $uploadType = $request->input('upload_type', 'documents');
         $contentType = $request->input('content_type', 'application/octet-stream');
-
+    
         // Sanitize filename
         $cleanFileName = preg_replace('/[^a-zA-Z0-9\-\._]/', '', $fileName);
         $path = "{$uploadType}/" . Str::uuid() . "_" . $cleanFileName;
-
-        // Get the S3 client directly from the disk configuration
+    
+        // Get the S3 client
         $client = Storage::disk('s3')->getClient();
-
+        
+        // Force DigitalOcean Spaces endpoint
+        $client->getEndpoint()->setHost(config('filesystems.disks.s3.endpoint'));
+    
         $command = $client->getCommand('PutObject', [
             'Bucket' => config('filesystems.disks.s3.bucket'),
             'Key' => $path,
             'ACL' => 'public-read',
             'ContentType' => $contentType
         ]);
-
+    
         $expires = now()->addMinutes(15);
         $signedUrl = (string) $client->createPresignedRequest($command, $expires)->getUri();
         $publicUrl = Storage::disk('s3')->url($path);
-
+    
         return response()->json([
             'upload_url' => $signedUrl,
             'public_url' => $publicUrl,
