@@ -666,7 +666,7 @@
                                         <option value="other">Other</option>
                                     </select>
                                 </div>
-                            </div>
+                            </div> 
                             
                             <div class="col-md-6">
                                 <div class="mb-3">

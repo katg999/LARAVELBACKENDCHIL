@@ -12,6 +12,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SchoolActionController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorAvailabilityController;
+use App\Http\Controllers\FileUploadController;
 
 
 
@@ -120,7 +121,7 @@ Route::post('/appointments', function(Request $request) {
     // Calculate amount
     $doctor = Doctor::find($validated['doctor_id']);
     $isSpecialist = $doctor->specialization !== 'General Practitioner';
-    $amount = $isSpecialist 
+    $amount = $isSpecialist  
         ? ($validated['duration'] == 15 ? 100000 : 150000)
         : ($validated['duration'] == 15 ? 30000 : 45000);
 
@@ -217,3 +218,12 @@ Route::post('/doctors/{doctor}/update-online-status', [DoctorController::class, 
 Route::post('/register-health-facility', [HealthFacilityController::class, 'registerHealthFacility']);
 Route::get('/health-facilities', [HealthFacilityController::class, 'getHealthFacilities']);
 Route::patch('/update-latest-health-facility-file', [HealthFacilityController::class, 'updateLatestHealthFacilityFile']);
+
+
+
+//Document Uploads Endpoints.
+Route::prefix('documents')->group(function () {
+    Route::post('/signed-url', [FileUploadController::class, 'generatePresignedUrl']);
+    Route::post('/store-urls', [FileUploadController::class, 'storeFileUrls']);
+    Route::post('/upload', [FileUploadController::class, 'uploadToTmpFiles']);
+});
