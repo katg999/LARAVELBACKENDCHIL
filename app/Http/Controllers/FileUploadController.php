@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use GuzzleHttp\Client;
+use App\Models\Doctor;
+use App\Models\School;
 
 class FileUploadController extends Controller
 {
@@ -28,10 +30,11 @@ class FileUploadController extends Controller
         $cleanFileName = preg_replace('/[^a-zA-Z0-9\-\._]/', '', $fileName);
         $path = "{$uploadType}/" . Str::uuid() . "_" . $cleanFileName;
 
-        $client = Storage::disk('s3')->getDriver()->getAdapter()->getClient();
+        // Get the S3 client directly from the disk configuration
+        $client = Storage::disk('s3')->getClient();
 
         $command = $client->getCommand('PutObject', [
-            'Bucket' => env('DO_SPACES_BUCKET'),
+            'Bucket' => config('filesystems.disks.s3.bucket'),
             'Key' => $path,
             'ACL' => 'public-read',
             'ContentType' => $contentType
@@ -39,7 +42,7 @@ class FileUploadController extends Controller
 
         $expires = now()->addMinutes(15);
         $signedUrl = (string) $client->createPresignedRequest($command, $expires)->getUri();
-        $publicUrl = Storage::disk('spaces')->url($path);
+        $publicUrl = Storage::disk('s3')->url($path);
 
         return response()->json([
             'upload_url' => $signedUrl,
