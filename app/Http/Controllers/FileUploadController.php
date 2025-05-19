@@ -16,6 +16,7 @@ class FileUploadController extends Controller
      */
     public function generatePresignedUrl(Request $request)
     {
+        // Existing code - keep as fallback method
         $request->validate([
             'filename' => 'required|string',
             'upload_type' => 'sometimes|string|in:doctor,school',
@@ -32,8 +33,7 @@ class FileUploadController extends Controller
 
         // Get the S3 client directly from the disk configuration
         $client = Storage::disk('s3')->getClient();
-         
-
+        
         $command = $client->getCommand('PutObject', [
             'Bucket' => config('filesystems.disks.s3.bucket'),
             'Key' => $path,
@@ -53,10 +53,94 @@ class FileUploadController extends Controller
     }
 
     /**
+     * New server-side proxy method to handle direct file uploads
+     * This avoids CORS issues by having the server perform the upload to DigitalOcean
+     */
+    public function proxyUpload(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|max:51200', // 50MB max
+            'upload_type' => 'required|string|in:doctor,school',
+        ]);
+
+        $file = $request->file('file');
+        $uploadType = $request->input('upload_type');
+
+        try {
+            // 1. Upload to DigitalOcean Spaces directly from the server
+            $path = "{$uploadType}/" . Str::uuid() . "_" . $file->getClientOriginalName();
+            $uploaded = Storage::disk('s3')->put($path, file_get_contents($file->getRealPath()), [
+                'visibility' => 'public',
+                'ContentType' => $file->getMimeType(),
+            ]);
+
+            if (!$uploaded) {
+                return response()->json(['error' => 'Failed to upload file to DigitalOcean'], 500);
+            }
+
+            // Get the public URL
+            $publicUrl = Storage::disk('s3')->url($path);
+
+            // 2. Also upload to tmpfiles.org for temporary access
+            $tmpFileUrl = $this->uploadToTmpFilesFromServer($file);
+
+            // 3. Update the model with both URLs
+            $model = $uploadType === 'doctor'
+                ? Doctor::latest()->first()
+                : School::latest()->first();
+
+            if ($model) {
+                $model->update([
+                    'permanent_file_url' => $publicUrl,
+                    'temp_file_url' => $tmpFileUrl,
+                    'file_uploaded_at' => now(),
+                ]);
+            }
+
+            return response()->json([
+                'message' => 'File uploaded successfully',
+                'file_url' => $publicUrl,
+                'temp_file_url' => $tmpFileUrl,
+                'upload_type' => $uploadType
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Upload failed',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Private helper to upload to tmpfiles.org from the server
+     */
+    private function uploadToTmpFilesFromServer($file)
+    {
+        $client = new Client();
+        $response = $client->post('https://tmpfiles.org/api/v1/upload', [
+            'multipart' => [
+                [
+                    'name' => 'file',
+                    'contents' => fopen($file->getRealPath(), 'r'),
+                    'filename' => $file->getClientOriginalName()
+                ]
+            ]
+        ]);
+
+        $data = json_decode($response->getBody(), true);
+        return str_replace(
+            'https://tmpfiles.org/',
+            'https://tmpfiles.org/dl/',
+            $data['data']['url']
+        );
+    }
+
+    /**
      * Handle the final file URL storage after both uploads complete
      */
     public function storeFileUrls(Request $request)
     {
+        // Existing code
         $request->validate([
             'permanent_url' => 'required|url',
             'temp_url' => 'required|url',
@@ -64,7 +148,7 @@ class FileUploadController extends Controller
         ]);
 
         // Determine which model to update based on upload_type
-        $model = $request->upload_type === 'doctor' 
+        $model = $request->upload_type === 'doctor'
             ? Doctor::latest()->first()
             : School::latest()->first();
 
@@ -90,12 +174,13 @@ class FileUploadController extends Controller
      */
     public function uploadToTmpFiles(Request $request)
     {
+        // Existing code
         $request->validate([
             'file' => 'required|file|max:51200', // 50MB max
         ]);
 
         $client = new Client();
-        $response = $client->post(env('TMPFILES_API'), [
+        $response = $client->post('https://tmpfiles.org/api/v1/upload', [
             'multipart' => [
                 [
                     'name' => 'file',
@@ -108,7 +193,7 @@ class FileUploadController extends Controller
         $data = json_decode($response->getBody(), true);
         $downloadUrl = str_replace(
             'https://tmpfiles.org/',
-            env('TMPFILES_DOWNLOAD_BASE'),
+            'https://tmpfiles.org/dl/',
             $data['data']['url']
         );
 
