@@ -227,6 +227,6 @@ Route::prefix('documents')->group(function () {
     Route::post('/store-urls', [FileUploadController::class, 'storeFileUrls']);
     Route::post('/upload', [FileUploadController::class, 'uploadToTmpFiles']);
     // New proxy upload endpoint that handles everything server-side
-    Route::post('/documents/proxy-upload', [FileUploadController::class, 'proxyUpload']);
+    Route::post('/proxy-upload', [FileUploadController::class, 'proxyUpload']);
 });
 
