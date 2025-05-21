@@ -99,57 +99,47 @@ class HealthFacilityController extends Controller
         ]);
     }
 
-public function showDashboard($id)
-{
-
-    $doctors = Doctor::all();
-    $healthFacility = HealthFacility::findOrFail($id);
-     $notifications = collect(); 
-     $allDoctors = Doctor::where('health_facility_id', $id)->get();
-
-
-    // Get unread messages count for this health facility
-    $unreadMessages = Message::where('health_facility_id', $id)
-                             ->where('is_read', false)
-                             ->count();
-
-    $appointments = Appointment::where('health_facility_id', $id)
-                           ->latest()
-                           ->take(10)
+    public function showDashboard($id)
+    {
+        $healthFacility = HealthFacility::findOrFail($id);
+    
+        $notifications = collect(); 
+    
+        $allDoctors = Doctor::all(); // <-- fetch all doctors in the DB
+    
+        $unreadMessages = Message::where('health_facility_id', $id)
+                                 ->where('is_read', false)
+                                 ->count();
+    
+        $appointments = Appointment::where('health_facility_id', $id)
+                                   ->latest()
+                                   ->take(10)
+                                   ->get();
+    
+        $availableDoctors = Doctor::where('health_facility_id', $id)
+                                  ->whereHas('availabilities', function ($query) {
+                                      $query->where('available', true);
+                                  })
+                                  ->get();
+    
+        $messages = Message::where('health_facility_id', $id)
+                           ->orderBy('created_at', 'desc')
                            ->get();
-
-
-    $availableDoctors = Doctor::where('health_facility_id', $id)
-                          ->whereHas('availabilities', function ($query) {
-                              $query->where('available', true);
-                          })
-                          ->get();
-
-       // Fetch the messages for this health facility
-    $messages = Message::where('health_facility_id', $id)
-                       ->orderBy('created_at', 'desc')  // Optional: you can order them by creation date
-                       ->get();
-
-      // Fetch the patients for this health facility
-    $patients = Patient::where('health_facility_id', $id)
-                       ->get();
-
-
-
- 
-    // Pass the data to the view
-    return view('Health-Facility-Instance', [
-    'healthFacility' => $healthFacility,
-    'unreadMessages' => $unreadMessages,
-    'allDoctors' => $allDoctors,
-    'appointments' => $appointments,
-    'availableDoctors' => $availableDoctors,
-    'patients' => $patients, 
-    'messages' => $messages,
-    'stats' => null // or an empty array []
-]);
-}
-
+    
+        $patients = Patient::where('health_facility_id', $id)->get();
+    
+        return view('Health-Facility-Instance', [
+            'healthFacility' => $healthFacility,
+            'unreadMessages' => $unreadMessages,
+            'allDoctors' => $allDoctors,
+            'appointments' => $appointments,
+            'availableDoctors' => $availableDoctors,
+            'patients' => $patients,
+            'messages' => $messages,
+            'stats' => null
+        ]);
+    }
+    
 
 
     
