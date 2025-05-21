@@ -101,6 +101,8 @@ class HealthFacilityController extends Controller
 
 public function showDashboard($id)
 {
+
+    $doctors = Doctor::all();
     $healthFacility = HealthFacility::findOrFail($id);
      $notifications = collect(); 
      $allDoctors = Doctor::where('health_facility_id', $id)->get();

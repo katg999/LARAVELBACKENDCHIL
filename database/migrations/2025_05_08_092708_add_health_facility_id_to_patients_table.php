@@ -9,13 +9,16 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
+    public function up()
+{
+    if (!Schema::hasColumn('patients', 'health_facility_id')) {
         Schema::table('patients', function (Blueprint $table) {
-              $table->foreignId('health_facility_id')->nullable()->constrained()->onDelete('set null');
-
+            $table->unsignedBigInteger('health_facility_id')->nullable();
+            // Add foreign key if needed:
+            // $table->foreign('health_facility_id')->references('id')->on('health_facilities');
         });
     }
+}
 
     /**
      * Reverse the migrations.

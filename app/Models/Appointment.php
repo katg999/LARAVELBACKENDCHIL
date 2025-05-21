@@ -12,6 +12,7 @@ class Appointment extends Model {
         'doctor_id',
         'appointment_time',
         'reason',
+        'health_facility_id',
         'status'
     ];
     
