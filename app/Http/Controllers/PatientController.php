@@ -45,10 +45,12 @@ class PatientController extends Controller
     {
         // Validate the incoming request
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:patients,email',
-            'phone' => 'required|string|max:15',
-            'health_facility_id' => 'required|exists:health_facilities,id',
+           'health_facility_id',
+        'name',
+        'gender',
+        'birth_date',
+        'contact_number',
+        'medical_history'
         ]);
 
         // Create the new patient

@@ -107,10 +107,58 @@ Route::post('/students', function(Request $request) {
 
 
 
+// Patient routes
+Route::post('/patients', function(Request $request) {
+    try {
+        $validated = $request->validate([
+            'health_facility_id' => 'required|exists:health_facilities,id',
+            'name' => 'required|string|max:255',
+            'gender' => 'required|string|in:male,female,other',
+            'birth_date' => 'required|date',
+            'contact_number' => 'nullable|string',
+            'medical_history' => 'nullable|string'
+        ]);
+
+        $patient = App\Models\Patient::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'patient' => $patient
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+});
+
+Route::get('/patients/{healthFacility}', function($healthFacilityId) {
+    try {
+        $patients = App\Models\Patient::where('health_facility_id', $healthFacilityId)->get();
+
+        return response()->json([
+            'success' => true,
+            'patients' => $patients
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+});
+
+
+
+
+
+
 // Appointments
 Route::post('/appointments', function(Request $request) {
     $validated = $request->validate([
         'school_id' => 'required|exists:schools,id',
+        'health_facility_id' => 'required|exists:health_facilities,id',
         'student_id' => 'required|exists:students,id',
         'doctor_id' => 'required|exists:doctors,id',
         'duration' => 'required|in:15,20',

@@ -11,14 +11,25 @@ class Patient extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'email',
-        'phone',
         'health_facility_id',
+        'name',
+        'gender',
+        'birth_date',
+        'contact_number',
+        'medical_history'
+    ];
+
+    protected $casts = [
+        'birth_date' => 'date',
     ];
 
     public function healthFacility()
     {
         return $this->belongsTo(HealthFacility::class);
+    }
+
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class);
     }
 }

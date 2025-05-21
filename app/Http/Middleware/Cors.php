@@ -13,64 +13,33 @@ class Cors
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Dynamic allowed origins (consider loading from .env)
+        // Dynamic allowed origins
         $allowedOrigins = [
-            'http://localhost:5173',
-            'http://127.0.0.1:8000',
-            'http://127.0.0.1:5173',
-            'http://localhost:5173',
-            'https://laravelbackendchil.onrender.com',
             'https://ketiai.com',
-            'https://voiceflow.com', // Add VoiceFlow domains
-            'https://*.voiceflow.com' // Wildcard for all subdomains
+            'https://www.ketiai.com',
+            'https://laravelbackendchil.onrender.com',
+            'http://localhost:5173',
+            'http://127.0.0.1:8000'
         ];
 
         $origin = $request->headers->get('Origin');
 
         // Handle preflight requests
         if ($request->isMethod('OPTIONS')) {
-            return $this->addCorsHeaders(response()->json([], 204), $origin, $allowedOrigins);
+            $response = response()->json([], 204);
+        } else {
+            $response = $next($request);
         }
 
-        $response = $next($request);
-
-        // Apply CORS headers to actual responses
-        return $this->addCorsHeaders($response, $origin, $allowedOrigins);
-    }
-
-    protected function addCorsHeaders(Response $response, ?string $origin, array $allowedOrigins): Response
-{
-    // Check if origin exists and is in the allowed list, or if wildcard matches
-    if ($origin) {
-        $allowed = false;
-        
-        // Check exact matches
+        // Apply CORS headers
         if (in_array($origin, $allowedOrigins)) {
-            $allowed = true;
-        } 
-        
-        // Check wildcard matches (for *.voiceflow.com type entries)
-        if (!$allowed) {
-            foreach ($allowedOrigins as $allowedOrigin) {
-                if (strpos($allowedOrigin, '*') !== false) {
-                    $pattern = str_replace('*', '.*', preg_quote($allowedOrigin, '/'));
-                    if (preg_match('/' . $pattern . '/', $origin)) {
-                        $allowed = true;
-                        break;
-                    }
-                }
-            }
-        }
-        
-        if ($allowed) {
             $response->headers->set('Access-Control-Allow-Origin', $origin);
             $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-            $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN');
+            $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, x-amz-acl');
             $response->headers->set('Access-Control-Allow-Credentials', 'true');
-            $response->headers->set('Access-Control-Max-Age', '86400'); // 24 hours
+            $response->headers->set('Access-Control-Max-Age', '86400');
         }
-    }
 
-    return $response;
-}
+        return $response;
+    }
 }

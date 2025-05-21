@@ -12,8 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('patients', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        $table->id(); // Only once
+        $table->foreignId('health_facility_id')->constrained()->onDelete('cascade');
+        $table->string('name');
+        $table->string('gender');
+        $table->date('birth_date');
+        $table->string('contact_number')->nullable();
+        $table->text('medical_history')->nullable();
+        $table->timestamps(); // Only once
+
+        // Optional: Add index for better performance
+        $table->index('health_facility_id');
         });
     }
 
