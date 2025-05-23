@@ -104,79 +104,93 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle document upload and classification
-    document.getElementById('document-upload-form').addEventListener('submit', async function(e) {
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('document-upload-form');
+    const fileInput = document.getElementById('document-file');
+    const submitButton = form.querySelector('button[type="submit"]');
+    const modalEl = document.getElementById('uploadDocumentModal');
+    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+
+    form.addEventListener('submit', async function (e) {
         e.preventDefault();
-        const form = e.target;
+
+        const file = fileInput.files[0];
+        if (!validateFile(file)) return;
+
         const formData = new FormData(form);
-        const modal = bootstrap.Modal.getInstance(document.getElementById('uploadDocumentModal'));
-        
-        const uploadButton = document.getElementById('upload-button');
-        const uploadText = document.getElementById('upload-text');
-        const uploadSpinner = document.getElementById('upload-spinner');
-        
-        // Show loading state
-        uploadText.innerHTML = 'Processing...';
-        uploadSpinner.classList.remove('d-none');
-        uploadButton.disabled = true;
-        
+        const originalContent = submitButton.innerHTML;
+
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Uploading...';
+
         try {
-            const response = await fetch('{{ route("api.maternal-documents.store") }}', {
+            const response = await fetch(form.action, {
                 method: 'POST',
                 headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
                 },
                 body: formData
             });
-            
+
             const data = await response.json();
-            
-            if(data.success) {
-                // Close modal and refresh page
-                modal.hide();
-                window.location.reload();
-            } else {
-                throw new Error(data.message || 'Upload failed');
-            }
+            if (!response.ok || !data.success) throw new Error(data.message || 'Upload failed');
+
+            modal.hide();
+            showAlert('success', 'Document uploaded successfully!');
+            window.location.reload();
+
         } catch (error) {
-            console.error('Upload error:', error);
-            alert('Error: ' + error.message);
+            console.error(error);
+            showAlert('danger', error.message);
         } finally {
-            // Reset button state
-            uploadText.innerHTML = '<i class="fas fa-upload me-2"></i> Upload & Classify';
-            uploadSpinner.classList.add('d-none');
-            uploadButton.disabled = false;
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalContent;
         }
     });
 
-    // File validation
-    document.getElementById('document-file').addEventListener('change', function() {
-        const file = this.files[0];
-        const maxSize = 10 * 1024 * 1024; // 10MB
-        const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-        
-        if (file.size > maxSize) {
-            this.classList.add('is-invalid');
-            document.getElementById('file-error').textContent = 'File too large (max 10MB)';
-            this.value = '';
-        } else if (!validTypes.includes(file.type)) {
-            this.classList.add('is-invalid');
-            document.getElementById('file-error').textContent = 'Invalid file type (PDF, JPG, PNG only)';
-            this.value = '';
-        } else {
-            this.classList.remove('is-invalid');
-            document.getElementById('file-error').textContent = '';
-        }
+    fileInput.addEventListener('change', function () {
+        validateFile(this.files[0]);
     });
-    
-    // Reset form when modal is closed
-    document.getElementById('uploadDocumentModal').addEventListener('hidden.bs.modal', function() {
-        document.getElementById('document-upload-form').reset();
-        document.getElementById('document-file').classList.remove('is-invalid');
+
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        form.reset();
+        fileInput.classList.remove('is-invalid');
         document.getElementById('file-error').textContent = '';
     });
+
+    function validateFile(file) {
+        const maxSize = 10 * 1024 * 1024;
+        const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+
+        if (!file) {
+            showAlert('danger', 'Please select a file');
+            return false;
+        }
+
+        if (file.size > maxSize) {
+            fileInput.classList.add('is-invalid');
+            document.getElementById('file-error').textContent = 'File too large (max 10MB)';
+            return false;
+        }
+
+        if (!validTypes.includes(file.type)) {
+            fileInput.classList.add('is-invalid');
+            document.getElementById('file-error').textContent = 'Invalid file type (PDF, JPG, PNG only)';
+            return false;
+        }
+
+        fileInput.classList.remove('is-invalid');
+        document.getElementById('file-error').textContent = '';
+        return true;
+    }
+
+    function showAlert(type, message) {
+        alert(message); // Replace with Bootstrap/SweetAlert as needed
+    }
 });
+</script>
+
 </script>
 @endsection
