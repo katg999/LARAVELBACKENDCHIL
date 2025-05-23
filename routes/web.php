@@ -160,6 +160,5 @@ Route::post('/appointments', [AppointmentController::class, 'store'])->name('app
 Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
 
 
-Route::get('/patients/{patient}/maternal', [PatientController::class, 'maternalDocuments'])->name('patient.maternal');
 Route::get('/patients/{patient}/maternal', [PatientController::class, 'maternalDocuments'])
     ->name('patient.maternal');
