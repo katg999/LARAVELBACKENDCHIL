@@ -61,6 +61,7 @@
 </div>
 
 <!-- Upload Document Modal -->
+<!-- Upload Document Modal -->
 <div class="modal fade" id="uploadDocumentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -68,7 +69,7 @@
                 <h5 class="modal-title">Upload Maternal Document</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="document-upload-form" method="POST" enctype="multipart/form-data">
+            <form id="document-upload-form" method="POST" action="{{ route('api.maternal-documents.store') }}" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="patient_id" value="{{ $patient->id }}">
                 
@@ -76,19 +77,8 @@
                     <div class="mb-3">
                         <label class="form-label">Document File</label>
                         <input type="file" name="document" id="document-file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
-                        <small class="text-muted">Supported formats: PDF, JPG, PNG (Max 10MB)</small>
+                        <small class="text-muted">Files will be automatically classified</small>
                         <div class="invalid-feedback" id="file-error"></div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Document Type (Optional)</label>
-                        <select name="document_type" class="form-select">
-                            <option value="">Let AI Classify</option>
-                            <option value="ultrasound report">Ultrasound Report</option>
-                            <option value="blood test results">Blood Test Results</option>
-                            <option value="urine analysis">Urine Analysis</option>
-                            <option value="prenatal screening">Prenatal Screening</option>
-                        </select>
                     </div>
                 </div>
                 <div class="modal-footer">

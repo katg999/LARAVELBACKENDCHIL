@@ -19,43 +19,33 @@ class MaternalDocumentController extends Controller
     ]);
 
     try {
-        if (!$request->hasFile('document')) {
-            throw new \Exception('No file was uploaded');
-        }
-
         $file = $request->file('document');
         $patientId = $request->patient_id;
+
+        // 1. First send to classifier
+        $classification = $this->classifyDocument($file, $patientId);
         
-        // Generate more unique filename
+        // 2. Upload to DigitalOcean Spaces
         $filename = uniqid().'_'.preg_replace('/[^a-zA-Z0-9\.\-]/', '_', $file->getClientOriginalName());
         $path = "patients/{$patientId}/documents/{$filename}";
-
-        // Stream the file instead of loading into memory
-        Storage::disk('pregnancy_docs')->put($path, fopen($file->getRealPath(), 'r+'));
         
+        Storage::disk('pregnancy_docs')->put($path, fopen($file->getRealPath(), 'r+'));
         $s3Path = Storage::disk('pregnancy_docs')->url($path);
 
-        // Classify document if no type provided
-        $documentType = $request->document_type;
-        $confidence = 1.0;
-        
-        if (empty($documentType)) {
-            $classification = $this->classifyDocument($file, $patientId);
-            $documentType = $classification['label'];
-            $confidence = $classification['confidence'];
-        }
-
+        // 3. Save to database
         $document = MaternalDocument::create([
             'patient_id' => $patientId,
             'original_filename' => $file->getClientOriginalName(),
             's3_path' => $s3Path,
-            'document_type' => $documentType,
-            'confidence' => $confidence
+            'document_type' => $classification['label'],
+            'confidence' => $classification['confidence'],
+            'classification_status' => $classification['status']
         ]);
 
         return response()->json([
             'success' => true,
-            'document' => $document
+            'document' => $document,
+            'classification' => $classification
         ]);
 
     } catch (\Exception $e) {
@@ -66,35 +56,33 @@ class MaternalDocumentController extends Controller
         ], 500);
     }
 }
-    
-    protected function classifyDocument($file, $patientId)
-    {
-        try {
-            // Send file directly to classifier endpoint
-            $response = Http::attach(
+
+protected function classifyDocument($file, $patientId)
+{
+    try {
+        $response = Http::timeout(30)
+            ->attach(
                 'file', 
-                file_get_contents($file->getRealPath()),
+                fopen($file->getRealPath(), 'r'),
                 $file->getClientOriginalName()
-            )->post('https://pregnancydocumentclassifier.onrender.com/classify/', [
+            )
+            ->post('https://pregnancydocumentclassifier.onrender.com/classify/', [
                 'patient_id' => 'patient_'.$patientId
             ]);
-            
-            if ($response->successful()) {
-                return $response->json()['classification'];
-            }
-            
-            return [
-                'label' => 'unclassified document',
-                'confidence' => 0.0,
-                'status' => 'api_error'
-            ];
-            
-        } catch (\Exception $e) {
-            return [
-                'label' => 'unclassified document',
-                'confidence' => 0.0,
-                'status' => 'error'
-            ];
+        
+        if ($response->successful()) {
+            return $response->json()['classification'];
         }
+        
+        throw new \Exception('Classification API error: '.$response->body());
+        
+    } catch (\Exception $e) {
+        \Log::error("Classification failed: " . $e->getMessage());
+        return [
+            'label' => 'unclassified document',
+            'confidence' => 0.0,
+            'status' => 'error'
+        ];
     }
+}
 }
