@@ -12,46 +12,60 @@ use Illuminate\Support\Facades\Http;
 class MaternalDocumentController extends Controller
 {
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'patient_id' => 'required|exists:patients,id',
-            'document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'document_type' => 'nullable|in:ultrasound report,blood test results,urine analysis,prenatal screening'
+{
+    $request->validate([
+        'patient_id' => 'required|exists:patients,id',
+        'document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+    ]);
+
+    try {
+        if (!$request->hasFile('document')) {
+            throw new \Exception('No file was uploaded');
+        }
+
+        $file = $request->file('document');
+        $patientId = $request->patient_id;
+        
+        // Generate more unique filename
+        $filename = uniqid().'_'.preg_replace('/[^a-zA-Z0-9\.\-]/', '_', $file->getClientOriginalName());
+        $path = "patients/{$patientId}/documents/{$filename}";
+
+        // Stream the file instead of loading into memory
+        Storage::disk('pregnancy_docs')->put($path, fopen($file->getRealPath(), 'r+'));
+        
+        $s3Path = Storage::disk('pregnancy_docs')->url($path);
+
+        // Classify document if no type provided
+        $documentType = $request->document_type;
+        $confidence = 1.0;
+        
+        if (empty($documentType)) {
+            $classification = $this->classifyDocument($file, $patientId);
+            $documentType = $classification['label'];
+            $confidence = $classification['confidence'];
+        }
+
+        $document = MaternalDocument::create([
+            'patient_id' => $patientId,
+            'original_filename' => $file->getClientOriginalName(),
+            's3_path' => $s3Path,
+            'document_type' => $documentType,
+            'confidence' => $confidence
         ]);
 
-        try {
-            $file = $request->file('document');
-            
-            // 1. Upload to DigitalOcean Spaces (pregnancy_docs disk)
-            $path = $file->store(
-                "patients/{$validated['patient_id']}/documents",
-                'pregnancy_docs'  // Using the specific pregnancy docs configuration
-            );
-            
-            // 2. Get the public URL
-            $s3Path = Storage::disk('pregnancy_docs')->url($path);
+        return response()->json([
+            'success' => true,
+            'document' => $document
+        ]);
 
-            // 3. Save to database
-            $document = MaternalDocument::create([
-                'patient_id' => $validated['patient_id'],
-                'original_filename' => $file->getClientOriginalName(),
-                's3_path' => $s3Path,
-                'document_type' => $validated['document_type'] ?? 'unclassified document',
-                'confidence' => isset($validated['document_type']) ? 1.0 : 0.0
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'document' => $document
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Upload failed: ' . $e->getMessage()
-            ], 500);
-        }
+    } catch (\Exception $e) {
+        \Log::error("Upload failed: " . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Upload failed: ' . $e->getMessage()
+        ], 500);
     }
+}
     
     protected function classifyDocument($file, $patientId)
     {
