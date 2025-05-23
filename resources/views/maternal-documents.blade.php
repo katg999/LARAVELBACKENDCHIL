@@ -72,6 +72,7 @@
             <form id="document-upload-form" method="POST" action="{{ route('api.maternal-documents.store') }}" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="patient_id" value="{{ $patient->id }}">
+                <input type="hidden" name="health_facility_id" value="{{ $patient->health_facility_id }}">
                 
                 <div class="modal-body">
                     <div class="mb-3">
