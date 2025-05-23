@@ -15,6 +15,7 @@ class MaternalDocumentController extends Controller
 {
     $request->validate([
         'patient_id' => 'required|exists:patients,id',
+        'health_facility_id' => 'required|exists:health_facilities,id',
         'document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
     ]);
 
@@ -35,6 +36,7 @@ class MaternalDocumentController extends Controller
         // 3. Save to database
         $document = MaternalDocument::create([
             'patient_id' => $patientId,
+            'health_facility_id' => $request->health_facility_id,
             'original_filename' => $file->getClientOriginalName(),
             's3_path' => $s3Path,
             'document_type' => $classification['label'],
@@ -60,7 +62,8 @@ class MaternalDocumentController extends Controller
 protected function classifyDocument($file, $patientId)
 {
     try {
-        $response = Http::timeout(30)
+        $response = Http::timeout(120)
+          ->retry(3, 5000) // Retry 3 times with 5 second delay
             ->attach(
                 'file', 
                 fopen($file->getRealPath(), 'r'),
