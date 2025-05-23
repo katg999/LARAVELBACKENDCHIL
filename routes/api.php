@@ -284,7 +284,7 @@ Route::prefix('documents')->group(function () {
 
 
 
-Route::post('/maternal-documents', [MaternalDocumentController::class, 'store']);
-Route::get('/patients/{patient}/maternal-documents', [MaternalDocumentController::class, 'index']);
+
+
 Route::post('/maternal-documents', [MaternalDocumentController::class, 'store'])
     ->name('api.maternal-documents.store');
