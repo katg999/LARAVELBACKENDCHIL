@@ -13,6 +13,8 @@ use App\Http\Controllers\SchoolActionController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\FileUploadController;
+use App\Http\Controllers\MaternalDocumentController;
+use App\Http\Controllers\PatientController; 
 
 
 
@@ -278,3 +280,11 @@ Route::prefix('documents')->group(function () {
     Route::post('/proxy-upload', [FileUploadController::class, 'proxyUpload']);
 });
 
+
+
+
+
+Route::post('/maternal-documents', [MaternalDocumentController::class, 'store']);
+Route::get('/patients/{patient}/maternal-documents', [MaternalDocumentController::class, 'index']);
+Route::post('/maternal-documents', [MaternalDocumentController::class, 'store'])
+    ->name('api.maternal-documents.store');

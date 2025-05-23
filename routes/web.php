@@ -3,13 +3,13 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PatientController; 
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\FinanceDashboardController;
 use App\Http\Controllers\HealthFacilityController;
 use App\Http\Controllers\ApiDashboardController;
 use App\Models\NewsletterSubscriber;
-use App\Models\PatientController;
 use App\Http\Controllers\ContactController;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\OtpController;
@@ -158,3 +158,8 @@ Route::post('/health-facilities/{id}/change-password', [HealthFacilityController
 Route::post('/health-facilities/{id}/upload-logo', [HealthFacilityController::class, 'uploadLogo'])->name('health-facilities.upload-logo');
 Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
 Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
+
+
+Route::get('/patients/{patient}/maternal', [PatientController::class, 'maternalDocuments'])->name('patient.maternal');
+Route::get('/patients/{patient}/maternal', [PatientController::class, 'maternalDocuments'])
+    ->name('patient.maternal');

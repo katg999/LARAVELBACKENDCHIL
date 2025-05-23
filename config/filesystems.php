@@ -65,6 +65,15 @@ return [
             'endpoint' => env('AWS_ENDPOINT', 'https://lon1.digitaloceanspaces.com'),  
             'use_path_style_endpoint' => true,  
         ],
+        'pregnancy_docs' => [  // New configuration for pregnancy documents
+        'driver' => 's3',
+        'key' => env('SPACES_KEY'), // New env variable
+        'secret' => env('SPACES_SECRET'), // New env variable
+        'region' => 'syd1', // Region for pregnancy documents space
+        'bucket' => env('SPACES_BUCKET', 'pregnancydocumentclassifier'),
+        'endpoint' => env('SPACES_ENDPOINT', 'https://pregnancydocumentclassifier.syd1.digitaloceanspaces.com'),
+        'use_path_style_endpoint' => true,
+    ],
 
     ],
 

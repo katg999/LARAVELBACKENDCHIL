@@ -104,14 +104,18 @@
                                         <td>{{ \Carbon\Carbon::parse($patient->birth_date)->age }}</td>
                                         <td>{{ $patient->contact_number ?? 'N/A' }}</td>
                                         <td>
-                                            <button class="btn btn-sm btn-primary">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                        <button class="btn btn-sm btn-primary">
+        <i class="fas fa-edit"></i>
+    </button>
+    <button class="btn btn-sm btn-danger">
+        <i class="fas fa-trash"></i>
+    </button>
+    <a href="{{ route('patient.maternal', $patient->id) }}" class="btn btn-sm btn-info" title="Maternal Documents">
+        <i class="fas fa-baby"></i>
+    </a>
                                         </td>
                                     </tr>
+
                                     @endforeach
                                 </tbody>
                             </table>

@@ -35,6 +35,19 @@ class PatientController extends Controller
         return view('patients.create', compact('healthFacilities'));
     }
 
+
+    public function maternalDocuments(Patient $patient)
+    {
+        $documents = $patient->maternalDocuments()->orderBy('created_at', 'desc')->get();
+        $groupedDocuments = $documents->groupBy('document_type');
+        
+        return view('maternal-documents', [
+            'patient' => $patient,
+            'groupedDocuments' => $groupedDocuments,
+            'healthFacility' => $patient->healthFacility // Get facility from patient instead
+        ]);
+    }
+
     /**
      * Store a newly created patient in storage.
      *
