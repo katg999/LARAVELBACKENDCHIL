@@ -10,12 +10,15 @@ class Appointment extends Model {
         'school_id',
         'student_id',
         'doctor_id',
+        'duration',
         'appointment_time',
         'reason',
+        'patient_id',
         'health_facility_id',
         'status'
     ];
     
+
     /**
      * The attributes that should be cast.
      *
@@ -43,5 +46,28 @@ class Appointment extends Model {
     public function healthFacility()
 {
     return $this->belongsTo(HealthFacility::class);
+
 }
+
+    
+
+  
+    
+    public function patient(): BelongsTo
+    {
+        return $this->belongsTo(Patient::class);
+    }
+
+
+    // Helper method to get the institution (school or health facility)
+    public function institution()
+    {
+        return $this->school_id ? $this->school : $this->healthFacility;
+    }
+
+    // Helper method to get the user (student or patient)
+    public function user()
+    {
+        return $this->student_id ? $this->student : $this->patient;
+    }
 }
