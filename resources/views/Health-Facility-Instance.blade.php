@@ -382,10 +382,19 @@
 
 
     // Handle form submission for booking
+// Fixed JavaScript for handling appointment form submission
 document.getElementById('appointment-form').addEventListener('submit', function(e) {
     e.preventDefault();
     const form = e.target;
+    
+    // Get all form data
     const formData = new FormData(form);
+    
+    // Log form data for debugging
+    console.log('Form data being sent:');
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+    }
     
     // Disable button during processing
     const submitButton = form.querySelector('button[type="submit"]');
@@ -393,36 +402,131 @@ document.getElementById('appointment-form').addEventListener('submit', function(
     submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Booking...';
     submitButton.disabled = true;
     
+    // Make sure we have the required fields
+    if (!formData.get('patient_id')) {
+        alert('Please select a patient');
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+        return;
+    }
+    
+    if (!formData.get('doctor_id')) {
+        alert('Please select a doctor');
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+        return;
+    }
+    
+    // Send the request
     fetch(form.action, {
         method: 'POST',
         headers: {
             'Accept': 'application/json',
+            'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         },
-        body: formData
+        body: JSON.stringify({
+            health_facility_id: formData.get('health_facility_id'),
+            patient_id: formData.get('patient_id'),
+            doctor_id: formData.get('doctor_id'),
+            duration: formData.get('duration'),
+            appointment_time: formData.get('appointment_time'),
+            reason: formData.get('reason')
+        })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
+        
         if(data.success) {
             alert('Appointment booked successfully!');
             form.reset();
+            
             // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('newAppointmentModal'));
-            modal.hide();
+            if (modal) {
+                modal.hide();
+            }
+            
             // Reload page to see new appointment
-            window.location.reload();
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
         } else {
-            alert('Error: ' + (data.message || 'Booking failed'));
+            // Handle validation errors
+            if (data.errors) {
+                let errorMessage = 'Validation errors:\n';
+                Object.keys(data.errors).forEach(key => {
+                    errorMessage += `- ${data.errors[key].join(', ')}\n`;
+                });
+                alert(errorMessage);
+            } else {
+                alert('Error: ' + (data.message || 'Booking failed'));
+            }
+            
             submitButton.innerHTML = originalText;
             submitButton.disabled = false;
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while booking');
+        console.error('Fetch error:', error);
+        alert('An error occurred while booking. Please check the console for details.');
         submitButton.innerHTML = originalText;
         submitButton.disabled = false;
     });
+});
+
+// Also add some validation to the form fields
+document.addEventListener('DOMContentLoaded', function() {
+    // Set minimum datetime to 1 hour from now
+    const datetimeInput = document.querySelector('input[name="appointment_time"]');
+    if (datetimeInput) {
+        const now = new Date();
+        now.setHours(now.getHours() + 1); // Add 1 hour
+        const minDateTime = now.toISOString().slice(0, 16); // Format for datetime-local
+        datetimeInput.min = minDateTime;
+    }
+    
+    // Validate form before submission
+    const form = document.getElementById('appointment-form');
+    const patientSelect = form.querySelector('select[name="patient_id"]');
+    const doctorSelect = form.querySelector('select[name="doctor_id"]');
+    const durationSelect = form.querySelector('select[name="duration"]');
+    const reasonTextarea = form.querySelector('textarea[name="reason"]');
+    
+    // Add change listeners for real-time validation
+    [patientSelect, doctorSelect, durationSelect].forEach(select => {
+        if (select) {
+            select.addEventListener('change', function() {
+                validateForm();
+            });
+        }
+    });
+    
+    if (reasonTextarea) {
+        reasonTextarea.addEventListener('input', function() {
+            validateForm();
+        });
+    }
+    
+    function validateForm() {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const isValid = patientSelect.value && 
+                       doctorSelect.value && 
+                       durationSelect.value && 
+                       datetimeInput.value && 
+                       reasonTextarea.value.trim().length > 0;
+        
+        if (submitBtn) {
+            submitBtn.disabled = !isValid;
+        }
+    }
+    
+    // Initial validation
+    validateForm();
 });
     // Add event listeners for dynamic pricing
     document.getElementById('doctor-select').addEventListener('change', calculateAppointmentCost);
