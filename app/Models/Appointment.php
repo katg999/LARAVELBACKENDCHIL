@@ -15,7 +15,11 @@ class Appointment extends Model {
         'reason',
         'patient_id',
         'health_facility_id',
-        'status'
+        'status',
+        'school_id',       // nullable
+       'health_facility_id', // nullable
+       'patient_id',      // nullable
+       'student_id'       // nullable
     ];
     
 

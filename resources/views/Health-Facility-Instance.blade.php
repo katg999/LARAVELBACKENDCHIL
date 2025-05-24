@@ -230,6 +230,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="appointment-form" action="{{ route('api.appointments.store') }}" method="POST">
+
                     @csrf
                     <input type="hidden" name="health_facility_id" value="{{ $healthFacility->id }}">
                     
