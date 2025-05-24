@@ -14,70 +14,74 @@ use Illuminate\Support\Facades\Validator;
 
 class AppointmentController extends Controller
 {
-    protected $momoService;
-
-    public function __construct(MomoService $momoService)
-    {
-        $this->momoService = $momoService;
-    }
-
     public function store(Request $request)
     {
-        // Debug log to see what's being sent
         \Log::info('Appointment request data:', $request->all());
 
-        $validator = Validator::make($request->all(), [
-            // Institution type validation - only one required
-            'school_id' => 'nullable|exists:schools,id',
-            'health_facility_id' => 'nullable|exists:health_facilities,id',
-            
-            // User type validation - only one required
-            'student_id' => 'nullable|exists:students,id',
-            'patient_id' => 'nullable|exists:patients,id',
-            
-            // Common required fields
+        // First, determine the context (school or health facility)
+        $isHealthFacility = $request->filled('health_facility_id');
+        $isSchool = $request->filled('school_id');
+        
+        // Create dynamic validation rules based on context
+        $rules = [
             'doctor_id' => 'required|exists:doctors,id',
             'duration' => 'required|in:15,20,30,45,60',
             'appointment_time' => [
                 'required',
                 'date',
                 function ($attribute, $value, $fail) {
-                    if (now()->diffInHours(Carbon::parse($value)) < 1) { // Changed from 2 to 1 hour
+                    if (now()->diffInHours(Carbon::parse($value)) < 1) {
                         $fail('Appointments must be scheduled at least 1 hour in advance.');
                     }
                 }
             ],
             'reason' => 'required|string|max:500'
-        ]);
+        ];
+        
+        // Add context-specific rules
+        if ($isHealthFacility) {
+            $rules['health_facility_id'] = 'required|exists:health_facilities,id';
+            $rules['patient_id'] = 'required|exists:patients,id';
+        } elseif ($isSchool) {
+            $rules['school_id'] = 'required|exists:schools,id';
+            $rules['student_id'] = 'required|exists:students,id';
+        }
+        
+        $validator = Validator::make($request->all(), $rules);
 
         // Custom validation logic
-        $validator->after(function ($validator) use ($request) {
-            // Must have either school_id or health_facility_id
-            if (!$request->filled('school_id') && !$request->filled('health_facility_id')) {
+        $validator->after(function ($validator) use ($request, $isHealthFacility, $isSchool) {
+            // Must have exactly one institution type
+            if (!$isHealthFacility && !$isSchool) {
                 $validator->errors()->add('institution', 'Either school_id or health_facility_id is required');
+                return;
             }
-
-            // Must have either student_id or patient_id
-            if (!$request->filled('student_id') && !$request->filled('patient_id')) {
-                $validator->errors()->add('user', 'Either student_id or patient_id is required');
+            
+            if ($isHealthFacility && $isSchool) {
+                $validator->errors()->add('institution', 'Cannot specify both school_id and health_facility_id');
+                return;
             }
-
-            // Logical combinations
-            if ($request->filled('school_id') && $request->filled('patient_id')) {
-                $validator->errors()->add('combination', 'Cannot use patient_id with school_id');
+            
+            // For health facilities, validate patient relationship
+            if ($isHealthFacility) {
+                $healthFacilityId = $request->health_facility_id;
+                $patientId = $request->patient_id;
+                
+                $patient = Patient::find($patientId);
+                if ($patient && $patient->health_facility_id != $healthFacilityId) {
+                    $validator->errors()->add('patient_id', 'Selected patient does not belong to this health facility');
+                }
             }
-            if ($request->filled('health_facility_id') && $request->filled('student_id')) {
-                $validator->errors()->add('combination', 'Cannot use student_id with health_facility_id');
-            }
-
-            // If health facility, must have patient
-            if ($request->filled('health_facility_id') && !$request->filled('patient_id')) {
-                $validator->errors()->add('patient_id', 'Patient is required for health facility appointments');
-            }
-
-            // If school, must have student
-            if ($request->filled('school_id') && !$request->filled('student_id')) {
-                $validator->errors()->add('student_id', 'Student is required for school appointments');
+            
+            // For schools, validate student relationship
+            if ($isSchool) {
+                $schoolId = $request->school_id;
+                $studentId = $request->student_id;
+                
+                $student = Student::find($studentId);
+                if ($student && $student->school_id != $schoolId) {
+                    $validator->errors()->add('student_id', 'Selected student does not belong to this school');
+                }
             }
         });
 
@@ -94,16 +98,17 @@ class AppointmentController extends Controller
 
         // Check doctor availability
         $appointmentTime = Carbon::parse($validated['appointment_time']);
-        $endTime = $appointmentTime->copy()->addMinutes($validated['duration']);
-        $startTime = $appointmentTime->copy()->subMinutes($validated['duration']);
+        $duration = (int)$validated['duration'];
+        $endTime = $appointmentTime->copy()->addMinutes($duration);
+        $startTime = $appointmentTime->copy()->subMinutes($duration);
 
         $conflictingAppointments = Appointment::where('doctor_id', $validated['doctor_id'])
             ->where('status', '!=', 'cancelled')
-            ->where(function($query) use ($appointmentTime, $endTime, $startTime) {
-                $query->whereBetween('appointment_time', [$startTime, $endTime])
-                      ->orWhere(function($q) use ($appointmentTime) {
+            ->where(function($query) use ($appointmentTime, $endTime) {
+                $query->whereBetween('appointment_time', [$appointmentTime, $endTime])
+                      ->orWhere(function($q) use ($appointmentTime, $endTime) {
                           $q->where('appointment_time', '<=', $appointmentTime)
-                            ->whereRaw('DATE_ADD(appointment_time, INTERVAL duration MINUTE) > ?', [$appointmentTime]);
+                            ->where('appointment_time', '>=', $endTime);
                       });
             })
             ->exists();
@@ -119,19 +124,14 @@ class AppointmentController extends Controller
         $appointmentData = [
             'doctor_id' => $validated['doctor_id'],
             'appointment_time' => $validated['appointment_time'],
-            'duration' => $validated['duration'],
+            'duration' => $duration,
             'reason' => $validated['reason'],
-            'status' => 'confirmed'
+            'status' => 'confirmed',
+            'school_id' => $isSchool ? $validated['school_id'] : null,
+            'health_facility_id' => $isHealthFacility ? $validated['health_facility_id'] : null,
+            'patient_id' => $isHealthFacility ? $validated['patient_id'] : null,
+            'student_id' => $isSchool ? $validated['student_id'] : null
         ];
-
-        // Set institution and user data
-        if ($request->filled('school_id')) {
-            $appointmentData['school_id'] = $validated['school_id'];
-            $appointmentData['student_id'] = $validated['student_id'];
-        } else {
-            $appointmentData['health_facility_id'] = $validated['health_facility_id'];
-            $appointmentData['patient_id'] = $validated['patient_id'];
-        }
 
         try {
             $appointment = Appointment::create($appointmentData);
@@ -187,19 +187,6 @@ class AppointmentController extends Controller
             ->with(['student', 'patient', 'doctor'])
             ->firstOrFail();
 
-        // Only check with MoMo if status is still pending
-        if ($appointment->status === 'pending_payment') {
-            $status = $this->momoService->getPaymentStatus($referenceId);
-            
-            if ($status && $status['status'] === 'SUCCESSFUL') {
-                $appointment->update(['status' => 'confirmed']);
-                $this->sendAppointmentConfirmation($appointment);
-            } 
-            elseif ($status && $status['status'] === 'FAILED') {
-                $appointment->update(['status' => 'payment_failed']);
-            }
-        }
-
         return response()->json([
             'status' => $appointment->status,
             'appointment' => $appointment
@@ -217,7 +204,6 @@ class AppointmentController extends Controller
                    "Doctor: Dr. {$doctor->name}\n" .
                    "Type: " . ($doctor->specialization === 'General Practitioner' ? 'General' : 'Specialist') . "\n" .
                    "Duration: {$appointment->duration} mins\n" .
-                   "Amount: " . number_format($appointment->amount ?? 0) . " UGX\n" .
                    "Time: {$appointment->appointment_time->format('D, M j, Y g:i A')}\n" .
                    "Reason: {$appointment->reason}";
 

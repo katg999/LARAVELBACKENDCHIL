@@ -15,7 +15,7 @@ use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\FileUploadController;
 use App\Http\Controllers\MaternalDocumentController;
 use App\Http\Controllers\PatientController; 
-
+use App\Http\Controllers\AppointmentController; 
 
 
 /*
@@ -157,42 +157,12 @@ Route::get('/patients/{healthFacility}', function($healthFacilityId) {
 
 
 // Appointments
-Route::post('/appointments', function(Request $request) {
-    $validated = $request->validate([
-        'school_id' => 'required|exists:schools,id',
-        'health_facility_id' => 'required|exists:health_facilities,id',
-        'student_id' => 'required|exists:students,id',
-        'doctor_id' => 'required|exists:doctors,id',
-        'duration' => 'required|in:15,20',
-        'appointment_time' => 'required|date',
-        'reason' => 'required|string|max:500'
-    ]);
+Route::prefix('appointments')->group(function () {
+    Route::post('/', [AppointmentController::class, 'store'])->name('api.appointments.store');
+    Route::get('/', [AppointmentController::class, 'index']);
+    Route::get('/status/{referenceId}', [AppointmentController::class, 'checkStatus']);
+});
 
-    // Calculate amount
-    $doctor = Doctor::find($validated['doctor_id']);
-    $isSpecialist = $doctor->specialization !== 'General Practitioner';
-    $amount = $isSpecialist  
-        ? ($validated['duration'] == 15 ? 100000 : 150000)
-        : ($validated['duration'] == 15 ? 30000 : 45000);
-
-    // Create appointment
-    $appointment = Appointment::create([
-        'school_id' => $validated['school_id'],
-        'student_id' => $validated['student_id'],
-        'doctor_id' => $validated['doctor_id'],
-        'appointment_time' => $validated['appointment_time'],
-        'duration' => $validated['duration'],
-        'reason' => $validated['reason'],
-        'amount' => $amount,
-        'status' => 'pending_payment'
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'appointment' => $appointment,
-        'amount_due' => $amount
-    ]);
-})->name('api.appointments.store');
 
 // Lab Tests
 Route::post('/lab-tests', function(Request $request) {
