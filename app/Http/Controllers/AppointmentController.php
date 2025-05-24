@@ -15,145 +15,80 @@ use Illuminate\Support\Facades\Validator;
 class AppointmentController extends Controller
 {
     public function store(Request $request)
-    {
-        \Log::info('Appointment request data:', $request->all());
+{
+    \Log::info('Appointment request data:', $request->all());
 
-        // First, determine the context (school or health facility)
-        $isHealthFacility = $request->filled('health_facility_id');
-        $isSchool = $request->filled('school_id');
-        
-        // Create dynamic validation rules based on context
-        $rules = [
-            'doctor_id' => 'required|exists:doctors,id',
-            'duration' => 'required|in:15,20,30,45,60',
-            'appointment_time' => [
-                'required',
-                'date',
-                function ($attribute, $value, $fail) {
-                    if (now()->diffInHours(Carbon::parse($value)) < 1) {
-                        $fail('Appointments must be scheduled at least 1 hour in advance.');
-                    }
-                }
-            ],
-            'reason' => 'required|string|max:500'
-        ];
-        
-        // Add context-specific rules
-        if ($isHealthFacility) {
-            $rules['health_facility_id'] = 'required|exists:health_facilities,id';
-            $rules['patient_id'] = 'required|exists:patients,id';
-        } elseif ($isSchool) {
-            $rules['school_id'] = 'required|exists:schools,id';
-            $rules['student_id'] = 'required|exists:students,id';
-        }
-        
-        $validator = Validator::make($request->all(), $rules);
-
-        // Custom validation logic
-        $validator->after(function ($validator) use ($request, $isHealthFacility, $isSchool) {
-            // Must have exactly one institution type
-            if (!$isHealthFacility && !$isSchool) {
-                $validator->errors()->add('institution', 'Either school_id or health_facility_id is required');
-                return;
-            }
-            
-            if ($isHealthFacility && $isSchool) {
-                $validator->errors()->add('institution', 'Cannot specify both school_id and health_facility_id');
-                return;
-            }
-            
-            // For health facilities, validate patient relationship
-            if ($isHealthFacility) {
-                $healthFacilityId = $request->health_facility_id;
-                $patientId = $request->patient_id;
-                
-                $patient = Patient::find($patientId);
-                if ($patient && $patient->health_facility_id != $healthFacilityId) {
-                    $validator->errors()->add('patient_id', 'Selected patient does not belong to this health facility');
+    // Validate request
+    $validator = Validator::make($request->all(), [
+        'doctor_id' => 'required|exists:doctors,id',
+        'duration' => 'required|in:15,20,30,45,60',
+        'appointment_time' => [
+            'required',
+            'date',
+            function ($attribute, $value, $fail) {
+                if (now()->diffInHours(Carbon::parse($value)) < 1) {
+                    $fail('Appointments must be scheduled at least 1 hour in advance.');
                 }
             }
-            
-            // For schools, validate student relationship
-            if ($isSchool) {
-                $schoolId = $request->school_id;
-                $studentId = $request->student_id;
-                
-                $student = Student::find($studentId);
-                if ($student && $student->school_id != $schoolId) {
-                    $validator->errors()->add('student_id', 'Selected student does not belong to this school');
-                }
+        ],
+        'reason' => 'required|string|max:500',
+        'health_facility_id' => 'required_without:school_id|exists:health_facilities,id',
+        'patient_id' => 'required_with:health_facility_id|exists:patients,id',
+        'school_id' => 'required_without:health_facility_id|exists:schools,id',
+        'student_id' => 'required_with:school_id|exists:students,id'
+    ]);
+
+    // Additional validation
+    $validator->after(function ($validator) use ($request) {
+        if ($request->filled('health_facility_id')) {
+            $patient = Patient::find($request->patient_id);
+            if ($patient && $patient->health_facility_id != $request->health_facility_id) {
+                $validator->errors()->add('patient_id', 'Patient does not belong to this health facility');
             }
-        });
-
-        if ($validator->fails()) {
-            \Log::error('Appointment validation failed:', $validator->errors()->toArray());
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
         }
-
-        $validated = $validator->validated();
-
-        // Check doctor availability
-        $appointmentTime = Carbon::parse($validated['appointment_time']);
-        $duration = (int)$validated['duration'];
-        $endTime = $appointmentTime->copy()->addMinutes($duration);
-        $startTime = $appointmentTime->copy()->subMinutes($duration);
-
-        $conflictingAppointments = Appointment::where('doctor_id', $validated['doctor_id'])
-            ->where('status', '!=', 'cancelled')
-            ->where(function($query) use ($appointmentTime, $endTime) {
-                $query->whereBetween('appointment_time', [$appointmentTime, $endTime])
-                      ->orWhere(function($q) use ($appointmentTime, $endTime) {
-                          $q->where('appointment_time', '<=', $appointmentTime)
-                            ->where('appointment_time', '>=', $endTime);
-                      });
-            })
-            ->exists();
-
-        if ($conflictingAppointments) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Doctor is not available at the selected time'
-            ], 409);
+        
+        if ($request->filled('school_id')) {
+            $student = Student::find($request->student_id);
+            if ($student && $student->school_id != $request->school_id) {
+                $validator->errors()->add('student_id', 'Student does not belong to this school');
+            }
         }
+    });
 
-        // Prepare appointment data
-        $appointmentData = [
-            'doctor_id' => $validated['doctor_id'],
-            'appointment_time' => $validated['appointment_time'],
-            'duration' => $duration,
-            'reason' => $validated['reason'],
-            'status' => 'confirmed',
-            'school_id' => $isSchool ? $validated['school_id'] : null,
-            'health_facility_id' => $isHealthFacility ? $validated['health_facility_id'] : null,
-            'patient_id' => $isHealthFacility ? $validated['patient_id'] : null,
-            'student_id' => $isSchool ? $validated['student_id'] : null
-        ];
-
-        try {
-            $appointment = Appointment::create($appointmentData);
-            
-            \Log::info('Appointment created successfully:', ['appointment_id' => $appointment->id]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Appointment booked successfully',
-                'data' => $appointment->load(['doctor', 'patient', 'student'])
-            ], 201);
-
-        } catch (\Exception $e) {
-            \Log::error('Failed to create appointment:', ['error' => $e->getMessage()]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create appointment: ' . $e->getMessage()
-            ], 500);
-        }
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'errors' => $validator->errors()
+        ], 422);
     }
 
+    // Create appointment
+    try {
+        $appointment = Appointment::create([
+            'doctor_id' => $request->doctor_id,
+            'appointment_time' => $request->appointment_time,
+            'duration' => (int)$request->duration,
+            'reason' => $request->reason,
+            'status' => 'confirmed',
+            'health_facility_id' => $request->health_facility_id,
+            'patient_id' => $request->patient_id,
+            'school_id' => $request->school_id,
+            'student_id' => $request->student_id
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $appointment
+        ], 201);
+
+    } catch (\Exception $e) {
+        \Log::error('Appointment creation failed: '.$e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Appointment creation failed'
+        ], 500);
+    }
+}
     public function index(Request $request)
     {
         $query = Appointment::query();
