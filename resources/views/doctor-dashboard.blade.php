@@ -106,75 +106,96 @@ php-laravel-docker/public        .sidebar .nav-link {
 
             <!-- Main Content -->
             <div class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
-                <div class="tab-content">
-                    <!-- Appointments Tab -->
-                    <div class="tab-pane fade show active" id="appointments">
-                        <div class="d-flex justify-content-between mb-3">
-                            <h2>Appointments</h2>
-                            <div class="input-group" style="width: 300px;">
-                                <input type="text" class="form-control" placeholder="Search appointments...">
-                                <button class="btn btn-outline-secondary" type="button">
-                                    <i class="fas fa-search"></i>
-                                </button>
-                            </div>
-                        </div>
+    <div class="tab-content">
+        <!-- Appointments Tab -->
+        <div class="tab-pane fade show active" id="appointments">
+            <div class="d-flex justify-content-between mb-3">
+                <h2>Appointments</h2>
+                <div class="input-group" style="width: 300px;">
+                    <input type="text" class="form-control" placeholder="Search appointments...">
+                    <button class="btn btn-outline-secondary" type="button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
 
-                        @if($appointments->count() > 0)
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Date & Time</th>
-                                        <th>Patient</th>
-                                        <th>School</th>
-                                        <th>Duration</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($appointments as $appointment)
-                                    <tr>
-                                        <td>{{ $appointment->appointment_time->format('M d, Y h:i A') }}</td>
-                                        <td>{{ $appointment->student?->name ?? $appointment->patient?->name ?? 'N/A' }} <td>
-                                        <td>{{ $appointment->school?->name ?? $appointment->healthFacility?->name ?? 'N/A' }}</td>
-                                        <td>{{ $appointment->duration }} mins</td>
-                                        <td>
-                                            <span class="badge bg-{{ 
-                                                $appointment->status == 'confirmed' ? 'success' : 
-                                                ($appointment->status == 'pending' ? 'warning' : 'secondary') 
-                                            }}">
-                                                {{ ucfirst($appointment->status) }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            @if($appointment->status == 'confirmed')
-                                            <a href="{{ $doctor->meeting_link }}" 
-                                               target="_blank" 
-                                               class="btn btn-sm btn-success"
-                                               data-bs-toggle="tooltip" 
-                                               title="Start Meeting">
-                                                <i class="fas fa-video"></i>
-                                            </a>
-                                            @endif
-                                            <button class="btn btn-sm btn-primary"
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#appointmentDetailsModal"
-                                                    data-appointment-id="{{ $appointment->id }}">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        @else
-                        <div class="alert alert-info">
-                            No appointments found.
-                        </div>
-                        @endif
-                    </div>
+            @if($appointments->count() > 0)
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Patient</th>
+                            <th>School</th>
+                            <th>Health Facility</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($appointments as $appointment)
+                        <tr>
+                            <td>{{ $appointment->appointment_time->format('M d, Y h:i A') }}</td>
+                            <td>
+                                {{ $appointment->student?->name ?? $appointment->patient?->name ?? 'N/A' }}<br>
+                                <small class="text-muted">{{ $appointment->student?->email ?? $appointment->patient?->email ?? '' }}</small>
+                            </td>
+                            <td>
+                                @if($appointment->school)
+                                    {{ $appointment->school->name }}<br>
+                                    <small class="text-muted">{{ $appointment->school->email }}</small>
+                                @else
+                                    N/A
+                                @endif
+                            </td>
+                            <td>
+                                @if($appointment->healthFacility)
+                                    {{ $appointment->healthFacility->name }}<br>
+                                    <small class="text-muted">{{ $appointment->healthFacility->email }}</small>
+                                @else
+                                    N/A
+                                @endif
+                            </td>
+                            <td>{{ $appointment->duration }} mins</td>
+                            <td>
+                                <span class="badge bg-{{ 
+                                    $appointment->status == 'confirmed' ? 'success' : 
+                                    ($appointment->status == 'pending' ? 'warning' : 'secondary') 
+                                }}">
+                                    {{ ucfirst($appointment->status) }}
+                                </span>
+                            </td>
+                            <td>
+                                @if($appointment->status == 'confirmed')
+                                <a href="{{ $doctor->meeting_link }}" 
+                                   target="_blank" 
+                                   class="btn btn-sm btn-success"
+                                   data-bs-toggle="tooltip" 
+                                   title="Start Meeting">
+                                    <i class="fas fa-video"></i>
+                                </a>
+                                @endif
+                                <button class="btn btn-sm btn-primary"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#appointmentDetailsModal"
+                                        data-appointment-id="{{ $appointment->id }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @else
+            <div class="alert alert-info">
+                No appointments found.
+            </div>
+            @endif
+        </div>
+    </div>
+</div>
 
                     <!-- Meeting Link Tab -->
                     <div class="tab-pane fade" id="meeting-link">
