@@ -223,7 +223,7 @@ php-laravel-docker/public        .sidebar .nav-link {
                                             @foreach($upcomingAppointments as $appointment)
                                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                                 <div>
-                                                    <strong>{{ $appointment->student->name }}</strong> from {{ $appointment->school->name }}<br>
+                                                    <strong>{{ $appointment->student?->name ?? $appointment->patient?->name ?? 'N/A' }} </strong> from {{ $appointment->student?->name ?? $appointment->patient?->name ?? 'N/A' }} <br>
                                                     <small>{{ $appointment->appointment_time->format('M d, Y h:i A') }}</small>
                                                 </div>
                                                 <a href="{{ $doctor->meeting_link }}" 
