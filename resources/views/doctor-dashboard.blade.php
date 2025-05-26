@@ -13,7 +13,7 @@
             background: #343a40;
             color: white;
         }
-        .sidebar .nav-link {
+php-laravel-docker/public        .sidebar .nav-link {
             color: rgba(255,255,255,.5);
         }
         .sidebar .nav-link:hover, .sidebar .nav-link.active {
@@ -136,8 +136,8 @@
                                     @foreach($appointments as $appointment)
                                     <tr>
                                         <td>{{ $appointment->appointment_time->format('M d, Y h:i A') }}</td>
-                                        <td>{{ $appointment->student->name }}</td>
-                                        <td>{{ $appointment->school->name }}</td>
+                                        <td>{{ $appointment->student?->name ?? $appointment->patient?->name ?? 'N/A' }} <td>
+                                        <td>{{ $appointment->school?->name ?? $appointment->healthFacility?->name ?? 'N/A' }}</td>
                                         <td>{{ $appointment->duration }} mins</td>
                                         <td>
                                             <span class="badge bg-{{ 
