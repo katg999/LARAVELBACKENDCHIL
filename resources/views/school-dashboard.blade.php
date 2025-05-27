@@ -195,7 +195,7 @@
                         </div>
                         @endif
 
-                        <!-- Update the modal form -->
+     <!-- School Appointment Modal -->
 <div class="modal fade" id="newAppointmentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -218,7 +218,7 @@
                             @endforeach
                         </select>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label">Doctor</label>
                         <select name="doctor_id" id="doctor-select" class="form-select" required>
@@ -230,44 +230,49 @@
                             @endforeach
                         </select>
                     </div>
-                    
+
                     <div class="mb-3">
-                        <label class="form-label">Duration</label>
+                        <label class="form-label">Duration (minutes)</label>
                         <select name="duration" id="duration-select" class="form-select" required>
                             <option value="">Select Duration</option>
                             <option value="15">15 minutes</option>
                             <option value="20">20 minutes</option>
+                            <option value="30">30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60">60 minutes</option>
                         </select>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label">Date & Time</label>
                         <input type="datetime-local" name="appointment_time" class="form-control" required>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label">Reason</label>
                         <textarea name="reason" class="form-control" rows="3" required></textarea>
                     </div>
-                    
-                    <!-- Payment information display -->
-                    <div class="alert alert-info" id="payment-info" style="display: none;">
+
+                    <!-- Display payment summary -->
+                    <div class="alert alert-info d-none" id="payment-info">
                         <h5>Payment Details</h5>
                         <p>Doctor Type: <span id="doctor-type-display"></span></p>
                         <p>Duration: <span id="duration-display"></span> minutes</p>
                         <p>Amount to Pay: <strong><span id="amount-display"></span> UGX</strong></p>
                     </div>
                 </div>
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" id="initiate-payment-btn" class="btn btn-primary" disabled>
-                        <i class="fas fa-money-bill-wave me-2"></i> Pay with MoMo
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-calendar-check me-2"></i> Book Appointment
                     </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
                     <!-- Lab Tests Tab -->
                     <div class="tab-pane fade" id="lab-tests">
                         <div class="d-flex justify-content-between mb-4">
