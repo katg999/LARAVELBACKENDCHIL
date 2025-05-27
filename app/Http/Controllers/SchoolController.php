@@ -95,13 +95,13 @@ public function showDashboard($id)
 {
     $school = School::findOrFail($id);
 
-    $doctors = Doctor::all(); // Fetch all doctors
+    $allDoctors = Doctor::all(); // Fetch all doctors
 
     // Optional: fetch related data like messages, stats, etc. if needed
 
     return view('school-dashboard', [
         'school' => $school,
-        'doctors' => $doctors
+        'allDoctors' => $allDoctors
     ]);
 }
 }

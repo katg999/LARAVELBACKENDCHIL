@@ -37,4 +37,6 @@ class ApiDashboardController extends Controller
             'error' => empty($schools) ? 'Failed to fetch data from API' : null
         ]);
     }
+
+
 }
