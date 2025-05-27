@@ -13,6 +13,7 @@ use App\Models\NewsletterSubscriber;
 use App\Http\Controllers\ContactController;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\OtpController;
+use App\Http\Controllers\SchoolController;
 use Illuminate\Http\Request; 
 
 
@@ -90,6 +91,9 @@ Route::get('/school-dashboard/{school}', function (App\Models\School $school) {
         'doctors' => $school->doctors()->latest()->get()
     ]);
 })->name('school.dashboard');
+
+Route::get('/school/{id}/dashboard', [SchoolController::class, 'showDashboard'])->name('school.dashboard');
+
 
 
 // Doctor Dashboard Route
