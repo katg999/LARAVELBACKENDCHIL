@@ -221,14 +221,14 @@
 
                     <div class="mb-3">
                         <label class="form-label">Doctor</label>
-                        <select name="doctor_id" id="doctor-select" class="form-select" required>
-                            <option value="">Select Doctor</option>
-                            @foreach($doctors as $doctor)
-                            <option value="{{ $doctor->id }}" data-specialization="{{ $doctor->specialization }}">
-                                Dr. {{ $doctor->name }} ({{ $doctor->specialization }})
-                            </option>
-                            @endforeach
-                        </select>
+                        <select name="doctor_id" class="form-select" required>
+                                <option value="">Select Doctor</option>
+                                @foreach($allDoctors as $doctor)
+                                <option value="{{ $doctor->id }}">
+                                    Dr. {{ $doctor->name }} ({{ $doctor->specialization }})
+                                </option>
+                                @endforeach
+                            </select>
                     </div>
 
                     <div class="mb-3">
