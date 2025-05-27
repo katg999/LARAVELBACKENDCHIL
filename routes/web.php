@@ -13,8 +13,9 @@ use App\Models\NewsletterSubscriber;
 use App\Http\Controllers\ContactController;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\OtpController;
-use App\Http\Controllers\SchoolController;
 use Illuminate\Http\Request; 
+use App\Models\Doctor;
+
 
 
 /*
@@ -88,12 +89,9 @@ Route::get('/school-dashboard/{school}', function (App\Models\School $school) {
         'students' => $school->students()->latest()->get(), // Removed with()
         'appointments' => $school->appointments()->with(['student', 'doctor'])->latest()->get(),
         'labTests' => $school->labTests()->with('student')->latest()->get(),
-        'doctors' => $school->doctors()->latest()->get()
+        'doctors' => Doctor::latest()->get()
     ]);
 })->name('school.dashboard');
-
-Route::get('/school/{id}/dashboard', [SchoolController::class, 'showDashboard'])->name('school.dashboard');
-
 
 
 // Doctor Dashboard Route
