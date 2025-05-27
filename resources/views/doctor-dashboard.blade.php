@@ -13,7 +13,7 @@
             background: #343a40;
             color: white;
         }
-php-laravel-docker/public        .sidebar .nav-link {
+        .sidebar .nav-link {
             color: rgba(255,255,255,.5);
         }
         .sidebar .nav-link:hover, .sidebar .nav-link.active {
@@ -106,96 +106,94 @@ php-laravel-docker/public        .sidebar .nav-link {
 
             <!-- Main Content -->
             <div class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
-    <div class="tab-content">
-        <!-- Appointments Tab -->
-        <div class="tab-pane fade show active" id="appointments">
-            <div class="d-flex justify-content-between mb-3">
-                <h2>Appointments</h2>
-                <div class="input-group" style="width: 300px;">
-                    <input type="text" class="form-control" placeholder="Search appointments...">
-                    <button class="btn btn-outline-secondary" type="button">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </div>
-            </div>
-
-            @if($appointments->count() > 0)
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Date & Time</th>
-                            <th>Patient</th>
-                            <th>School</th>
-                            <th>Health Facility</th>
-                            <th>Duration</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($appointments as $appointment)
-                        <tr>
-                            <td>{{ $appointment->appointment_time->format('M d, Y h:i A') }}</td>
-                            <td>
-                                {{ $appointment->student?->name ?? $appointment->patient?->name ?? 'N/A' }}<br>
-                                <small class="text-muted">{{ $appointment->student?->email ?? $appointment->patient?->email ?? '' }}</small>
-                            </td>
-                            <td>
-                                @if($appointment->school)
-                                    {{ $appointment->school->name }}<br>
-                                    <small class="text-muted">{{ $appointment->school->email }}</small>
-                                @else
-                                    N/A
-                                @endif
-                            </td>
-                            <td>
-                                @if($appointment->healthFacility)
-                                    {{ $appointment->healthFacility->name }}<br>
-                                    <small class="text-muted">{{ $appointment->healthFacility->email }}</small>
-                                @else
-                                    N/A
-                                @endif
-                            </td>
-                            <td>{{ $appointment->duration }} mins</td>
-                            <td>
-                                <span class="badge bg-{{ 
-                                    $appointment->status == 'confirmed' ? 'success' : 
-                                    ($appointment->status == 'pending' ? 'warning' : 'secondary') 
-                                }}">
-                                    {{ ucfirst($appointment->status) }}
-                                </span>
-                            </td>
-                            <td>
-                                @if($appointment->status == 'confirmed')
-                                <a href="{{ $doctor->meeting_link }}" 
-                                   target="_blank" 
-                                   class="btn btn-sm btn-success"
-                                   data-bs-toggle="tooltip" 
-                                   title="Start Meeting">
-                                    <i class="fas fa-video"></i>
-                                </a>
-                                @endif
-                                <button class="btn btn-sm btn-primary"
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#appointmentDetailsModal"
-                                        data-appointment-id="{{ $appointment->id }}">
-                                    <i class="fas fa-eye"></i>
+                <div class="tab-content">
+                    <!-- Appointments Tab -->
+                    <div class="tab-pane fade show active" id="appointments">
+                        <div class="d-flex justify-content-between mb-3">
+                            <h2>Appointments</h2>
+                            <div class="input-group" style="width: 300px;">
+                                <input type="text" class="form-control" placeholder="Search appointments...">
+                                <button class="btn btn-outline-secondary" type="button">
+                                    <i class="fas fa-search"></i>
                                 </button>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            @else
-            <div class="alert alert-info">
-                No appointments found.
-            </div>
-            @endif
-        </div>
-    </div>
-</div>
+                            </div>
+                        </div>
+
+                        @if($appointments->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Date & Time</th>
+                                        <th>Patient</th>
+                                        <th>School</th>
+                                        <th>Health Facility</th>
+                                        <th>Duration</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($appointments as $appointment)
+                                    <tr>
+                                        <td>{{ $appointment->appointment_time->format('M d, Y h:i A') }}</td>
+                                        <td>
+                                            {{ $appointment->student?->name ?? $appointment->patient?->name ?? 'N/A' }}<br>
+                                            <small class="text-muted">{{ $appointment->student?->email ?? $appointment->patient?->email ?? '' }}</small>
+                                        </td>
+                                        <td>
+                                            @if($appointment->school)
+                                                {{ $appointment->school->name }}<br>
+                                                <small class="text-muted">{{ $appointment->school->email }}</small>
+                                            @else
+                                                N/A
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($appointment->healthFacility)
+                                                {{ $appointment->healthFacility->name }}<br>
+                                                <small class="text-muted">{{ $appointment->healthFacility->email }}</small>
+                                            @else
+                                                N/A
+                                            @endif
+                                        </td>
+                                        <td>{{ $appointment->duration }} mins</td>
+                                        <td>
+                                            <span class="badge bg-{{ 
+                                                $appointment->status == 'confirmed' ? 'success' : 
+                                                ($appointment->status == 'pending' ? 'warning' : 'secondary') 
+                                            }}">
+                                                {{ ucfirst($appointment->status) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($appointment->status == 'confirmed')
+                                            <a href="{{ $doctor->meeting_link }}" 
+                                               target="_blank" 
+                                               class="btn btn-sm btn-success"
+                                               data-bs-toggle="tooltip" 
+                                               title="Start Meeting">
+                                                <i class="fas fa-video"></i>
+                                            </a>
+                                            @endif
+                                            <button class="btn btn-sm btn-primary"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#appointmentDetailsModal"
+                                                    data-appointment-id="{{ $appointment->id }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        @else
+                        <div class="alert alert-info">
+                            No appointments found.
+                        </div>
+                        @endif
+                    </div>
 
                     <!-- Meeting Link Tab -->
                     <div class="tab-pane fade" id="meeting-link">
@@ -239,12 +237,12 @@ php-laravel-docker/public        .sidebar .nav-link {
                                         <i class="fas fa-calendar-check me-2"></i> Upcoming Appointments
                                     </div>
                                     <div class="card-body">
-                                        @if($upcomingAppointments->count() > 0)
+                                        @if(isset($upcomingAppointments) && $upcomingAppointments->count() > 0)
                                         <ul class="list-group">
                                             @foreach($upcomingAppointments as $appointment)
                                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                                 <div>
-                                                    <strong>{{ $appointment->student?->name ?? $appointment->patient?->name ?? 'N/A' }} </strong> from {{ $appointment->student?->name ?? $appointment->patient?->name ?? 'N/A' }} <br>
+                                                    <strong>{{ $appointment->student?->name ?? $appointment->patient?->name ?? 'N/A' }}</strong><br>
                                                     <small>{{ $appointment->appointment_time->format('M d, Y h:i A') }}</small>
                                                 </div>
                                                 <a href="{{ $doctor->meeting_link }}" 
@@ -277,7 +275,7 @@ php-laravel-docker/public        .sidebar .nav-link {
                                             <i class="fas fa-video me-2"></i> Test Meeting Room
                                         </a>
                                         <button class="btn btn-info w-100" data-bs-toggle="modal" data-bs-target="#sendLinkModal">
-                                            <i class="fas fa-envelope me-2"></i> Send Link to School
+                                            <i class="fas fa-envelope me-2"></i> Send Link to School/Health Facility
                                         </button>
                                     </div>
                                 </div>
@@ -291,7 +289,7 @@ php-laravel-docker/public        .sidebar .nav-link {
                                             <h6>Total Appointments</h6>
                                             <div class="progress">
                                                 <div class="progress-bar bg-primary" 
-                                                     style="width: {{ min(100, $stats['total_appointments'] / 50 * 100) }}%">
+                                                     style="width: {{ isset($stats['total_appointments']) ? min(100, $stats['total_appointments'] / 50 * 100) : 0 }}%">
                                                     {{ $stats['total_appointments'] ?? 0 }}
                                                 </div>
                                             </div>
@@ -300,8 +298,8 @@ php-laravel-docker/public        .sidebar .nav-link {
                                             <h6>Completed Meetings</h6>
                                             <div class="progress">
                                                 <div class="progress-bar bg-success" 
-                                                     style="width: {{ min(100, $stats['completed_appointments'] / max(1, $stats['total_appointments']) * 100) }}%">
-                                                    {{ $stats['completed_appointments']  ?? 0 }}
+                                                     style="width: {{ isset($stats['completed_appointments']) && isset($stats['total_appointments']) ? min(100, $stats['completed_appointments'] / max(1, $stats['total_appointments']) * 100) : 0 }}%">
+                                                    {{ $stats['completed_appointments'] ?? 0 }}
                                                 </div>
                                             </div>
                                         </div>
@@ -309,8 +307,8 @@ php-laravel-docker/public        .sidebar .nav-link {
                                             <h6>Upcoming</h6>
                                             <div class="progress">
                                                 <div class="progress-bar bg-warning" 
-                                                     style="width: {{ min(100, $stats['upcoming_appointments'] / 10 * 100) }}%">
-                                                    {{ $stats['upcoming_appointments']   ?? 0 }}
+                                                     style="width: {{ isset($stats['upcoming_appointments']) ? min(100, $stats['upcoming_appointments'] / 10 * 100) : 0 }}%">
+                                                    {{ $stats['upcoming_appointments'] ?? 0 }}
                                                 </div>
                                             </div>
                                         </div>
@@ -323,9 +321,10 @@ php-laravel-docker/public        .sidebar .nav-link {
                     <!-- Availability Tab -->
                     <div class="tab-pane fade" id="availability">
                         <div class="row">
+                            <!-- Left Column -->
                             <div class="col-md-8">
                                 <h2 class="mb-4">Set Your Availability</h2>
-                                
+
                                 <div class="card mb-4">
                                     <div class="card-header bg-primary text-white">
                                         <i class="fas fa-calendar-alt me-2"></i> Weekly Schedule
@@ -333,73 +332,76 @@ php-laravel-docker/public        .sidebar .nav-link {
                                     <div class="card-body">
                                         <form id="availability-form" method="POST" action="{{ route('api.doctors.update-availability', $doctor->id) }}">
                                             @csrf
-                                            <table class="table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Day</th>
-                                                        <th>Available</th>
-                                                        <th>Start Time</th>
-                                                        <th>End Time</th>
-                                                        <th>Max Appointments</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as $day)
-                                                    @php
-                                                        $availability = $doctor->availabilities->where('day', strtolower($day))->first();
-                                                    @endphp
-                                                    <tr>
-                                                        <td>{{ $day }}</td>
-                                                        <td>
-                                                            <div class="form-check form-switch">
-                                                                <input class="form-check-input availability-toggle" 
-                                                                       type="checkbox" 
-                                                                       name="days[{{ strtolower($day) }}][available]"
-                                                                       {{ $availability && $availability->available ? 'checked' : '' }}>
-                                                            </div>
-                                                        </td>
-                                                        <td>
-                                                            <select class="form-control time-select" 
-                                                                    name="days[{{ strtolower($day) }}][start_time]"
-                                                                    {{ $availability && $availability->available ? '' : 'disabled' }}>
-                                                                @for($hour = 8; $hour <= 20; $hour++)
-                                                                <option value="{{ sprintf('%02d:00', $hour) }}"
-                                                                        {{ $availability && $availability->start_time == sprintf('%02d:00:00', $hour) ? 'selected' : '' }}>
-                                                                    {{ sprintf('%02d:00', $hour) }}
-                                                                </option>
-                                                                @endfor
-                                                            </select>
-                                                        </td>
-                                                        <td>
-                                                            <select class="form-control time-select" 
-                                                                    name="days[{{ strtolower($day) }}][end_time]"
-                                                                    {{ $availability && $availability->available ? '' : 'disabled' }}>
-                                                                @for($hour = 9; $hour <= 21; $hour++)
-                                                                <option value="{{ sprintf('%02d:00', $hour) }}"
-                                                                        {{ $availability && $availability->end_time == sprintf('%02d:00:00', $hour) ? 'selected' : '' }}>
-                                                                    {{ sprintf('%02d:00', $hour) }}
-                                                                </option>
-                                                                @endfor
-                                                            </select>
-                                                        </td>
-                                                        <td>
-                                                            <input type="number" 
-                                                                   class="form-control" 
-                                                                   name="days[{{ strtolower($day) }}][max_appointments]"
-                                                                   value="{{ $availability ? $availability->max_appointments : 5 }}"
-                                                                   min="1" max="20"
-                                                                   {{ $availability && $availability->available ? '' : 'disabled' }}>
-                                                        </td>
-                                                    </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
+                                            <div class="table-responsive">
+                                                <table class="table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Day</th>
+                                                            <th>Available</th>
+                                                            <th>Start Time</th>
+                                                            <th>End Time</th>
+                                                            <th>Max Appointments</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as $day)
+                                                        @php
+                                                            $availability = isset($doctor->availabilities) ? $doctor->availabilities->where('day', strtolower($day))->first() : null;
+                                                        @endphp
+                                                        <tr>
+                                                            <td>{{ $day }}</td>
+                                                            <td>
+                                                                <div class="form-check form-switch">
+                                                                    <input class="form-check-input availability-toggle" 
+                                                                           type="checkbox" 
+                                                                           name="days[{{ strtolower($day) }}][available]"
+                                                                           {{ $availability && $availability->available ? 'checked' : '' }}>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <select class="form-select time-select" 
+                                                                        name="days[{{ strtolower($day) }}][start_time]"
+                                                                        {{ $availability && $availability->available ? '' : 'disabled' }}>
+                                                                    @for($hour = 8; $hour <= 20; $hour++)
+                                                                    <option value="{{ sprintf('%02d:00', $hour) }}"
+                                                                            {{ $availability && $availability->start_time == sprintf('%02d:00:00', $hour) ? 'selected' : '' }}>
+                                                                        {{ sprintf('%02d:00', $hour) }}
+                                                                    </option>
+                                                                    @endfor
+                                                                </select>
+                                                            </td>
+                                                            <td>
+                                                                <select class="form-select time-select" 
+                                                                        name="days[{{ strtolower($day) }}][end_time]"
+                                                                        {{ $availability && $availability->available ? '' : 'disabled' }}>
+                                                                    @for($hour = 9; $hour <= 21; $hour++)
+                                                                    <option value="{{ sprintf('%02d:00', $hour) }}"
+                                                                            {{ $availability && $availability->end_time == sprintf('%02d:00:00', $hour) ? 'selected' : '' }}>
+                                                                        {{ sprintf('%02d:00', $hour) }}
+                                                                    </option>
+                                                                    @endfor
+                                                                </select>
+                                                            </td>
+                                                            <td>
+                                                                <input type="number" 
+                                                                       class="form-control" 
+                                                                       name="days[{{ strtolower($day) }}][max_appointments]"
+                                                                       value="{{ $availability ? $availability->max_appointments : 5 }}"
+                                                                       min="1" max="20"
+                                                                       {{ $availability && $availability->available ? '' : 'disabled' }}>
+                                                            </td>
+                                                        </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                             <button type="submit" class="btn btn-primary">Save Availability</button>
                                         </form>
                                     </div>
                                 </div>
-                             
-                               
+                            </div>
+
+                            <!-- Right Column -->
                             <div class="col-md-4">
                                 <div class="card mb-4">
                                     <div class="card-header bg-success text-white">
@@ -408,32 +410,35 @@ php-laravel-docker/public        .sidebar .nav-link {
                                     <div class="card-body">
                                         <h5>Current Availability</h5>
                                         <ul class="list-unstyled">
-                                            @foreach($doctor->availabilities->where('available', true)->sortBy('day') as $avail)
-                                            <li>
-                                                <strong>{{ ucfirst($avail->day) }}:</strong> 
-                                                {{ substr($avail->start_time, 0, 5) }} - {{ substr($avail->end_time, 0, 5) }}
-                                                (Max: {{ $avail->max_appointments }})
-                                            </li>
-                                            @endforeach
+                                            @if(isset($doctor->availabilities))
+                                                @foreach($doctor->availabilities->where('available', true)->sortBy('day') as $avail)
+                                                <li>
+                                                    <strong>{{ ucfirst($avail->day) }}:</strong> 
+                                                    {{ substr($avail->start_time, 0, 5) }} - {{ substr($avail->end_time, 0, 5) }}
+                                                    (Max: {{ $avail->max_appointments }})
+                                                </li>
+                                                @endforeach
+                                            @endif
                                         </ul>
                                         <hr>
                                         <h5>Next 7 Days</h5>
                                         <div id="availability-calendar">
-                                            <!-- Simple calendar view showing availability -->
-                                            @foreach($nextSevenDays as $day)
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <span>{{ $day['date']->format('D, M j') }}</span>
-                                                @if($day['available'])
-                                                <span class="badge bg-success">Available</span>
-                                                @else
-                                                <span class="badge bg-secondary">Not Available</span>
-                                                @endif
-                                            </div>
-                                            @endforeach
+                                            @if(isset($nextSevenDays))
+                                                @foreach($nextSevenDays as $day)
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span>{{ $day['date']->format('D, M j') }}</span>
+                                                    @if($day['available'])
+                                                    <span class="badge bg-success">Available</span>
+                                                    @else
+                                                    <span class="badge bg-secondary">Not Available</span>
+                                                    @endif
+                                                </div>
+                                                @endforeach
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="card">
                                     <div class="card-header bg-warning text-white">
                                         <i class="fas fa-exclamation-triangle me-2"></i> Important Notes
@@ -464,7 +469,7 @@ php-laravel-docker/public        .sidebar .nav-link {
                         <div class="row">
                             <div class="col-md-6">
                                 <h2 class="mb-4">Profile Information</h2>
-                                <form method="POST" action="{{ route('api.doctors.update', $doctor->id) }}">
+                                <form id="profile-form" method="POST" action="{{ route('api.doctors.update', $doctor->id) }}">
                                     @csrf
                                     <div class="mb-3">
                                         <label class="form-label">Full Name</label>
@@ -536,17 +541,17 @@ php-laravel-docker/public        .sidebar .nav-link {
                                             @csrf
                                             <div class="mb-3 form-check">
                                                 <input type="checkbox" class="form-check-input" name="email_notifications" 
-                                                       id="email-notifications" {{ $doctor->email_notifications ? 'checked' : '' }}>
+                                                       id="email-notifications" {{ isset($doctor->email_notifications) && $doctor->email_notifications ? 'checked' : '' }}>
                                                 <label class="form-check-label" for="email-notifications">Email Notifications</label>
                                             </div>
                                             <div class="mb-3 form-check">
                                                 <input type="checkbox" class="form-check-input" name="sms_notifications" 
-                                                       id="sms-notifications" {{ $doctor->sms_notifications ? 'checked' : '' }}>
+                                                       id="sms-notifications" {{ isset($doctor->sms_notifications) && $doctor->sms_notifications ? 'checked' : '' }}>
                                                 <label class="form-check-label" for="sms-notifications">SMS Notifications</label>
                                             </div>
                                             <div class="mb-3 form-check">
                                                 <input type="checkbox" class="form-check-input" name="appointment_reminders" 
-                                                       id="appointment-reminders" {{ $doctor->appointment_reminders ? 'checked' : '' }}>
+                                                       id="appointment-reminders" {{ isset($doctor->appointment_reminders) && $doctor->appointment_reminders ? 'checked' : '' }}>
                                                 <label class="form-check-label" for="appointment-reminders">Appointment Reminders</label>
                                             </div>
                                             <button type="submit" class="btn btn-primary">Save Preferences</button>
@@ -563,15 +568,15 @@ php-laravel-docker/public        .sidebar .nav-link {
                                             @csrf
                                             <div class="mb-3">
                                                 <label class="form-label">Mobile Money Number</label>
-                                                <input type="tel" name="momo_number" class="form-control" value="{{ $doctor->momo_number }}">
+                                                <input type="tel" name="momo_number" class="form-control" value="{{ $doctor->momo_number ?? '' }}">
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label">Bank Name (Optional)</label>
-                                                <input type="text" name="bank_name" class="form-control" value="{{ $doctor->bank_name }}">
+                                                <input type="text" name="bank_name" class="form-control" value="{{ $doctor->bank_name ?? '' }}">
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label">Account Number (Optional)</label>
-                                                <input type="text" name="account_number" class="form-control" value="{{ $doctor->account_number }}">
+                                                <input type="text" name="account_number" class="form-control" value="{{ $doctor->account_number ?? '' }}">
                                             </div>
                                             <button type="submit" class="btn btn-primary">Update Payment Info</button>
                                         </form>

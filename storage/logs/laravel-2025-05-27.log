@@ -1,0 +1,2 @@
+[2025-05-27 12:30:37] local.INFO: Appointment request data: {"_token":"lK5phs6av6pMoTXqOolmOh65JrOZd0N2eNerh01M","school_id":"1","amount":"100000","student_id":"1","doctor_id":"3","duration":"15","appointment_time":"2025-05-22T15:30","reason":"hello"} 
+[2025-05-27 12:36:27] local.INFO: Appointment request data: {"_token":"lK5phs6av6pMoTXqOolmOh65JrOZd0N2eNerh01M","school_id":"1","amount":null,"student_id":"1","doctor_id":"3","duration":"15","appointment_time":"2025-05-29T15:30","reason":"hello"} 
