@@ -12,7 +12,7 @@ A robust backend system built with Laravel 11, Docker, and PostgreSQL, providing
 - **Voiceflow Integration**: Conversational AI endpoints for seamless interactions
 - **Comprehensive API**: 50+ endpoints for various healthcare and education operations
 - **Filament Admin Panels**: Beautiful dashboards for data management
-- **Payment Integration**: Mobile money (MOMO) processing system
+- **Payment Integration**: Mobile money (MOMO) processing system(To Be Changed To Stripe Integration)
 - **Document Management**: Secure file uploads and storage
 - **OTP Authentication**: Secure verification system for users
 - **Appointment Scheduling**: Doctor booking system with meeting links for our different clients Schools, HealthFacilities and Laboratories.
@@ -20,10 +20,11 @@ A robust backend system built with Laravel 11, Docker, and PostgreSQL, providing
 ## 📸 Dashboard Previews
 
 ### School Management Dashboard
-![School Dashboard]( SchoolAPIDashbaord.png "School Display Interface")
+
+![School Dashboard](https://laravelbackendchil.onrender.com/images/SchoolAPIDashboard.jpeg)
 
 ### Doctor Administration Portal
-![Doctor Dashboard](DoctorAppointments.png "Doctor Management Interface")
+![Doctor Dashboard](https://laravelbackendchil.onrender.com/images/DoctorAppointments.jpeg)
 
 ## 🚀 Live Deployment
 
