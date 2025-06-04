@@ -1,22 +1,81 @@
-# Laravel 11 with a Docker PHP Image
+# Comprehensive Healthcare & Education Management System
 
-A demo repo for deploying a Laravel PHP application on [Render](https://render.com) using Docker. You can follow the getting started tutorial [here](https://render.com/docs/deploy-php-laravel-docker).
+![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+
+A robust backend system built with Laravel 11, Docker, and PostgreSQL, providing API endpoints for healthcare and education management with integrated Voiceflow conversational AI capabilities.
+
+## 🌟 Key Features
+
+- **Multi-tenant Architecture**: Supports schools, health facilities, and doctors
+- **Voiceflow Integration**: Conversational AI endpoints for seamless interactions
+- **Comprehensive API**: 50+ endpoints for various healthcare and education operations
+- **Filament Admin Panels**: Beautiful dashboards for data management
+- **Payment Integration**: Mobile money (MOMO) processing system
+- **Document Management**: Secure file uploads and storage
+- **OTP Authentication**: Secure verification system for users
+- **Appointment Scheduling**: Doctor booking system with meeting links for our different clients Schools, HealthFacilities and Laboratories.
+
+## 📸 Dashboard Previews
+
+### School Management Dashboard
+![School Dashboard]( SchoolAPIDashbaord.png "School Display Interface")
+
+### Doctor Administration Portal
+![Doctor Dashboard](DoctorAppointments.png "Doctor Management Interface")
+
+## 🚀 Live Deployment
+
+The system is currently deployed on Render:  
+[![Render](https://img.shields.io/badge/Render-%46E3B7.svg?style=for-the-badge&logo=render&logoColor=white)](https://laravelbackendchil.onrender.com)
 
 
-## Deployment
+## 🔍 Core API Endpoints
 
-1. [Create](https://dashboard.render.com/new/database) a new PostgreSQL database on Render and copy the internal DB URL to use below.
+<details>
+<summary>📚 Education Management</summary>
 
-2. Fork this repo to your own GitHub account.
+- `POST /register-school` - School registration
+- `GET /schools` - Retrieve all schools
+- `POST /students` - Student creation
+- `POST /lab-tests` - Student health tests
+</details>
 
-3. Create a new **Web Service** on Render, and give Render's GitHub app permission to access your new repo.
+<details>
+<summary>🏥 Healthcare Services</summary>
 
-4. Select `Docker` for the environment, and add the following environment variable under the *Advanced* section:
+- `POST /register-doctor` - Doctor onboarding
+- `POST /appointments` - Appointment booking
+- `GET /patients/{healthFacility}` - Patient records
+- `POST /maternal-documents` - Pregnancy documentation
+</details>
 
-   | Key             | Value           |
-   | --------------- | --------------- |
-   | `APP_KEY`  | Copy the output of `php artisan key:generate --show` |
-   | `DATABASE_URL`  | The **internal database url** for the database you created above. |
-   | `DB_CONNECTION`  | `pgsql` |
+## 🛠️ Technical Stack
 
-That's it! Your Laravel 11 app will be live on your Render URL as soon as the build finishes. You can test it out by registering and logging in.
+- **Framework**: Laravel 11
+- **Database**: PostgreSQL
+- **Containerization**: Docker
+- **Admin Panel**: Filament PHP
+- **File Storage**: DigitalOcean Spaces (S3-compatible)
+- **CI/CD**: Render automatic deployments
+
+## 📦 Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/katg999/LARAVELBACKENDCHIL
+cd php-laravel-docker
+
+# Copy environment file
+cp .env.example .env
+
+# Start containers
+docker-compose up -d
+
+# Run migrations
+docker-compose exec app php artisan migrate
+
+# Install dependencies
+docker-compose exec app composer install
+docker-compose exec app npm install
