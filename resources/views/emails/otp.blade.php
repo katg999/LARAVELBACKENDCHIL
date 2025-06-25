@@ -16,7 +16,14 @@
     </style>
 </head>
 <body>
-    <h2>Your School Login OTP</h2>
+    <h2>
+        @if($userType === 'health_facility')
+            Your Health Facility Login OTP
+        @else
+            Your School Login OTP
+        @endif
+    </h2>
+
     <p>Here is your one-time password:</p>
     
     <div class="otp-code">{{ $otp }}</div>
