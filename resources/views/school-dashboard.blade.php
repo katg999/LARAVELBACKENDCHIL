@@ -194,8 +194,7 @@
                             No appointments found.
                         </div>
                         @endif
-
-     <!-- School Appointment Modal -->
+<!-- School Appointment Modal -->
 <div class="modal fade" id="newAppointmentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -203,10 +202,9 @@
                 <h5 class="modal-title">Book Doctor Appointment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="appointment-form" action="{{ route('api.appointments.store') }}" method="POST">
+            <form id="appointment-form" action="{{ route('payment.appointment.checkout') }}" method="POST">
                 @csrf
                 <input type="hidden" name="school_id" value="{{ $school->id }}">
-                <input type="hidden" name="amount" id="appointment-amount">
                 
                 <div class="modal-body">
                     <div class="mb-3">
@@ -255,17 +253,21 @@
 
                     <!-- Display payment summary -->
                     <div class="alert alert-info d-none" id="payment-info">
-                        <h5>Payment Details</h5>
-                        <p>Doctor Type: <span id="doctor-type-display"></span></p>
+                        <h5><i class="fas fa-credit-card me-2"></i>Payment Details</h5>
+                        <p>Doctor: <span id="doctor-name-display"></span></p>
                         <p>Duration: <span id="duration-display"></span> minutes</p>
                         <p>Amount to Pay: <strong><span id="amount-display"></span> UGX</strong></p>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            You will be redirected to Stripe for secure payment processing.
+                        </small>
                     </div>
                 </div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-calendar-check me-2"></i> Book Appointment
+                    <button type="submit" class="btn btn-primary" id="book-appointment-btn" disabled>
+                        <i class="fas fa-credit-card me-2"></i> Proceed to Payment
                     </button>
                 </div>
             </form>
@@ -381,55 +383,63 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    // Calculate appointment cost based on doctor type and duration
+// Updated JavaScript for Stripe integration
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculate appointment cost based on duration
     function calculateAppointmentCost() {
         const doctorSelect = document.getElementById('doctor-select');
         const durationSelect = document.getElementById('duration-select');
         const paymentInfo = document.getElementById('payment-info');
-        const payButton = document.getElementById('initiate-payment-btn');
-        const amountInput = document.getElementById('appointment-amount');
+        const bookButton = document.getElementById('book-appointment-btn');
         
         if (!doctorSelect.value || !durationSelect.value) {
-            paymentInfo.style.display = 'none';
-            payButton.disabled = true;
+            paymentInfo.classList.add('d-none');
+            bookButton.disabled = true;
             return;
         }
         
-        const selectedOption = doctorSelect.options[doctorSelect.selectedIndex];
-        const isSpecialist = selectedOption.dataset.specialization !== 'General Practitioner';
+        const selectedDoctorOption = doctorSelect.options[doctorSelect.selectedIndex];
+        const doctorName = selectedDoctorOption.text;
         const duration = parseInt(durationSelect.value);
         
-        // Pricing structure
-        const amount = isSpecialist 
-            ? (duration === 15 ? 100000 : 150000)
-            : (duration === 15 ? 30000 : 45000);
+        // Pricing structure for UGX
+        const pricing = {
+            15: 30000,  // 30,000 UGX for 15 minutes
+            20: 45000,  // 45,000 UGX for 20 minutes
+            30: 60000,  // 60,000 UGX for 30 minutes
+            45: 80000,  // 80,000 UGX for 45 minutes
+            60: 100000  // 100,000 UGX for 60 minutes
+        };
+        
+        const amount = pricing[duration] || 30000;
         
         // Update display
-        document.getElementById('doctor-type-display').textContent = 
-            isSpecialist ? 'Specialist' : 'General Doctor';
+        document.getElementById('doctor-name-display').textContent = doctorName;
         document.getElementById('duration-display').textContent = duration;
         document.getElementById('amount-display').textContent = amount.toLocaleString();
-        amountInput.value = amount;
         
-        paymentInfo.style.display = 'block';
-        payButton.disabled = false;
+        paymentInfo.classList.remove('d-none');
+        bookButton.disabled = false;
     }
 
     // Add event listeners for dynamic pricing
     document.getElementById('doctor-select').addEventListener('change', calculateAppointmentCost);
     document.getElementById('duration-select').addEventListener('change', calculateAppointmentCost);
 
-    // Handle payment initiation
-    document.getElementById('initiate-payment-btn').addEventListener('click', function() {
-        const form = document.getElementById('appointment-form');
+    // Handle appointment form submission
+    document.getElementById('appointment-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const form = e.target;
         const formData = new FormData(form);
+        const submitButton = document.getElementById('book-appointment-btn');
         
-        // Disable button during processing
-        const payButton = this;
-        const originalText = payButton.innerHTML;
-        payButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processing...';
-        payButton.disabled = true;
+        // Disable button and show loading state
+        const originalText = submitButton.innerHTML;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Creating Payment Session...';
+        submitButton.disabled = true;
         
+        // Submit form data to create Stripe checkout session
         fetch(form.action, {
             method: 'POST',
             headers: {
@@ -440,48 +450,25 @@
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                if (data.payment_reference) {
-                    // Start checking payment status
-                    checkPaymentStatus(data.payment_reference);
-                } else {
-                    alert('Appointment booked successfully!');
-                    window.location.reload();
-                }
+            if (data.success && data.checkout_url) {
+                // Redirect to Stripe checkout
+                window.location.href = data.checkout_url;
             } else {
-                alert('Error: ' + (data.message || 'Operation failed'));
-                payButton.innerHTML = originalText;
-                payButton.disabled = false;
+                // Show error message
+                alert('Error: ' + (data.message || 'Failed to create payment session'));
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred');
-            payButton.innerHTML = originalText;
-            payButton.disabled = false;
+            alert('An error occurred while creating the payment session');
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
         });
     });
 
-    // Check payment status periodically
-    function checkPaymentStatus(referenceId) {
-        const statusInterval = setInterval(() => {
-            fetch(`/api/momo/payment-status/${referenceId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'SUCCESSFUL' || data.status === 'successful') {
-                    clearInterval(statusInterval);
-                    alert('Payment successful! Appointment confirmed.');
-                    window.location.reload();
-                } else if (data.status === 'FAILED' || data.status === 'failed') {
-                    clearInterval(statusInterval);
-                    alert('Payment failed. Please try again.');
-                }
-                // else continue checking
-            });
-        }, 3000); // Check every 3 seconds
-    }
-
-    // General form submission handler
+    // General form submission handler for other forms
     function handleFormSubmit(e) {
         e.preventDefault();
         const form = e.target;
@@ -510,6 +497,19 @@
             alert('An error occurred');
         });
     }
+
+    // Attach handlers to other forms (student form, lab test form)
+    const studentForm = document.getElementById('student-form');
+    const labTestForm = document.getElementById('labtest-form');
+    
+    if (studentForm) {
+        studentForm.addEventListener('submit', handleFormSubmit);
+    }
+    
+    if (labTestForm) {
+        labTestForm.addEventListener('submit', handleFormSubmit);
+    }
+});
 </script>
 </body>
 </html>

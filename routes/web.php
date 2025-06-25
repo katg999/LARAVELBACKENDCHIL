@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\OtpController;
 use Illuminate\Http\Request; 
 use App\Models\Doctor;
+use App\Http\Controllers\PaymentController;
 
 
 
@@ -164,3 +165,32 @@ Route::post('/patients', [PatientController::class, 'store'])->name('patients.st
 
 Route::get('/patients/{patient}/maternal', [PatientController::class, 'maternalDocuments'])
     ->name('patient.maternal');
+
+
+
+
+   
+Route::get('/payment', [PaymentController::class, 'index'])->name('payment.form');
+Route::post('/checkout', [PaymentController::class, 'checkout'])->name('payment.checkout');
+Route::get('/success', function () {
+        return "Payment Successful!";
+    })->name('payment.success');
+    Route::get('/cancel', function () {
+        return "Payment Canceled!";
+    })->name('payment.cancel');
+
+
+// Existing payment routes
+Route::get('/payment', [PaymentController::class, 'index'])->name('payment.form');
+Route::post('/checkout', [PaymentController::class, 'checkout'])->name('payment.checkout');
+Route::get('/success', function () {
+    return "Payment Successful!";
+})->name('payment.success');
+Route::get('/cancel', function () {
+    return "Payment Canceled!";
+})->name('payment.cancel');
+
+// New appointment payment routes
+Route::post('/appointment/checkout', [PaymentController::class, 'createAppointmentCheckout'])->name('payment.appointment.checkout');
+Route::get('/appointment/success/{appointment}', [PaymentController::class, 'appointmentSuccess'])->name('payment.appointment.success');
+Route::get('/appointment/cancel/{appointment}', [PaymentController::class, 'appointmentCancel'])->name('payment.appointment.cancel');
