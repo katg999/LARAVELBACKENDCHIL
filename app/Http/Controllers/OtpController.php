@@ -137,8 +137,20 @@ class OtpController extends Controller
     public function sendLoginOtp(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:schools,email'
+            'email' => [
+                'required',
+                'email',
+                function ($attribute, $value, $fail) {
+                    $isInSchools = \App\Models\School::where('email', $value)->exists();
+                    $isInHealthFacilities = \App\Models\HealthFacility::where('email', $value)->exists();
+        
+                    if (!$isInSchools && !$isInHealthFacilities) {
+                        $fail("The selected email is invalid.");
+                    }
+                }
+            ]
         ]);
+        
 
         if ($validator->fails()) {
             return response()->json([
