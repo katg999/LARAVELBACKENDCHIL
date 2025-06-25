@@ -75,7 +75,8 @@ class OtpController extends Controller
             ]);
             
             // Send OTP email immediately (bypass queue for testing)
-            Mail::to($request->email)->send(new SchoolOtpMail($otp));
+            Mail::to($request->email)->send(new SchoolOtpMail($otp, 'school'));
+
             
             // Verify no failures occurred
             if (count(Mail::failures()) > 0) {
@@ -175,8 +176,12 @@ class OtpController extends Controller
                 ]
             );
 
-            Mail::to($request->email)->send(new SchoolOtpMail($otp));
-            
+            $userType = \App\Models\HealthFacility::where('email', $request->email)->exists() 
+               ? 'health_facility' 
+              : 'school';
+
+            Mail::to($request->email)->send(new SchoolOtpMail($otp, $userType));
+
             return response()->json(['success' => true]);
 
         } catch (\Exception $e) {

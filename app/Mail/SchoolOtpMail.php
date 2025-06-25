@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -15,55 +14,49 @@ class SchoolOtpMail extends Mailable
     use Queueable, SerializesModels;
 
     public string $otp;
+    public string $userType;
 
-    /**
-     * Create a new message instance.
-     *
-     * @param string $otp
-     */
-    public function __construct(string $otp)
+    public function __construct(string $otp, string $userType = 'school')
     {
         $this->otp = $otp;
+        $this->userType = $userType;
     }
 
-    /**
-     * Get the message envelope.
-     *
-     * @return \Illuminate\Mail\Mailables\Envelope
-     */
     public function envelope()
     {
+        $subject = $this->userType === 'health_facility'
+            ? 'Your Health Facility Login OTP'
+            : 'Your School Login OTP';
+
         return new Envelope(
             from: new Address(config('mail.from.address'), config('mail.from.name')),
-            subject: 'Your School Login OTP',
+            subject: $subject,
         );
     }
 
-    /**
-     * Get the message content definition.
-     *
-     * @return \Illuminate\Mail\Mailables\Content
-     */
     public function content()
     {
         return new Content(
             view: 'emails.otp',
             with: [
                 'otp' => $this->otp,
+                'userType' => $this->userType,
             ],
         );
     }
 
-    /**
-     * Build the message (legacy method for backward compatibility).
-     *
-     * @return $this
-     */
     public function build()
     {
+        $subject = $this->userType === 'health_facility'
+            ? 'Your Health Facility Login OTP'
+            : 'Your School Login OTP';
+
         return $this->from(config('mail.from.address'), config('mail.from.name'))
                     ->view('emails.otp')
-                    ->with(['otp' => $this->otp])
-                    ->subject('Your School Login OTP');
+                    ->with([
+                        'otp' => $this->otp,
+                        'userType' => $this->userType,
+                    ])
+                    ->subject($subject);
     }
 }
