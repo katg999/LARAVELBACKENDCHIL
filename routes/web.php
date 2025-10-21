@@ -19,6 +19,7 @@ use App\Http\Controllers\OtpController;
 use Illuminate\Http\Request; 
 use App\Models\Doctor;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\WalletController;
 
 
 
@@ -492,3 +493,9 @@ Route::get('/appointment/pay/{appointment}', [PaymentController::class, 'showApp
 Route::post('/appointment/checkout', [PaymentController::class, 'createAppointmentCheckout'])->name('payment.appointment.checkout');
 Route::get('/appointment/success/{appointment}', [PaymentController::class, 'appointmentSuccess'])->name('payment.appointment.success');
 Route::get('/appointment/cancel/{appointment}', [PaymentController::class, 'appointmentCancel'])->name('payment.appointment.cancel');
+
+// Wallet Routes
+Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
+Route::post('/wallet/deposit', [WalletController::class, 'deposit'])->name('wallet.deposit');
+Route::post('/wallet/withdraw', [WalletController::class, 'withdraw'])->name('wallet.withdraw');
+Route::get('/wallet/balance', [WalletController::class, 'balance'])->name('wallet.balance');

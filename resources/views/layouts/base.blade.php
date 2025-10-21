@@ -72,8 +72,18 @@
         </ul>
         <ul class="navbar-nav navbar-nav-right">
           <li class="nav-item nav-date dropdown">
-            <a class="nav-link d-flex justify-content-center align-items-center" href="javascript:;">
-              <h6 class="date mb-0">0 UGX</h6>
+            <a class="nav-link d-flex justify-content-center align-items-center" href="{{ isset($school) ? route('wallet.index', ['type' => 'school', 'id' => $school->id]) : (isset($healthFacility) ? route('wallet.index', ['type' => 'health_facility', 'id' => $healthFacility->id]) : (isset($doctor) ? route('wallet.index', ['type' => 'doctor', 'id' => $doctor->id]) : '#')) }}">
+              <h6 class="date mb-0">
+                @if(isset($school))
+                  {{ number_format($school->wallet_balance, 2) }} UGX
+                @elseif(isset($healthFacility))
+                  {{ number_format($healthFacility->wallet_balance, 2) }} UGX
+                @elseif(isset($doctor))
+                  {{ number_format($doctor->wallet_balance, 2) }} UGX
+                @else
+                  0 UGX
+                @endif
+              </h6>
               <i class="mdi mdi-wallet"></i>
             </a>
           </li>

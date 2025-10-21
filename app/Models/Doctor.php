@@ -15,7 +15,12 @@ class Doctor extends Authenticatable
         'specialization',
         'email', 
         'health_facility_id',
-        'contact'
+        'contact',
+        'wallet_balance'
+    ];
+
+    protected $casts = [
+        'wallet_balance' => 'decimal:2',
     ];
 
     public function school(): BelongsTo

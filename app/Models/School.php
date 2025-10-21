@@ -10,7 +10,11 @@ class School extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'email', 'contact', 'file_url'];
+    protected $fillable = ['name', 'email', 'contact', 'file_url', 'wallet_balance'];
+    
+    protected $casts = [
+        'wallet_balance' => 'decimal:2',
+    ];
     
     public function students(): HasMany
     {

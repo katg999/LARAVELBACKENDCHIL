@@ -24,6 +24,12 @@
             <span class="menu-title">Transactions</span>
         </a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('wallet.index') ? 'active' : '' }}" href="{{ route('wallet.index', ['type' => 'school', 'id' => $school->id]) }}">
+            <i class="mdi mdi-wallet menu-icon"></i>
+            <span class="menu-title">Wallet</span>
+        </a>
+    </li>
 </ul>
 @elseif(isset($healthFacility))
 <ul class="nav">
@@ -57,6 +63,12 @@
             <span class="menu-title">Transactions</span>
         </a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('wallet.index') ? 'active' : '' }}" href="{{ route('wallet.index', ['type' => 'health_facility', 'id' => $healthFacility->id]) }}">
+            <i class="mdi mdi-wallet menu-icon"></i>
+            <span class="menu-title">Wallet</span>
+        </a>
+    </li>
 </ul>
 @elseif(isset($doctor))
 <ul class="nav">
@@ -88,6 +100,12 @@
         <a class="nav-link {{ request()->routeIs('doctor.availability') ? 'active' : '' }}" href="{{ route('doctor.availability', ['doctorId' => $doctor->id]) }}">
             <i class="mdi mdi-square-inc-cash menu-icon"></i>
             <span class="menu-title">Transactions</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('wallet.index') ? 'active' : '' }}" href="{{ route('wallet.index', ['type' => 'doctor', 'id' => $doctor->id]) }}">
+            <i class="mdi mdi-wallet menu-icon"></i>
+            <span class="menu-title">Wallet</span>
         </a>
     </li>
 </ul>
