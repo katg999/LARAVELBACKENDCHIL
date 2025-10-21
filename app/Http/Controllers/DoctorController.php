@@ -97,12 +97,12 @@ class DoctorController extends Controller
      */
     public function getDoctorAppointments(Request $request)
     {
-        $doctorId = $request->route('doctorId');
+        $doctor = session('current_entity');
 
-        $doctor = Doctor::findOrFail($doctorId);
-
-        // Paginate appointments 10 per page for the doctor's appointments list
-        $appointments = Appointment::where('doctor_id', $doctorId)
+    if (!$doctor || !($doctor instanceof \App\Models\Doctor)) {
+        return redirect('/')->with('error', 'Please log in to access this feature.');
+    }        // Paginate appointments 10 per page for the doctor's appointments list
+        $appointments = Appointment::where('doctor_id', $doctor->id)
             ->with(['student', 'patient', 'duration'])
             ->latest()
             ->paginate(10);
@@ -227,15 +227,21 @@ class DoctorController extends Controller
 }
 
 
-public function showDoctorDashboard($doctorId)
+public function showDoctorDashboard()
 {
+    $doctor = session('current_entity');
+
+    if (!$doctor || !($doctor instanceof \App\Models\Doctor)) {
+        return redirect('/')->with('error', 'Please log in to access your dashboard.');
+    }
+
     $doctor = Doctor::with([
         'appointments.student',
         'appointments.patient',
         'appointments.school',
         'appointments.duration',
         'availabilities' // ✅ Include availabilities here
-    ])->findOrFail($doctorId);
+    ])->findOrFail($doctor->id);
 
     // All appointments
     $appointments = $doctor->appointments()->with('duration', 'patient')->latest()->get();
@@ -331,9 +337,15 @@ public function update(Request $request, Doctor $doctor)
 
 
 
-public function updateMeetingLink(Request $request, $id)
+public function updateMeetingLink(Request $request)
 {
-    $doctor = Doctor::findOrFail($id);
+    $doctor = session('current_entity');
+
+    if (!$doctor || !($doctor instanceof \App\Models\Doctor)) {
+        return redirect('/')->with('error', 'Please log in to update your meeting link.');
+    }
+
+    $doctor = Doctor::findOrFail($doctor->id);
 
     $request->validate([
         'meeting_slug' => 'required|string|alpha_dash|unique:doctors,meeting_slug,' . $doctor->id,
@@ -417,8 +429,16 @@ public function uploadImage(Request $request, Doctor $doctor)
 }
 
 
-    public function sendLink(Request $request, Doctor $doctor)
+    public function sendLink(Request $request)
     {
+        $doctor = session('current_entity');
+
+        if (!$doctor || !($doctor instanceof \App\Models\Doctor)) {
+            return redirect('/')->with('error', 'Please log in to send meeting links.');
+        }
+
+        $doctor = Doctor::findOrFail($doctor->id);
+
         $request->validate([
             'recipient_email' => 'required|email',
             'message' => 'nullable|string',
@@ -452,9 +472,15 @@ public function updateOnlineStatus(Request $request, Doctor $doctor)
     /**
      * Show availability management page for a specific doctor
      */
-    public function availability($doctorId)
+    public function availability()
     {
-        $doctor = Doctor::with('availabilities')->findOrFail($doctorId);
+        $doctor = session('current_entity');
+
+        if (!$doctor || !($doctor instanceof \App\Models\Doctor)) {
+            return redirect('/')->with('error', 'Please log in to access your availability settings.');
+        }
+
+        $doctor = Doctor::with('availabilities')->findOrFail($doctor->id);
         $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
         return view('doctor-availability', [

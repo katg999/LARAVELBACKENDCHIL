@@ -108,8 +108,15 @@ class HealthFacilityController extends Controller
         ]);
     }
 
-    public function showDashboard($id)
+    public function showDashboard()
     {
+        $currentEntity = session('current_entity');
+
+        if (!$currentEntity || $currentEntity['type'] !== 'health_facility') {
+            return redirect()->route('home')->with('error', 'Health facility context not found. Please navigate from a valid health facility page.');
+        }
+
+        $id = $currentEntity['id'];
         $healthFacility = HealthFacility::findOrFail($id);
     
         $notifications = collect(); 
@@ -189,56 +196,86 @@ class HealthFacilityController extends Controller
         ]);
     }
 
-    public function patients($id)
+    public function patients()
     {
-        $healthFacility = HealthFacility::findOrFail($id);
-        $patients = Patient::where('health_facility_id', $id)->latest()->get();
+        $healthFacility = session('current_entity');
+
+        if (!$healthFacility || !($healthFacility instanceof \App\Models\HealthFacility)) {
+            return redirect('/')->with('error', 'Please log in to access patients.');
+        }
+
+        $patients = Patient::where('health_facility_id', $healthFacility->id)->latest()->get();
         return view('health-facility/patients', compact('healthFacility', 'patients'));
     }
 
-    public function createPatient($id)
+    public function createPatient()
     {
-        $healthFacility = HealthFacility::findOrFail($id);
+        $healthFacility = session('current_entity');
+
+        if (!$healthFacility || !($healthFacility instanceof \App\Models\HealthFacility)) {
+            return redirect('/')->with('error', 'Please log in to create patients.');
+        }
+
         return view('health-facility/patients-create', compact('healthFacility'));
     }
 
-    public function bookDoctor($id)
+    public function bookDoctor()
     {
-        $healthFacility = HealthFacility::findOrFail($id);
-        $patients = Patient::where('health_facility_id', $id)->latest()->get();
+        $healthFacility = session('current_entity');
+
+        if (!$healthFacility || !($healthFacility instanceof \App\Models\HealthFacility)) {
+            return redirect('/')->with('error', 'Please log in to book appointments.');
+        }
+
+        $patients = Patient::where('health_facility_id', $healthFacility->id)->latest()->get();
         $doctors = Doctor::latest()->get();
-        $appointments = Appointment::where('health_facility_id', $id)
+        $appointments = Appointment::where('health_facility_id', $healthFacility->id)
             ->with(['patient', 'doctor', 'duration'])
             ->latest()
             ->get();
         return view('health-facility/book-doctor', compact('healthFacility', 'patients', 'doctors', 'appointments'));
     }
 
-    public function labTests($id)
+    public function labTests()
     {
-        $healthFacility = HealthFacility::findOrFail($id);
+        $healthFacility = session('current_entity');
+
+        if (!$healthFacility || !($healthFacility instanceof \App\Models\HealthFacility)) {
+            return redirect('/')->with('error', 'Please log in to access lab tests.');
+        }
+
         // Placeholder: if LabTest supports health_facility_id, filter; else show empty list
         $labTests = collect();
         return view('health-facility/lab-tests', compact('healthFacility', 'labTests'));
     }
 
-    public function transactions($id)
+    public function transactions()
     {
-        $healthFacility = HealthFacility::findOrFail($id);
+        $healthFacility = session('current_entity');
+
+        if (!$healthFacility || !($healthFacility instanceof \App\Models\HealthFacility)) {
+            return redirect('/')->with('error', 'Please log in to access transactions.');
+        }
+
         // Get transactions/payments related to this health facility
         // For now, we'll show appointments with payment status
-        $appointments = Appointment::where('health_facility_id', $id)
+        $appointments = Appointment::where('health_facility_id', $healthFacility->id)
             ->with(['patient', 'doctor', 'duration'])
             ->latest()
             ->paginate(15);
         return view('health-facility/transactions', compact('healthFacility', 'appointments'));
     }
 
-    public function staff($id)
+    public function staff()
     {
-        $healthFacility = HealthFacility::findOrFail($id);
+        $healthFacility = session('current_entity');
+
+        if (!$healthFacility || !($healthFacility instanceof \App\Models\HealthFacility)) {
+            return redirect('/')->with('error', 'Please log in to access staff.');
+        }
+
         // Get doctors associated with this health facility
-        $doctors = Doctor::where('health_facility_id', $id)->latest()->get();
+        $doctors = Doctor::where('health_facility_id', $healthFacility->id)->latest()->get();
         return view('health-facility/staff', compact('healthFacility', 'doctors'));
     }
 

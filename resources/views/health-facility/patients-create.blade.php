@@ -106,7 +106,7 @@
                 
                 <div class="mt-3">
                     <button type="submit" class="btn btn-primary">Save</button>
-                    <a href="{{ route('health-facility.patients', ['id' => $healthFacility->id]) }}" class="btn btn-light">Cancel</a>
+                    <a href="{{ route('health-facility.patients') }}" class="btn btn-light">Cancel</a>
                 </div>
             </form>
         </div>

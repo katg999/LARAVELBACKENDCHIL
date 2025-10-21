@@ -167,7 +167,7 @@ class PatientController extends Controller
         $patient->delete();
 
         return redirect()
-            ->route('health-facility.patients', ['id' => $facilityId])
+            ->route('health-facility.patients')
             ->with('success', 'Patient and their appointments deleted successfully.');
     }
 

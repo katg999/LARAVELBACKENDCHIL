@@ -44,7 +44,7 @@
                                 </span>
                             </td>
                             <td class="text-end">
-                                <a href="{{ route('doctor.dashboard', ['doctorId' => $doctor->id]) }}" class="btn btn-sm btn-outline-primary me-1">
+                                <a href="{{ route('doctor.dashboard') }}" class="btn btn-sm btn-outline-primary me-1">
                                     <i class="mdi mdi-eye"></i> View
                                 </a>
                                 <button type="button"

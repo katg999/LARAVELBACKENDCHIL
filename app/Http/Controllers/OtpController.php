@@ -284,7 +284,7 @@ class OtpController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'OTP verified successfully. Access your dashboard below.',
-            'dashboard_url' => 'https://laravelbackendchil.onrender.com/school-dashboard/'.$school->id,
+            'dashboard_url' => 'https://laravelbackendchil.onrender.com/school-dashboard',
             'school_id' => $school->id,
             'school_name' => $school->name
         ]);
@@ -367,7 +367,7 @@ class OtpController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'OTP verified successfully',
-                'dashboard_url' => url("/doctor-dashboard/{$doctor->id}"),
+                'dashboard_url' => url("/doctor-dashboard"),
                 'doctor_id' => $doctor->id,
                 'doctor_name' => $doctor->name
             ]);
@@ -461,7 +461,7 @@ class OtpController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'OTP verified successfully',
-            'dashboard_url' => url("/health-facility/dashboard/{$healthFacility->id}"),
+            'dashboard_url' => url("/health-facility/dashboard"),
             'health_facility_id' => $healthFacility->id,
             'health_facility_name' => $healthFacility->name
         ]);
