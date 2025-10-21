@@ -25,7 +25,7 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {{ request()->routeIs('wallet.index') ? 'active' : '' }}" href="{{ route('wallet.index', ['type' => 'school', 'id' => $school->id]) }}">
+        <a class="nav-link {{ request()->routeIs('wallet.index') ? 'active' : '' }}" href="{{ route('wallet.index') }}">
             <i class="mdi mdi-wallet menu-icon"></i>
             <span class="menu-title">Wallet</span>
         </a>
@@ -64,7 +64,7 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {{ request()->routeIs('wallet.index') ? 'active' : '' }}" href="{{ route('wallet.index', ['type' => 'health_facility', 'id' => $healthFacility->id]) }}">
+        <a class="nav-link {{ request()->routeIs('wallet.index') ? 'active' : '' }}" href="{{ route('wallet.index') }}">
             <i class="mdi mdi-wallet menu-icon"></i>
             <span class="menu-title">Wallet</span>
         </a>
@@ -103,7 +103,7 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {{ request()->routeIs('wallet.index') ? 'active' : '' }}" href="{{ route('wallet.index', ['type' => 'doctor', 'id' => $doctor->id]) }}">
+        <a class="nav-link {{ request()->routeIs('wallet.index') ? 'active' : '' }}" href="{{ route('wallet.index') }}">
             <i class="mdi mdi-wallet menu-icon"></i>
             <span class="menu-title">Wallet</span>
         </a>

@@ -72,7 +72,7 @@
         </ul>
         <ul class="navbar-nav navbar-nav-right">
           <li class="nav-item nav-date dropdown">
-            <a class="nav-link d-flex justify-content-center align-items-center" href="{{ isset($school) ? route('wallet.index', ['type' => 'school', 'id' => $school->id]) : (isset($healthFacility) ? route('wallet.index', ['type' => 'health_facility', 'id' => $healthFacility->id]) : (isset($doctor) ? route('wallet.index', ['type' => 'doctor', 'id' => $doctor->id]) : '#')) }}">
+            <a class="nav-link d-flex justify-content-center align-items-center" href="{{ route('wallet.index') }}">
               <h6 class="date mb-0">
                 @if(isset($school))
                   {{ number_format($school->wallet_balance, 2) }} UGX

@@ -34,8 +34,6 @@
                     <h5 class="card-title">Deposit Money</h5>
                     <form id="depositForm">
                         @csrf
-                        <input type="hidden" name="user_type" value="{{ $userType }}">
-                        <input type="hidden" name="user_id" value="{{ $wallet->id }}">
                         <div class="mb-3">
                             <label for="depositAmount" class="form-label">Amount (UGX)</label>
                             <input type="number" class="form-control" id="depositAmount" name="amount" min="0.01" step="0.01" required>
@@ -59,8 +57,6 @@
                     <h5 class="card-title">Withdraw Money</h5>
                     <form id="withdrawForm">
                         @csrf
-                        <input type="hidden" name="user_type" value="{{ $userType }}">
-                        <input type="hidden" name="user_id" value="{{ $wallet->id }}">
                         <div class="mb-3">
                             <label for="withdrawAmount" class="form-label">Amount (UGX)</label>
                             <input type="number" class="form-control" id="withdrawAmount" name="amount" min="0.01" step="0.01" required>

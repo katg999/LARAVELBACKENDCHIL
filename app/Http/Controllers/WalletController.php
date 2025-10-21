@@ -17,25 +17,16 @@ class WalletController extends Controller
      */
     public function index(Request $request)
     {
-        $userType = $request->get('type'); // 'doctor', 'school', 'health_facility'
-        $userId = $request->get('id');
+        $currentEntity = session('current_entity');
 
-        $wallet = null;
-        $transactions = collect();
-
-        switch ($userType) {
-            case 'doctor':
-                $wallet = Doctor::findOrFail($userId);
-                break;
-            case 'school':
-                $wallet = School::findOrFail($userId);
-                break;
-            case 'health_facility':
-                $wallet = HealthFacility::findOrFail($userId);
-                break;
-            default:
-                abort(400, 'Invalid user type');
+        if (!$currentEntity) {
+            return redirect()->back()->with('error', 'No active entity found. Please navigate from a valid dashboard.');
         }
+
+        $userType = $currentEntity['type'];
+        $userId = $currentEntity['id'];
+
+        $wallet = $this->getWalletModel($userType, $userId);
 
         // Get transaction history
         $transactions = WalletTransaction::forUser($userType, $userId)
@@ -51,14 +42,18 @@ class WalletController extends Controller
     public function deposit(Request $request)
     {
         $request->validate([
-            'user_type' => 'required|in:doctor,school,health_facility',
-            'user_id' => 'required|integer',
             'amount' => 'required|numeric|min:0.01',
             'description' => 'nullable|string'
         ]);
 
-        $userType = $request->user_type;
-        $userId = $request->user_id;
+        $currentEntity = session('current_entity');
+
+        if (!$currentEntity) {
+            return response()->json(['error' => 'No active entity found'], 400);
+        }
+
+        $userType = $currentEntity['type'];
+        $userId = $currentEntity['id'];
         $amount = $request->amount;
 
         DB::beginTransaction();
@@ -91,14 +86,18 @@ class WalletController extends Controller
     public function withdraw(Request $request)
     {
         $request->validate([
-            'user_type' => 'required|in:doctor,school,health_facility',
-            'user_id' => 'required|integer',
             'amount' => 'required|numeric|min:0.01',
             'description' => 'nullable|string'
         ]);
 
-        $userType = $request->user_type;
-        $userId = $request->user_id;
+        $currentEntity = session('current_entity');
+
+        if (!$currentEntity) {
+            return response()->json(['error' => 'No active entity found'], 400);
+        }
+
+        $userType = $currentEntity['type'];
+        $userId = $currentEntity['id'];
         $amount = $request->amount;
 
         DB::beginTransaction();
@@ -134,12 +133,13 @@ class WalletController extends Controller
      */
     public function balance(Request $request)
     {
-        $request->validate([
-            'user_type' => 'required|in:doctor,school,health_facility',
-            'user_id' => 'required|integer'
-        ]);
+        $currentEntity = session('current_entity');
 
-        $wallet = $this->getWalletModel($request->user_type, $request->user_id);
+        if (!$currentEntity) {
+            return response()->json(['error' => 'No active entity found'], 400);
+        }
+
+        $wallet = $this->getWalletModel($currentEntity['type'], $currentEntity['id']);
         
         return response()->json([
             'balance' => $wallet->wallet_balance
