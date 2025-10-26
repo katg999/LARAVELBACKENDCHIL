@@ -285,6 +285,16 @@ Route::patch('/appointments/{appointment}/cancel', [\App\Http\Controllers\Appoin
 Route::patch('/appointments/{appointment}/complete', [\App\Http\Controllers\AppointmentController::class, 'complete'])->name('appointments.complete');
 Route::delete('/appointments/{appointment}', [\App\Http\Controllers\AppointmentController::class, 'destroy'])->name('appointments.destroy');
 
+// Conference routes
+Route::prefix('conferences')->middleware('auth')->group(function () {
+    Route::post('/appointment/{appointment}', [\App\Http\Controllers\ConferenceController::class, 'create'])->name('conferences.create');
+    Route::get('/{conference}/join', [\App\Http\Controllers\ConferenceController::class, 'join'])->name('conferences.join');
+    Route::post('/{conference}/leave', [\App\Http\Controllers\ConferenceController::class, 'leave'])->name('conferences.leave');
+    Route::post('/{conference}/end', [\App\Http\Controllers\ConferenceController::class, 'end'])->name('conferences.end');
+    Route::post('/{conference}/kick/{participant}', [\App\Http\Controllers\ConferenceController::class, 'kickParticipant'])->name('conferences.kick');
+    Route::get('/{conference}/status', [\App\Http\Controllers\ConferenceController::class, 'status'])->name('conferences.status');
+});
+
 // Authentication routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');

@@ -64,6 +64,19 @@
                                                         <i class="fa fa-times me-1"></i> Cancel
                                                     </button>
                                                 </div>
+                                            @elseif($appointment->status === 'confirmed')
+                                                <div class="btn-group" role="group">
+                                                    @if($appointment->conference)
+                                                        <a href="{{ route('conferences.join', $appointment->conference) }}" class="btn btn-sm btn-success">
+                                                            <i class="fas fa-video me-1"></i> Join Conference
+                                                        </a>
+                                                    @else
+                                                        <button class="btn btn-sm btn-info create-conference" 
+                                                                data-appointment-id="{{ $appointment->id }}">
+                                                            <i class="fas fa-plus me-1"></i> Start Conference
+                                                        </button>
+                                                    @endif
+                                                </div>
                                             @elseif($appointment->status === 'cancelled')
                                                 <button class="btn btn-sm btn-danger delete-appointment" 
                                                         data-appointment-id="{{ $appointment->id }}"
@@ -414,7 +427,48 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial filter of duration options
     filterDurationOptions();
 
-    // Handle cancel appointment button clicks
+    // Handle create conference button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('create-conference') || e.target.closest('.create-conference')) {
+            e.preventDefault();
+            const button = e.target.classList.contains('create-conference') ? e.target : e.target.closest('.create-conference');
+            const appointmentId = button.getAttribute('data-appointment-id');
+
+            // Disable button and show loading
+            button.disabled = true;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Creating...';
+
+            // Create conference
+            fetch(`/conferences/appointment/${appointmentId}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Conference created successfully!', 'success');
+                    // Reload page to show join button
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert(data.message || 'Failed to create conference', 'danger');
+                    // Re-enable button
+                    button.disabled = false;
+                    button.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error creating conference:', error);
+                showAlert('Failed to create conference', 'danger');
+                // Re-enable button
+                button.disabled = false;
+                button.innerHTML = originalText;
+            });
+        }
+    });
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('cancel-appointment') || e.target.closest('.cancel-appointment')) {
             e.preventDefault();
