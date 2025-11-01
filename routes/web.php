@@ -74,7 +74,7 @@ Route::post('/send-otp', [App\Http\Controllers\OtpController::class, 'sendOtp'])
 
 use App\Http\Controllers\SchoolController;
 
-Route::middleware('session.auth:school')->group(function () {
+Route::middleware(['auth', 'role:school-staff'])->group(function () {
     Route::get('/school-dashboard', function (Request $request) {
         $authenticatedUser = $request->current_user;
         $school = \App\Models\School::findOrFail($authenticatedUser['id']);
@@ -541,7 +541,7 @@ Route::post('password/reset', 'App\Http\Controllers\Auth\ResetPasswordController
 // Simple admin area (protected)
 // Ensure the 'web' middleware is applied so session/cookie middleware run
 // (EncryptCookies, StartSession, ShareErrorsFromSession, VerifyCsrfToken)
-Route::prefix('admin')->middleware(['web', 'admin'])->group(function(){
+Route::prefix('admin')->middleware(['web', 'auth', 'role:admin'])->group(function(){
     Route::get('/', [AdminController::class, 'index'])->name('admin.index');
 
     // Individual model routes
@@ -700,7 +700,7 @@ Route::get('/health-facilities-dashboard', function () {
 });
 
 
-Route::middleware('session.auth:health_facility')->group(function () {
+Route::middleware(['auth', 'role:health-facility-staff'])->group(function () {
     Route::get('/health-facility/dashboard', function (Request $request) {
         $authenticatedUser = $request->current_user;
         return app(HealthFacilityController::class)->showDashboard($request, $authenticatedUser['id']);
