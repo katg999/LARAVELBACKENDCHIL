@@ -1,0 +1,84 @@
+services:
+  # Laravel Application
+  app:
+    image: richarvey/nginx-php-fpm:3.1.6
+    container_name: laravel_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    environment:
+      - WEBROOT=/var/www/html/public
+      - PHP_ERRORS_STDERR=1
+      - RUN_SCRIPTS=1
+      - REAL_IP_HEADER=1
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=laravel_db
+      - DB_USERNAME=laravel_user
+      - DB_PASSWORD=laravel_password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - COMPOSER_ALLOW_SUPERUSER=1
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - laravel
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: laravel_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: laravel_db
+      POSTGRES_USER: laravel_user
+      POSTGRES_PASSWORD: laravel_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - laravel
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: laravel_redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - laravel
+
+  # Mailhog for testing emails (optional) - commented out due to ARM compatibility
+  # mailhog:
+  #   image: mailhog/mailhog:latest
+  #   platform: linux/amd64
+  #   container_name: laravel_mailhog
+  #   restart: unless-stopped
+  #   ports:
+  #     - "1025:1025"  # SMTP
+  #     - "8025:8025"  # Web UI
+  #   networks:
+  #     - laravel
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  laravel:
+    driver: bridge
