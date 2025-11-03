@@ -224,24 +224,32 @@ class PatientController extends Controller
             'recorded_date' => 'nullable|date',
         ]);
 
-        // Get the current authenticated user (assuming it's a doctor)
-        $doctor = auth()->user();
+        // Get the current authenticated user from session
+        $authenticatedUser = $request->session()->get('authenticated_user');
 
-        if (!$doctor) {
+        if (!$authenticatedUser) {
             return response()->json([
                 'success' => false,
                 'message' => 'You must be logged in to add medical notes.'
             ], 401);
         }
 
-        // Check if the doctor exists in the doctors table
-        $doctorRecord = \App\Models\Doctor::where('user_id', $doctor->id)->first();
-
-        if (!$doctorRecord) {
+        // Check if the authenticated user is a doctor
+        if ($authenticatedUser['type'] !== 'doctor') {
             return response()->json([
                 'success' => false,
                 'message' => 'Only doctors can add medical notes.'
             ], 403);
+        }
+
+        // Get the doctor record
+        $doctorRecord = \App\Models\Doctor::find($authenticatedUser['id']);
+
+        if (!$doctorRecord) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doctor record not found.'
+            ], 404);
         }
 
         try {
@@ -312,28 +320,36 @@ class PatientController extends Controller
             ], 403);
         }
 
-        // Get the current authenticated user (assuming it's a doctor)
-        $doctor = auth()->user();
+        // Get the current authenticated user from session
+        $authenticatedUser = $request->session()->get('authenticated_user');
 
-        if (!$doctor) {
+        if (!$authenticatedUser) {
             return response()->json([
                 'success' => false,
                 'message' => 'You must be logged in to edit medical notes.'
             ], 401);
         }
 
-        // Check if the doctor exists in the doctors table
-        $doctorRecord = \App\Models\Doctor::where('user_id', $doctor->id)->first();
-
-        if (!$doctorRecord) {
+        // Check if the authenticated user is a doctor
+        if ($authenticatedUser['type'] !== 'doctor') {
             return response()->json([
                 'success' => false,
                 'message' => 'Only doctors can edit medical notes.'
             ], 403);
         }
 
-        // Ensure the doctor is the one who created the note (or allow admin to edit)
-        if ($medicalHistory->doctor_id !== $doctorRecord->id && !$doctor->hasRole('admin')) {
+        // Get the doctor record
+        $doctorRecord = \App\Models\Doctor::find($authenticatedUser['id']);
+
+        if (!$doctorRecord) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doctor record not found.'
+            ], 404);
+        }
+
+        // Ensure the doctor is the one who created the note
+        if ($medicalHistory->doctor_id !== $doctorRecord->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'You can only edit medical notes you created.'

@@ -53,20 +53,14 @@ return new class extends Migration
         });
 
         // 5. Add unique constraint if it doesn't exist
-        DB::statement("
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 
-                    FROM pg_constraint 
-                    WHERE conname = 'durations_minutes_duration_type_unique'
-                ) THEN
-                    ALTER TABLE durations 
-                    ADD CONSTRAINT durations_minutes_duration_type_unique 
-                    UNIQUE (minutes, duration_type);
-                END IF;
-            END$$;
-        ");
+        // Try to add constraint, catch error if it already exists
+        try {
+            Schema::table('durations', function (Blueprint $table) {
+                $table->unique(['minutes', 'duration_type'], 'durations_minutes_duration_type_unique');
+            });
+        } catch (\Exception $e) {
+            // Constraint already exists or other error, continue
+        }
     }
 
     /**
@@ -75,17 +69,13 @@ return new class extends Migration
     public function down(): void
     {
         // 1. Drop unique constraint if exists
-        DB::statement("
-            DO $$
-            BEGIN
-                IF EXISTS (
-                    SELECT 1 FROM pg_constraint 
-                    WHERE conname = 'durations_minutes_duration_type_unique'
-                ) THEN
-                    ALTER TABLE durations DROP CONSTRAINT durations_minutes_duration_type_unique;
-                END IF;
-            END$$;
-        ");
+        try {
+            Schema::table('durations', function (Blueprint $table) {
+                $table->dropUnique('durations_minutes_duration_type_unique');
+            });
+        } catch (\Exception $e) {
+            // Constraint doesn't exist or other error, continue
+        }
 
         // 2. Rename 'duration_type' back to 'type' if exists
         if (Schema::hasColumn('durations', 'duration_type')) {

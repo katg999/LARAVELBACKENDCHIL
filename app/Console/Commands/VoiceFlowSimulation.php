@@ -34,20 +34,47 @@ class VoiceFlowSimulation extends Command
      *
      * @var string
      */
-    protected $baseUrl = 'http://localhost:8000';
+    protected $baseUrl;
+
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        parent::__construct();
+        
+        // Priority 1: Use explicit environment variable if set
+        if ($url = getenv('API_BASE_URL')) {
+            $this->baseUrl = $url;
+        }
+        // Priority 2: Detect if running inside Docker container
+        elseif (file_exists('/.dockerenv') || getenv('WEBROOT') === '/var/www/html/public') {
+            // Running inside the Docker container - use internal port
+            $this->baseUrl = 'http://localhost:80';
+        }
+        // Priority 3: Default to local development server
+        else {
+            $this->baseUrl = 'http://localhost:8000';
+        }
+    }
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('🎤 VoiceFlow Simulation');
+        $this->info('🎤 VoiceFlow Login Simulation');
         $this->info('==============================');
+        $this->info("📍 Using base URL: {$this->baseUrl}");
+        $this->info('');
 
         // Check if server is running
         if (!$this->isServerRunning()) {
             $this->error('❌ Laravel server is not running on ' . $this->baseUrl);
-            $this->info('💡 Start the server with: php artisan serve --host=0.0.0.0 --port=8000');
+            $suggestion = (getenv('WEBROOT') === '/var/www/html/public' || file_exists('/.dockerenv'))
+                ? '💡 Make sure the Docker container web server is running'
+                : '💡 Start the server with: php artisan serve --host=0.0.0.0 --port=8000';
+            $this->info($suggestion);
             return 1;
         }
 
@@ -81,7 +108,36 @@ class VoiceFlowSimulation extends Command
         );
 
         // Get email
-        $email = $this->option('email') ?: $this->ask('Enter email address:');
+        $email = $this->option('email');
+        
+        if (!$email) {
+            // Check if we can prompt (TTY available)
+            if (!posix_isatty(STDIN)) {
+                $this->error("❌ Email address is required");
+                $this->info('');
+                $this->error('⚠️  Non-interactive terminal detected!');
+                $this->info('');
+                $this->info('To run interactively in Docker, use the -it flags:');
+                $this->info('  docker exec -it laravel_app php artisan voiceflow:simulate');
+                $this->info('');
+                $this->info('Or use docker-compose (recommended):');
+                $this->info('  docker-compose exec app php artisan voiceflow:simulate');
+                $this->info('');
+                $this->info('Or provide the email option:');
+                $this->info("  docker exec laravel_app php artisan voiceflow:simulate --type={$userType} --email=test@example.com --action=login");
+                return 1;
+            }
+            
+            $email = $this->ask('Enter email address:');
+        }
+
+        // Trim and check if email is empty or null
+        $email = trim($email ?? '');
+        
+        if (empty($email)) {
+            $this->error("❌ Email address is required");
+            return 1;
+        }
 
         if (!$this->validateEmail($email, $userType)) {
             $this->error("❌ Email '{$email}' is not associated with any {$userType}");

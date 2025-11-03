@@ -7,9 +7,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // 1. Find duplicates based on (minutes, duration_type)
+        // 1. Find duplicates based on (minutes, duration_type) - database agnostic approach
         $duplicateGroups = DB::table('durations')
-            ->select('minutes', 'duration_type', DB::raw('MIN(id) as keep_id'), DB::raw('ARRAY_AGG(id) as all_ids'))
+            ->select('minutes', 'duration_type', DB::raw('MIN(id) as keep_id'))
             ->groupBy('minutes', 'duration_type')
             ->havingRaw('COUNT(*) > 1')
             ->get();
@@ -17,11 +17,15 @@ return new class extends Migration
         foreach ($duplicateGroups as $group) {
             $keepId = (int) $group->keep_id;
 
-            // Convert PostgreSQL array string to PHP array of integers
-            $allIds = array_map('intval', explode(',', trim($group->all_ids, '{}')));
+            // Get all IDs for this group
+            $allIds = DB::table('durations')
+                ->where('minutes', $group->minutes)
+                ->where('duration_type', $group->duration_type)
+                ->pluck('id')
+                ->toArray();
 
             // Remove the keep_id from the list (these are the IDs to delete)
-            $deleteIds = array_filter($allIds, fn($id) => $id !== $keepId);
+            $deleteIds = array_filter($allIds, fn($id) => $id != $keepId);
 
             if (!empty($deleteIds)) {
                 // 2. Update appointments to point to the kept duration

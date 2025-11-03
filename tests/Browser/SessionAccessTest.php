@@ -3,9 +3,9 @@
 namespace Tests\Browser;
 
 use App\Models\School;
+use App\Models\OneTimeLoginToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Dusk\Browser;
-use Tests\Browser\Pages\LoginPage;
 use Tests\DuskTestCase;
 
 class SessionAccessTest extends DuskTestCase
@@ -13,7 +13,7 @@ class SessionAccessTest extends DuskTestCase
     use RefreshDatabase;
 
     /** @test */
-    public function user_can_login_with_otp()
+    public function user_can_login_with_one_time_token()
     {
         // Create a test school
         $school = School::factory()->create([
@@ -21,45 +21,48 @@ class SessionAccessTest extends DuskTestCase
             'name' => 'Test School'
         ]);
 
-        $this->browse(function (Browser $browser) {
-            $browser->visit(new LoginPage)
-                    ->sendOtp('test@example.com')
-                    ->waitForText('OTP sent successfully')
-                    ->assertSee('OTP sent successfully');
+        // Create a one-time login token
+        $token = OneTimeLoginToken::create([
+            'token' => 'test-token-123',
+            'user_type' => 'school',
+            'user_id' => $school->id,
+            'email' => 'test@example.com',
+            'expires_at' => now()->addHours(1),
+            'used' => false
+        ]);
 
-            // In a real test, you'd need to capture the OTP from email or database
-            // For this example, we'll assume we can get it somehow
-            // $otp = // get OTP from database or email
-
-            // Then continue with OTP entry
-            // $browser->loginWithOtp($otp)
-            //         ->assertPathIs('/school-dashboard');
+        $this->browse(function (Browser $browser) use ($token) {
+            $browser->visit('/auth/login/' . $token->token)
+                    ->assertPathIs('/school-dashboard')
+                    ->assertSee('Test School');
         });
     }
 
     /** @test */
-    public function unauthorized_access_shows_403_error()
+    public function unauthorized_access_shows_logged_out_page()
     {
         $this->browse(function (Browser $browser) {
             $browser->visit('/school-dashboard')
-                    ->assertSee('403')
-                    ->assertSee('ACCESS DENIED');
+                    ->assertSee('You are currently logged out');
         });
     }
 
     /** @test */
-    public function invalid_otp_shows_error()
+    public function expired_token_shows_error()
     {
-        $school = School::factory()->create([
-            'email' => 'test@example.com'
+        // Create an expired token
+        $token = OneTimeLoginToken::create([
+            'token' => 'expired-token-123',
+            'user_type' => 'school',
+            'user_id' => 1,
+            'email' => 'test@example.com',
+            'expires_at' => now()->subHours(1), // Already expired
+            'used' => false
         ]);
 
-        $this->browse(function (Browser $browser) {
-            $browser->visit(new LoginPage)
-                    ->sendOtp('test@example.com')
-                    ->waitForText('OTP sent successfully')
-                    ->loginWithOtp('000000') // Invalid OTP
-                    ->assertSee('Invalid OTP');
+        $this->browse(function (Browser $browser) use ($token) {
+            $browser->visit('/auth/login/' . $token->token)
+                    ->assertSee('This login link has expired');
         });
     }
 }
