@@ -23,6 +23,7 @@
             'appointments' => 'Appointment',
             'payments' => 'Payment',
             'health-facilities' => 'HealthFacility',
+            'durations' => 'Duration',
             'users' => 'User',
         ];
         

@@ -159,16 +159,16 @@ class SendAdminInviteTest extends TestCase
 
         $email = 'admin@example.com';
 
-        // Create an existing invite
-        AdminInvite::create([
+        // Create an admin user with this email
+        \App\User::create([
+            'name' => 'Test Admin',
             'email' => $email,
-            'token' => 'existing-token',
-            'expires_at' => now()->addHours(24),
-            'used' => false,
+            'password' => bcrypt('password'),
+            'is_admin' => true,
         ]);
 
         $this->artisan('admin:invite', ['email' => $email])
-             ->expectsOutput('An active invite already exists for this email address.')
+             ->expectsOutput('An admin account with this email address already exists. Cannot send invitation.')
              ->assertExitCode(1);
 
         // Should not have sent another email

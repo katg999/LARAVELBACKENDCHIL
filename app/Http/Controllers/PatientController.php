@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Patient;
 use App\Models\HealthFacility;
+use App\Models\MedicalHistory;
 use Illuminate\Http\Request;
 
 class PatientController extends Controller
@@ -207,5 +208,153 @@ class PatientController extends Controller
         }
 
         return view('patients.profile', $viewData);
+    }
+
+    /**
+     * Store a medical history note for a patient.
+     *
+     * @param  \App\Models\Patient  $patient
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function storeMedicalHistory(Patient $patient, Request $request)
+    {
+        $request->validate([
+            'content' => 'required|string|max:1000',
+            'recorded_date' => 'nullable|date',
+        ]);
+
+        // Get the current authenticated user (assuming it's a doctor)
+        $doctor = auth()->user();
+
+        if (!$doctor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You must be logged in to add medical notes.'
+            ], 401);
+        }
+
+        // Check if the doctor exists in the doctors table
+        $doctorRecord = \App\Models\Doctor::where('user_id', $doctor->id)->first();
+
+        if (!$doctorRecord) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only doctors can add medical notes.'
+            ], 403);
+        }
+
+        try {
+            \App\Models\MedicalHistory::create([
+                'patient_id' => $patient->id,
+                'doctor_id' => $doctorRecord->id,
+                'content' => $request->content,
+                'recorded_date' => $request->recorded_date ?: now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Medical note added successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to add medical note: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Show a specific medical history note.
+     *
+     * @param  \App\Models\Patient  $patient
+     * @param  \App\Models\MedicalHistory  $medicalHistory
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function showMedicalHistory(Patient $patient, MedicalHistory $medicalHistory)
+    {
+        // Ensure the medical history belongs to the patient
+        if ($medicalHistory->patient_id !== $patient->id) {
+            return response()->json([
+                'error' => 'Medical history does not belong to this patient.'
+            ], 403);
+        }
+
+        return response()->json([
+            'id' => $medicalHistory->id,
+            'content' => $medicalHistory->content,
+            'recorded_date' => $medicalHistory->recorded_date ? $medicalHistory->recorded_date->format('Y-m-d') : null,
+            'doctor' => $medicalHistory->doctor->name ?? 'Unknown',
+            'created_at' => $medicalHistory->created_at->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+    /**
+     * Update a medical history note for a patient.
+     *
+     * @param  \App\Models\Patient  $patient
+     * @param  \App\Models\MedicalHistory  $medicalHistory
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateMedicalHistory(Patient $patient, MedicalHistory $medicalHistory, Request $request)
+    {
+        $request->validate([
+            'content' => 'required|string|max:1000',
+            'recorded_date' => 'nullable|date',
+        ]);
+
+        // Ensure the medical history belongs to the patient
+        if ($medicalHistory->patient_id !== $patient->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Medical history does not belong to this patient.'
+            ], 403);
+        }
+
+        // Get the current authenticated user (assuming it's a doctor)
+        $doctor = auth()->user();
+
+        if (!$doctor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You must be logged in to edit medical notes.'
+            ], 401);
+        }
+
+        // Check if the doctor exists in the doctors table
+        $doctorRecord = \App\Models\Doctor::where('user_id', $doctor->id)->first();
+
+        if (!$doctorRecord) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only doctors can edit medical notes.'
+            ], 403);
+        }
+
+        // Ensure the doctor is the one who created the note (or allow admin to edit)
+        if ($medicalHistory->doctor_id !== $doctorRecord->id && !$doctor->hasRole('admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You can only edit medical notes you created.'
+            ], 403);
+        }
+
+        try {
+            $medicalHistory->update([
+                'content' => $request->content,
+                'recorded_date' => $request->recorded_date ?: $medicalHistory->recorded_date,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Medical note updated successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update medical note: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -12,24 +12,61 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // 1. Add price column if it doesn't exist
         Schema::table('durations', function (Blueprint $table) {
-            // Add new price column
-            $table->decimal('price', 10, 2)->nullable()->after('minutes');
+            if (!Schema::hasColumn('durations', 'price')) {
+                $table->decimal('price', 10, 2)->nullable()->after('minutes');
+            }
         });
 
-        // Migrate existing data to the new price column
-        DB::statement("UPDATE durations SET price = CASE WHEN type = 'general' THEN general_price ELSE specialist_price END WHERE general_price IS NOT NULL OR specialist_price IS NOT NULL");
+        // 2. Migrate existing data safely
+        if (Schema::hasColumn('durations', 'type')) {
+            DB::statement("
+                UPDATE durations 
+                SET price = CASE 
+                    WHEN type = 'general' THEN general_price 
+                    ELSE specialist_price 
+                END
+                WHERE general_price IS NOT NULL OR specialist_price IS NOT NULL
+            ");
+        }
 
+        // 3. Rename 'type' to 'duration_type' if exists
+        if (Schema::hasColumn('durations', 'type')) {
+            Schema::table('durations', function (Blueprint $table) {
+                $table->renameColumn('type', 'duration_type');
+            });
+        }
+
+        // 4. Drop old price columns if they exist
         Schema::table('durations', function (Blueprint $table) {
-            // Rename type to duration_type
-            $table->renameColumn('type', 'duration_type');
-
-            // Drop old price columns
-            $table->dropColumn(['general_price', 'specialist_price']);
-
-            // Add unique constraint on minutes and duration_type
-            $table->unique(['minutes', 'duration_type']);
+            $columnsToDrop = [];
+            if (Schema::hasColumn('durations', 'general_price')) {
+                $columnsToDrop[] = 'general_price';
+            }
+            if (Schema::hasColumn('durations', 'specialist_price')) {
+                $columnsToDrop[] = 'specialist_price';
+            }
+            if (!empty($columnsToDrop)) {
+                $table->dropColumn($columnsToDrop);
+            }
         });
+
+        // 5. Add unique constraint if it doesn't exist
+        DB::statement("
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 
+                    FROM pg_constraint 
+                    WHERE conname = 'durations_minutes_duration_type_unique'
+                ) THEN
+                    ALTER TABLE durations 
+                    ADD CONSTRAINT durations_minutes_duration_type_unique 
+                    UNIQUE (minutes, duration_type);
+                END IF;
+            END$$;
+        ");
     }
 
     /**
@@ -37,25 +74,41 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // 1. Drop unique constraint if exists
+        DB::statement("
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM pg_constraint 
+                    WHERE conname = 'durations_minutes_duration_type_unique'
+                ) THEN
+                    ALTER TABLE durations DROP CONSTRAINT durations_minutes_duration_type_unique;
+                END IF;
+            END$$;
+        ");
+
+        // 2. Rename 'duration_type' back to 'type' if exists
+        if (Schema::hasColumn('durations', 'duration_type')) {
+            Schema::table('durations', function (Blueprint $table) {
+                $table->renameColumn('duration_type', 'type');
+            });
+        }
+
+        // 3. Add back old price columns if missing
         Schema::table('durations', function (Blueprint $table) {
-            // Drop unique constraint first
-            $table->dropUnique(['minutes', 'duration_type']);
-
-            // Add back old columns
-            $table->decimal('general_price', 10, 2)->nullable();
-            $table->decimal('specialist_price', 10, 2)->nullable();
-
-            // Rename back
-            $table->renameColumn('duration_type', 'type');
+            if (!Schema::hasColumn('durations', 'general_price')) {
+                $table->decimal('general_price', 10, 2)->nullable();
+            }
+            if (!Schema::hasColumn('durations', 'specialist_price')) {
+                $table->decimal('specialist_price', 10, 2)->nullable();
+            }
         });
 
-        // Migrate data back
-        DB::statement("UPDATE durations SET general_price = price WHERE type = 'general'");
-        DB::statement("UPDATE durations SET specialist_price = price WHERE type = 'specialist'");
-
+        // 4. Drop 'price' column if exists
         Schema::table('durations', function (Blueprint $table) {
-            // Drop new price column
-            $table->dropColumn('price');
+            if (Schema::hasColumn('durations', 'price')) {
+                $table->dropColumn('price');
+            }
         });
     }
 };

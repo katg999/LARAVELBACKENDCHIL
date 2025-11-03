@@ -156,8 +156,8 @@
                     </div>
 
                     @if($patient->medicalHistories->count() > 0)
-                    <div class="mt-3">
-                        <h5><i class="typcn typcn-time mr-2"></i>Medical History</h5>
+                    <div class="mt-4">
+                        <h5 class="mb-3"><i class="typcn typcn-time mr-2"></i>Medical History</h5>
                         <div class="timeline">
                             @foreach($patient->medicalHistories->sortByDesc('recorded_date') as $history)
                             <div class="timeline-item">
@@ -175,11 +175,28 @@
                                         </small>
                                     </div>
                                     <div class="mt-2">
-                                        <p class="mb-0">{{ $history->content }}</p>
+                                        <p class="mb-2">{{ $history->content }}</p>
+                                        <div class="d-flex justify-content-end">
+                                            <button class="btn btn-sm btn-outline-primary btn-edit-medical-note"
+                                                    data-id="{{ $history->id }}"
+                                                    onclick="editMedicalNote({{ $history->id }})"
+                                                    title="Edit Medical Note">
+                                                <i class="typcn typcn-edit mr-1"></i>Edit
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             @endforeach
+                        </div>
+                    </div>
+                    @else
+                    <div class="mt-4">
+                        <h5 class="mb-3"><i class="typcn typcn-time mr-2"></i>Medical History</h5>
+                        <div class="text-center py-4">
+                            <i class="typcn typcn-document-text fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No medical history records found for this patient.</p>
+                            <small class="text-muted">Medical history will appear here when doctors add notes during appointments.</small>
                         </div>
                     </div>
                     @endif
@@ -228,6 +245,21 @@
                     </table>
                 </div>
             </div>
+            @else
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="typcn typcn-beaker mr-2"></i>Lab Test History
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <i class="typcn typcn-beaker fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No lab tests found for this patient.</p>
+                        <small class="text-muted">Lab test results will appear here when tests are ordered and completed.</small>
+                    </div>
+                </div>
+            </div>
             @endif
         </div>
 
@@ -248,8 +280,11 @@
                         <button class="btn btn-success mb-2" disabled>
                             <i class="typcn typcn-beaker mr-2"></i>Order Lab Test
                         </button>
-                        <button class="btn btn-info mb-2" disabled>
+                        <button class="btn btn-info mb-2" onclick="createMedicalNote()">
                             <i class="typcn typcn-document mr-2"></i>Add Medical Note
+                        </button>
+                        <button class="btn btn-warning mb-2" disabled>
+                            <i class="typcn typcn-info mr-2"></i>Test Edit Modal
                         </button>
                         <button class="btn btn-warning mb-2" disabled>
                             <i class="typcn typcn-edit mr-2"></i>Update Profile
@@ -312,7 +347,15 @@
                         <tbody>
                             @foreach($patient->appointments->sortByDesc('appointment_date') as $appointment)
                             <tr>
-                                <td>{{ $appointment->appointment_date ? $appointment->appointment_date->format('M d, Y H:i') : 'N/A' }}</td>
+                                <td>
+                                    @if($appointment->appointment_date)
+                                        <div><strong>{{ $appointment->appointment_date->format('M d, Y') }}</strong></div>
+                                        <div class="text-muted small">{{ $appointment->appointment_date->format('H:i') }}</div>
+                                    @else
+                                        <div><strong>{{ $appointment->created_at->format('M d, Y') }}</strong></div>
+                                        <div class="text-muted small">{{ $appointment->created_at->format('H:i') }} (Created)</div>
+                                    @endif
+                                </td>
                                 <td>
                                     @if($appointment->doctor)
                                         <strong>{{ $appointment->doctor->name }}</strong><br>
@@ -397,6 +440,25 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    @else
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="typcn typcn-beaker mr-2"></i>Lab Test History
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <i class="typcn typcn-beaker fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No lab tests found for this patient.</p>
+                        <small class="text-muted">Lab test results will appear here when tests are ordered and completed.</small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -514,487 +576,118 @@
     </div>
 </div>
 
-<style>
-/* Patient Avatar */
-.patient-avatar {
-    margin-bottom: 15px;
-    text-align: center;
-}
+<!-- Add Medical Note Modal -->
+<div class="modal fade" id="medicalNoteModal" tabindex="-1" role="dialog" aria-labelledby="addMedicalNoteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addMedicalNoteModalLabel">
+                    <i class="typcn typcn-document mr-2"></i><span id="modal-title-text">Add Medical Note</span> for {{ $patient->name }}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="medical_note_form" method="POST">
+                @csrf
+                <input type="hidden" id="medical-note-id" name="medical_history_id" value="">
+                <input type="hidden" id="medical-note-method" name="_method" value="POST">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="medical_note_content" class="form-label">
+                            <i class="typcn typcn-edit mr-1"></i>Medical Note <span class="text-danger">*</span>
+                        </label>
+                        <textarea name="content" id="medical_note_content" class="form-control" rows="5" required
+                                  placeholder="Enter detailed medical notes, observations, diagnosis, treatment plan, or any other relevant medical information..."></textarea>
+                        <small class="form-text text-muted">Maximum 1000 characters</small>
+                    </div>
 
-/* Status Badges */
-.badge {
-    font-size: 0.75rem;
-    padding: 0.375rem 0.5rem;
-}
+                    <div class="form-group" style="display: none;">
+                        <input type="hidden" name="recorded_date" id="medical_note_date" value="{{ date('Y-m-d') }}">
+                    </div>
 
-/* Stat Label Styling */
-.stat-label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #6c757d;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Icon XL Styling */
-.icon-xl {
-    font-size: 2.5rem;
-    opacity: 0.8;
-}
-
-/* Print Styles */
-@media print {
-    .btn, .card-tools, .btn-group, .small-box .icon {
-        display: none !important;
-    }
-
-    .card {
-        box-shadow: none !important;
-        border: 1px solid #000 !important;
-    }
-}
-.card {
-    border: none;
-    border-radius: 0.5rem;
-    box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
-    transition: box-shadow 0.2s ease-in-out;
-}
-
-.card:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,.15);
-}
-
-.card-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 1px solid #dee2e6;
-    border-radius: 0.5rem 0.5rem 0 0 !important;
-    padding: 1rem 1.25rem;
-}
-
-.card-title {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #495057;
-}
-
-.card-title i {
-    color: #6c757d;
-    margin-right: 8px;
-}
-
-/* Table Enhancements */
-.table-hover tbody tr:hover {
-    background-color: rgba(0,0,0,.075);
-    transform: scale(1.01);
-    transition: all 0.2s ease-in-out;
-}
-
-.table thead th {
-    border-bottom: 2px solid #dee2e6;
-    font-weight: 600;
-    color: #495057;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Button Enhancements */
-.btn {
-    border-radius: 0.375rem;
-    font-weight: 500;
-    transition: all 0.2s ease-in-out;
-}
-
-.btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,.2);
-}
-
-.btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none !important;
-}
-
-/* Description List Styling */
-dl.row dt {
-    font-weight: 600;
-    color: #495057;
-    text-align: right;
-    padding-right: 15px;
-    border-right: 2px solid #dee2e6;
-}
-
-dl.row dd {
-    margin-bottom: 0.5rem;
-    color: #6c757d;
-}
-
-/* Alert Enhancements */
-.alert {
-    border: none;
-    border-radius: 0.375rem;
-    border-left: 4px solid;
-}
-
-.alert-info {
-    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
-    border-left-color: #17a2b8;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-    .small-box .inner h3 {
-        font-size: 1.8rem;
-    }
-
-    dl.row dt {
-        text-align: left;
-        border-right: none;
-        border-bottom: 1px solid #dee2e6;
-        padding-bottom: 5px;
-        margin-bottom: 5px;
-    }
-}
-
-/* Print Styles */
-@media print {
-    .btn, .card-tools, .btn-group, .small-box .icon {
-        display: none !important;
-    }
-
-    .card {
-        box-shadow: none !important;
-        border: 1px solid #000 !important;
-    }
-}
-
-/* Stat Label Styling */
-.stat-label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #6c757d;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Icon XL Styling */
-.icon-xl {
-    font-size: 2.5rem;
-    opacity: 0.8;
-}
-
-.timeline::before {
-    content: '';
-    position: absolute;
-    left: 15px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: #dee2e6;
-}
-
-.timeline-item {
-    position: relative;
-    margin-bottom: 20px;
-}
-
-.timeline-item:last-child {
-    margin-bottom: 0;
-}
-
-.timeline-marker {
-    position: absolute;
-    left: -22px;
-    top: 0;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 2px solid #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 8px;
-    color: #fff;
-}
-
-.timeline-content {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
-    padding: 15px;
-    margin-left: 10px;
-}
-</style>
-
-{{-- Copy functionality script --}}
-<script>
-    // Copy to clipboard functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        const copyButtons = document.querySelectorAll('.copy-btn');
-
-        copyButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const textToCopy = this.getAttribute('data-clipboard-text');
-
-                if (navigator.clipboard && window.isSecureContext) {
-                    // Use the Clipboard API when available
-                    navigator.clipboard.writeText(textToCopy).then(function() {
-                        showCopyFeedback(button, 'Copied!');
-                    }).catch(function(err) {
-                        console.error('Failed to copy: ', err);
-                        fallbackCopyTextToClipboard(textToCopy, button);
-                    });
-                } else {
-                    // Fallback for older browsers
-                    fallbackCopyTextToClipboard(textToCopy, button);
-                }
-            });
-        });
-
-        function fallbackCopyTextToClipboard(text, button) {
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-999999px';
-            textArea.style.top = '-999999px';
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-
-            try {
-                const successful = document.execCommand('copy');
-                if (successful) {
-                    showCopyFeedback(button, 'Copied!');
-                } else {
-                    showCopyFeedback(button, 'Failed to copy', true);
-                }
-            } catch (err) {
-                showCopyFeedback(button, 'Failed to copy', true);
-            }
-
-            document.body.removeChild(textArea);
-        }
-
-        function showCopyFeedback(button, message, isError = false) {
-            const originalIcon = button.querySelector('i');
-            const originalClass = originalIcon.className;
-
-            // Change icon temporarily
-            originalIcon.className = isError ? 'typcn typcn-warning' : 'typcn typcn-tick';
-
-            // Change button color temporarily
-            button.classList.remove('btn-outline-secondary');
-            button.classList.add(isError ? 'btn-outline-danger' : 'btn-outline-success');
-
-            // Reset after 2 seconds
-            setTimeout(function() {
-                originalIcon.className = originalClass;
-                button.classList.remove(isError ? 'btn-outline-danger' : 'btn-outline-success');
-                button.classList.add('btn-outline-secondary');
-            }, 2000);
-        }
-    });
-
-    // Appointment form submission
-    $(document).ready(function() {
-        $('#appointmentForm').on('submit', function(e) {
-            e.preventDefault();
-
-            const form = $(this);
-            const submitBtn = form.find('button[type="submit"]');
-            const originalText = submitBtn.html();
-
-            // Disable submit button and show loading
-            submitBtn.prop('disabled', true).html('<i class="typcn typcn-loading mr-1"></i> Scheduling...');
-
-            // Clear any previous alerts
-            $('.alert').not('.alert-info').remove();
-
-            $.ajax({
-                url: form.attr('action'),
-                method: 'POST',
-                data: form.serialize(),
-                success: function(response) {
-                    // Show success message
-                    const successAlert = `
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="typcn typcn-tick mr-1"></i>
-                            <strong>Success!</strong> Appointment scheduled successfully.
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                    `;
-                    form.closest('.modal-content').prepend(successAlert);
-
-                    // Reset form
-                    form[0].reset();
-
-                    // Close modal after 2 seconds
-                    setTimeout(function() {
-                        $('#scheduleAppointmentModal').modal('hide');
-                        // Reload page to show new appointment
-                        location.reload();
-                    }, 2000);
-                },
-                error: function(xhr) {
-                    let errorMessage = 'An error occurred while scheduling the appointment.';
-
-                    if (xhr.responseJSON && xhr.responseJSON.errors) {
-                        const errors = Object.values(xhr.responseJSON.errors).flat();
-                        errorMessage = errors.join('<br>');
-                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    }
-
-                    // Show error message
-                    const errorAlert = `
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="typcn typcn-warning mr-1"></i>
-                            <strong>Error!</strong> ${errorMessage}
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                    `;
-                    form.closest('.modal-content').prepend(errorAlert);
-                },
-                complete: function() {
-                    // Re-enable submit button
-                    submitBtn.prop('disabled', false).html(originalText);
-                }
-            });
-        });
-
-        // Reset form when modal is closed
-        $('#scheduleAppointmentModal').on('hidden.bs.modal', function() {
-            $('#appointmentForm')[0].reset();
-            $('.alert').not('.alert-info').remove();
-        });
-    });
-
-    // Appointment cancellation functionality
-    $(document).on('click', '.btn-cancel-appointment', function() {
-        const appointmentId = $(this).data('id');
-        const button = $(this);
-        const originalHtml = button.html();
-
-        if (!confirm('Are you sure you want to cancel this appointment?')) {
-            return;
-        }
-
-        // Disable button and show loading
-        button.prop('disabled', true).html('<i class="typcn typcn-loading mr-1"></i>Cancelling...');
-
-        $.ajax({
-            url: `/appointments/${appointmentId}/cancel`,
-            method: 'PATCH',
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                if (response.success) {
-                    // Show success message
-                    const successAlert = `
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="typcn typcn-tick mr-1"></i>
-                            <strong>Success!</strong> Appointment cancelled successfully.
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                    `;
-                    $('.container-fluid').prepend(successAlert);
-
-                    // Update the appointment row status
-                    const row = button.closest('tr');
-                    row.find('.badge').removeClass('badge-warning badge-success badge-secondary').addClass('badge-danger');
-                    row.find('.badge i').removeClass('typcn-credit-card typcn-tick typcn-time').addClass('typcn-times');
-                    row.find('.badge').html('<i class="typcn typcn-times mr-1"></i>Cancelled');
-
-                    // Replace cancel button with delete button
-                    button.replaceWith(`
-                        <button class="btn btn-sm btn-outline-danger btn-delete-appointment" data-id="${appointmentId}" title="Delete Appointment">
-                            <i class="typcn typcn-trash mr-1"></i>Delete
-                        </button>
-                    `);
-
-                    // Auto-hide alert after 3 seconds
-                    setTimeout(function() {
-                        $('.alert-success').fadeOut();
-                    }, 3000);
-                } else {
-                    alert('Failed to cancel appointment: ' + (response.message || 'Unknown error'));
-                    button.prop('disabled', false).html(originalHtml);
-                }
-            },
-            error: function(xhr) {
-                let errorMessage = 'Failed to cancel appointment.';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMessage = xhr.responseJSON.message;
-                }
-                alert(errorMessage);
-                button.prop('disabled', false).html(originalHtml);
-            }
-        });
-    });
-
-    // Appointment deletion functionality
-    $(document).on('click', '.btn-delete-appointment', function() {
-        const appointmentId = $(this).data('id');
-        const button = $(this);
-        const originalHtml = button.html();
-
-        if (!confirm('Are you sure you want to permanently delete this cancelled appointment? This action cannot be undone.')) {
-            return;
-        }
-
-        // Disable button and show loading
-        button.prop('disabled', true).html('<i class="typcn typcn-loading mr-1"></i>Deleting...');
-
-        $.ajax({
-            url: `/appointments/${appointmentId}`,
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                if (response.success) {
-                    // Show success message
-                    const successAlert = `
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="typcn typcn-tick mr-1"></i>
-                            <strong>Success!</strong> Appointment deleted successfully.
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                    `;
-                    $('.container-fluid').prepend(successAlert);
-
-                    // Remove the appointment row
-                    button.closest('tr').remove();
-
-                    // Auto-hide alert after 3 seconds
-                    setTimeout(function() {
-                        $('.alert-success').fadeOut();
-                    }, 3000);
-                } else {
-                    alert('Failed to delete appointment: ' + (response.message || 'Unknown error'));
-                    button.prop('disabled', false).html(originalHtml);
-                }
-            },
-            error: function(xhr) {
-                let errorMessage = 'Failed to delete appointment.';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMessage = xhr.responseJSON.message;
-                }
-                alert(errorMessage);
-                button.prop('disabled', false).html(originalHtml);
-            }
-        });
-    });
-</script>
+                    <!-- Patient Info Summary -->
+                    <div class="alert alert-info text-dark">
+                        <h6><i class="typcn typcn-info mr-1"></i>Note Details</h6>
+                        <p class="mb-1"><strong>Patient:</strong> {{ $patient->name }} (ID: {{ $patient->patient_id }})</p>
+                        <p class="mb-1"><strong>Doctor:</strong> {{ auth()->user()->name ?? 'Unknown' }}</p>
+                        <p class="mb-0"><strong>Date:</strong> <span id="note-date-display">{{ date('M d, Y') }}</span></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="typcn typcn-times mr-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="medical-note-submit-btn">
+                        <i class="typcn typcn-plus mr-1"></i><span id="submit-btn-text">Save Medical Note</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+function createMedicalNote() {
+    // Reset form for new note
+    $('#medical_note_form')[0].reset();
+    $('#medical-note-id').val('');
+    $('#medical-note-method').val('POST');
+    $('#modal-title-text').text('Add Medical Note');
+    $('#submit-btn-text').text('Save Medical Note');
+    $('#medicalNoteModal').modal('show');
+}
+
+function editMedicalNote(id) {
+    // Load existing note data for editing
+    $.ajax({
+        url: '{{ route("patients.medical-history.show", [$patient->id, ":id"]) }}'.replace(':id', id),
+        type: 'GET',
+        success: function(data) {
+            $('#medical_note_content').val(data.content);
+            $('#medical-note-id').val(data.id);
+            $('#medical-note-method').val('PUT');
+            $('#modal-title-text').text('Edit Medical Note');
+            $('#submit-btn-text').text('Update Medical Note');
+            $('#medicalNoteModal').modal('show');
+        },
+        error: function() {
+            alert('Error loading medical note data.');
+        }
+    });
+}
+
+$(document).ready(function() {
+    // Handle medical note form submission
+    $('#medical_note_form').on('submit', function(e) {
+        e.preventDefault();
+
+        var formData = new FormData(this);
+        var method = $('#medical-note-method').val();
+        var url = method === 'PUT'
+            ? '{{ route("patients.medical-history.update", [$patient->id, ":id"]) }}'.replace(':id', $('#medical-note-id').val())
+            : '{{ route("patients.medical-history.store", $patient->id) }}';
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-HTTP-Method-Override': method
+            },
+            success: function(response) {
+                $('#medicalNoteModal').modal('hide');
+                location.reload(); // Reload page to show updated data
+            },
+            error: function(xhr) {
+                alert('Error saving medical note: ' + xhr.responseJSON?.message || 'Unknown error');
+            }
+        });
+    });
+});
+</script>
+@endpush

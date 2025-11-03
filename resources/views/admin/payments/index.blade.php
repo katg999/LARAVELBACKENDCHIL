@@ -18,7 +18,7 @@
                         </div>
                         <div class="btn-group">
                             <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#createPaymentModal">
-                                <i class="fa fa-plus me-3"></i> <span>Record</span>
+                                <i class="mdi mdi-plus me-3"></i> <span>Record</span>
                             </button>
                             <button type="button" class="btn btn-secondary outline btn-sm" data-bs-toggle="modal" data-bs-target="#createPaymentModal">
                                 <i class="mdi mdi-export me-3"></i> <span>Export</span>
@@ -61,7 +61,7 @@
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fa fa-check-circle me-2"></i>{{ session('success') }}
+            <i class="mdi mdi-check-circle me-2"></i>{{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
@@ -136,61 +136,15 @@
                                 </div>
                             </td>
                             <td class="px-3 py-3 text-center">
-                                <div class="btn-group" role="group">
-                                    <a href="{{ route('admin.payments.edit', $payment->id) }}" class="btn btn-outline-info btn-sm me-1" title="View/Edit">
-                                        <i class="fa fa-eye"></i>
-                                    </a>
-                                    <a href="{{ route('admin.payments.edit', $payment->id) }}" class="btn btn-outline-secondary btn-sm me-1" title="Edit">
-                                        <i class="fa fa-edit"></i>
-                                    </a>
-                                    <div class="dropdown">
-                                        <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            <i class="fa fa-ellipsis-h"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end shadow">
-                                            @if($payment->status !== 'completed')
-                                            <li>
-                                                <form action="{{ route('admin.payments.bulk') }}" method="POST" style="display:inline-block">
-                                                    @csrf
-                                                    <input type="hidden" name="action" value="complete">
-                                                    <input type="hidden" name="ids[]" value="{{ $payment->id }}">
-                                                    <button class="dropdown-item" type="submit" style="padding: 0.5rem 1rem;">
-                                                        <i class="fa fa-check me-2 text-success"></i>Mark Completed
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            @endif
-                                            @if($payment->status !== 'failed')
-                                            <li>
-                                                <form action="{{ route('admin.payments.bulk') }}" method="POST" style="display:inline-block">
-                                                    @csrf
-                                                    <input type="hidden" name="action" value="fail">
-                                                    <input type="hidden" name="ids[]" value="{{ $payment->id }}">
-                                                    <button class="dropdown-item" type="submit" style="padding: 0.5rem 1rem;">
-                                                        <i class="fa fa-times me-2 text-danger"></i>Mark Failed
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            @endif
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li>
-                                                <form action="{{ route('admin.payments.destroy', $payment->id) }}" method="POST" style="display:inline-block">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button class="dropdown-item text-danger" type="submit" onclick="return confirm('Delete this payment?')" style="padding: 0.5rem 1rem;">
-                                                        <i class="fa fa-trash me-2"></i>Delete
-                                                    </button>
-                                                </form>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
+                                <button class="btn btn-outline-info btn-sm" title="View Details" data-toggle="modal" data-target="#paymentDetailsModal" onclick="showPaymentDetails({{ $payment->id }}, '{{ $payment->reference_id ?? '' }}', '{{ $payment->amount }}', '{{ $payment->status }}', '{{ $payment->phone_number ?? '' }}', '{{ $payment->appointment ? $payment->appointment->id : '' }}', '{{ $payment->appointment && $payment->appointment->patient ? $payment->appointment->patient->name : '' }}', '{{ optional($payment->created_at)->format('M j, Y g:i A') }}')">
+                                    <i class="mdi mdi-eye"></i>
+                                </button>
                             </td>
                         </tr>
                         @empty
                         <tr>
                             <td colspan="8" class="text-center py-5">
-                                <i class="fa fa-credit-card fa-3x text-muted mb-3"></i>
+                                <i class="mdi mdi-credit-card mdi-36px text-muted mb-3"></i>
                                 <h6 class="text-muted">No payments found</h6>
                                 <p class="text-muted small">Try adjusting your filters or record a new payment.</p>
                             </td>
@@ -221,6 +175,84 @@
         </div>
     </div>
 </div>
+
+<!-- Payment Details Modal -->
+<div class="modal fade doctors-modal" id="paymentDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="mdi mdi-credit-card me-2"></i>Payment Details
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted">Payment ID</label>
+                            <p class="mb-0" id="payment-id">-</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted">Amount</label>
+                            <p class="mb-0 fs-5 text-success fw-bold" id="payment-amount">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted">Status</label>
+                            <p class="mb-0">
+                                <span class="badge" id="payment-status">-</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted">Reference</label>
+                            <p class="mb-0">
+                                <code id="payment-reference">-</code>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted">Phone Number</label>
+                            <p class="mb-0" id="payment-phone">-</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-muted">Created At</label>
+                            <p class="mb-0" id="payment-created">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-muted">Appointment Details</label>
+                    <div class="border rounded p-3 bg-light">
+                        <div id="appointment-details">
+                            <p class="mb-0 text-muted">No appointment associated</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -242,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
         // Get all table rows (excluding header and empty state)
         const rows = Array.from(document.querySelectorAll('#payments-table tbody tr')).filter(row =>
-            !row.querySelector('.fa-credit-card')
+            !row.querySelector('.mdi-credit-card')
         );
 
         rows.forEach(row => {
@@ -270,5 +302,53 @@ document.addEventListener('DOMContentLoaded', function(){
     if (dateFromInput) dateFromInput.addEventListener('change', filterPayments);
     if (dateToInput) dateToInput.addEventListener('change', filterPayments);
 });
+
+// Function to show payment details in modal
+function showPaymentDetails(id, reference, amount, status, phone, appointmentId, patientName, createdAt) {
+    // Set payment ID
+    document.getElementById('payment-id').textContent = '#' + id;
+
+    // Set amount
+    document.getElementById('payment-amount').textContent = 'UGX ' + parseInt(amount).toLocaleString();
+
+    // Set status with appropriate badge
+    const statusColors = {
+        'pending': 'warning',
+        'completed': 'success',
+        'failed': 'danger',
+        'cancelled': 'secondary'
+    };
+    const statusColor = statusColors[status] || 'secondary';
+    document.getElementById('payment-status').className = 'badge bg-' + statusColor;
+    document.getElementById('payment-status').textContent = status.charAt(0).toUpperCase() + status.slice(1);
+
+    // Set reference
+    document.getElementById('payment-reference').textContent = reference || 'N/A';
+
+    // Set phone
+    document.getElementById('payment-phone').textContent = phone || 'N/A';
+
+    // Set created date
+    document.getElementById('payment-created').textContent = createdAt;
+
+    // Set appointment details
+    const appointmentDetails = document.getElementById('appointment-details');
+    if (appointmentId && patientName) {
+        appointmentDetails.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>Appointment #${appointmentId}</strong><br>
+                    <small class="text-muted">Patient: ${patientName}</small>
+                </div>
+                <i class="mdi mdi-calendar-check text-primary"></i>
+            </div>
+        `;
+    } else {
+        appointmentDetails.innerHTML = '<p class="mb-0 text-muted">No appointment associated</p>';
+    }
+
+    // Show modal using jQuery
+    $('#paymentDetailsModal').modal('show');
+}
 </script>
 @endpush

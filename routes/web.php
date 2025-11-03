@@ -53,6 +53,7 @@ Route::get('/finance-dashboard', [FinanceDashboardController::class, 'index'])->
 
 
 Route::get('/admin/contact-submissions', [ContactController::class, 'index'])
+     ->middleware('admin')
      ->name('admin.contact-submissions');
 
 
@@ -608,8 +609,10 @@ Route::prefix('admin')->middleware(['web', 'auth', 'role:admin'])->group(functio
     Route::get('/durations', [AdminModelController::class, 'index'])->name('admin.durations.index');
     Route::get('/durations/create', [AdminModelController::class, 'create'])->name('admin.durations.create');
     Route::post('/durations', [AdminModelController::class, 'store'])->name('admin.durations.store');
-    Route::post('/durations/seed', [AdminModelController::class, 'seedDurations'])->name('admin.durations.seed');
+    Route::get('/durations/delete/{id}', [AdminModelController::class, 'destroy'])->name('admin.durations.delete');
     Route::get('/durations/{id}/edit', [AdminModelController::class, 'edit'])->name('admin.durations.edit');
+    Route::get('/durations/{id}', [AdminModelController::class, 'show'])->name('admin.durations.show');
+    Route::post('/durations/seed', [AdminModelController::class, 'seedDurations'])->name('admin.durations.seed');
     Route::put('/durations/{id}', [AdminModelController::class, 'update'])->name('admin.durations.update');
     Route::delete('/durations/{id}', [AdminModelController::class, 'destroy'])->name('admin.durations.destroy');
 
@@ -763,6 +766,9 @@ Route::get('/patients/{patient}/maternal', [PatientController::class, 'maternalD
     ->name('patient.maternal');
 
 Route::get('/patients/{patient}/profile', [PatientController::class, 'show'])->name('patients.profile');
+Route::get('/patients/{patient}/medical-history/{medicalHistory}', [PatientController::class, 'showMedicalHistory'])->name('patients.medical-history.show');
+Route::post('/patients/{patient}/medical-history', [PatientController::class, 'storeMedicalHistory'])->name('patients.medical-history.store');
+Route::put('/patients/{patient}/medical-history/{medicalHistory}', [PatientController::class, 'updateMedicalHistory'])->name('patients.medical-history.update');
     
 Route::post('/patients/create', function (Request $request) {
     try {

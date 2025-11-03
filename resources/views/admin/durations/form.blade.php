@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.base')
 
 @section('title', $item ? 'Edit Duration' : 'Create Duration')
 
@@ -7,20 +7,15 @@
     <div class="row">
         <div class="col-md-8 offset-md-2">
             <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">{{ $item ? 'Edit Duration' : 'Create Duration' }}</h3>
-                    <div class="card-tools">
-                        <a href="{{ route('admin.durations.index') }}" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-arrow-left"></i> Back to List
-                        </a>
-                    </div>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">{{ $item ? 'Edit Duration' : 'Create Duration' }}</h3>
+                    <a href="{{ route('admin.durations.index') }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
                 </div>
 
-                <form method="POST" action="{{ $item ? route('admin.durations.update', $item->id) : route('admin.durations.store') }}">
+                <form id="duration-form" method="POST" action="{{ $item ? route('admin.durations.update', $item->id) : route('admin.durations.store') }}">
                     @csrf
-                    @if($item)
-                        @method('PUT')
-                    @endif
 
                     <div class="card-body">
                         <div class="row">
@@ -79,12 +74,14 @@
                     </div>
 
                     <div class="card-footer">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> {{ $item ? 'Update' : 'Create' }} Duration
-                        </button>
-                        <a href="{{ route('admin.durations.index') }}" class="btn btn-secondary ml-2">
-                            Cancel
-                        </a>
+                        <div class="btn-group" role="group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ $item ? 'Update' : 'Create' }} Duration
+                            </button>
+                            <a href="{{ route('admin.durations.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -92,3 +89,68 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    $('#duration-form').on('submit', function(e) {
+        e.preventDefault();
+        var form = $(this);
+        var formData = new FormData(this);
+        var url = form.attr('action');
+        var method = '{{ $item ? "PUT" : "POST" }}';
+        
+        console.log('AJAX Request:', {
+            url: url,
+            method: method,
+            csrfToken: $('meta[name="csrf-token"]').attr('content'),
+            formData: Object.fromEntries(formData.entries())
+        });
+        
+        $.ajax({
+            url: url,
+            method: method,
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            beforeSend: function() {
+                form.find('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+            },
+            success: function(response) {
+                window.location.href = '{{ route("admin.durations.index") }}';
+            },
+            error: function(xhr) {
+                console.log('AJAX Error:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseText: xhr.responseText,
+                    responseJSON: xhr.responseJSON
+                });
+                form.find('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-save"></i> {{ $item ? "Update" : "Create" }} Duration');
+                if (xhr.status === 422) {
+                    var errors = xhr.responseJSON.errors;
+                    form.find('.invalid-feedback').remove();
+                    form.find('.is-invalid').removeClass('is-invalid');
+                    $.each(errors, function(field, messages) {
+                        var input = form.find('[name="' + field + '"]');
+                        input.addClass('is-invalid');
+                        input.after('<div class="invalid-feedback">' + messages[0] + '</div>');
+                    });
+                } else if (xhr.status === 401) {
+                    alert('Session expired. Please log in again.');
+                    window.location.href = '{{ route("login") }}';
+                } else if (xhr.status === 403) {
+                    alert('Access denied. Admin privileges required.');
+                } else {
+                    alert('An error occurred. Status: ' + xhr.status + '. Please try again.');
+                }
+            }
+        });
+    });
+});
+</script>
+@endpush

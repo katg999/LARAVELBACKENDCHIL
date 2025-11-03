@@ -20,6 +20,7 @@ class VerifyCsrfToken extends Middleware
      */
     protected $except = [
         'marzpay/webhook',
+        // 'admin/durations' // Re-enabled CSRF protection for admin/durations routes
     ];
 
     /**

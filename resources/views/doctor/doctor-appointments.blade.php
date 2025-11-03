@@ -53,7 +53,15 @@
                     @foreach($appointments as $appointment)
                     <tr data-id="{{ $appointment->id }}">
                         <td class="appt-time">{{ $appointment->appointment_time->format('M d, Y h:i A') }}</td>
-                        <td class="appt-patient">{{ $appointment->patient->name ?? '-' }}</td>
+                        <td class="appt-patient">
+                            @if($appointment->patient)
+                                <a href="{{ route('patients.profile', ['patient' => $appointment->patient->id]) }}" class="text-decoration-none" target="_blank">
+                                    {{ $appointment->patient->name }}
+                                </a>
+                            @else
+                                -
+                            @endif
+                        </td>
                         <td class="appt-school">
                             @if($appointment->school)
                                 {{ $appointment->school->name }}<br>

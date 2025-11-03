@@ -75,7 +75,7 @@ class OtpController extends Controller
             ]);
             
             // Send OTP email immediately (bypass queue for testing)
-            Mail::to($request->email)->send(new SendOtpMail($otp, 'school', $expiresAt->diffInMinutes(now())));
+            Mail::to($request->email)->send(new SendOtpMail($otp, $expiresAt->diffInMinutes(now())));
 
             
             // Verify no failures occurred

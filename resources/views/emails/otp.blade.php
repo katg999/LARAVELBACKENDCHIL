@@ -65,7 +65,7 @@
           <!-- Button -->
           <tr>
             <td style="padding:0 24px 24px 24px;" align="center">
-              <a href="https://ketiai.com"
+              <a href="https://keti.ai"
                  style="display:inline-block; background:#FF00F8; color:#ffffff; text-decoration:none; padding:10px 16px; border-radius:8px; font-size:14px;">
                 Open Portal
               </a>
@@ -75,7 +75,7 @@
           <!-- Footer -->
           <tr>
             <td style="padding:16px 24px; background:#f8fafc; color:#64748b; font-size:12px; text-align:center;">
-              Sent by KETI AI • <a href="https://ketiai.com" style="color:#64748b; text-decoration:none;">ketiai.com</a>
+              Sent by KETI AI • <a href="https://keti.ai" style="color:#64748b; text-decoration:none;">keti.ai</a>
             </td>
           </tr>
 

@@ -390,7 +390,7 @@ class AdminModelController extends Controller
             $q = $modelClass::query();
 
             if (request()->filled('type')) {
-                $q->where('type', request('type'));
+                $q->where('duration_type', request('type'));
             }
 
             if (request()->filled('is_active')) {
@@ -401,8 +401,8 @@ class AdminModelController extends Controller
                 $term = '%' . request('q') . '%';
                 $q->where(function($r) use ($term) {
                     $r->where('minutes', 'like', $term)
-                      ->orWhere('general_price', 'like', $term)
-                      ->orWhere('specialist_price', 'like', $term);
+                      ->orWhere('price', 'like', $term)
+                      ->orWhere('duration_type', 'like', $term);
                 });
             }
 
@@ -410,10 +410,10 @@ class AdminModelController extends Controller
             $sort = request('sort', 'created_at_desc');
             if ($sort === 'minutes_asc') $q->orderBy('minutes', 'asc');
             elseif ($sort === 'minutes_desc') $q->orderBy('minutes', 'desc');
-            elseif ($sort === 'general_price_asc') $q->orderBy('general_price', 'asc');
-            elseif ($sort === 'general_price_desc') $q->orderBy('general_price', 'desc');
-            elseif ($sort === 'specialist_price_asc') $q->orderBy('specialist_price', 'asc');
-            elseif ($sort === 'specialist_price_desc') $q->orderBy('specialist_price', 'desc');
+            elseif ($sort === 'price_asc') $q->orderBy('price', 'asc');
+            elseif ($sort === 'price_desc') $q->orderBy('price', 'desc');
+            elseif ($sort === 'duration_type_asc') $q->orderBy('duration_type', 'asc');
+            elseif ($sort === 'duration_type_desc') $q->orderBy('duration_type', 'desc');
             elseif ($sort === 'created_at_desc') $q->orderBy('created_at', 'desc');
             elseif ($sort === 'created_at_asc') $q->orderBy('created_at', 'asc');
 
@@ -507,15 +507,66 @@ class AdminModelController extends Controller
             $item = $modelClass::create($validated);
 
         } elseif ($modelKey === 'durations') {
-            $validated = $request->validate([
-                'minutes' => 'required|integer|min:1|max:480', // Max 8 hours
-                'type' => 'nullable|string|in:general,specialist',
-                'general_price' => 'required|integer|min:0|max:999999',
-                'specialist_price' => 'required|integer|min:0|max:999999',
-                'is_active' => 'boolean',
-            ]);
+            try {
+                $validated = $request->validate([
+                    'minutes' => 'required|integer|min:1|max:480', // Max 8 hours
+                    'duration_type' => 'required|string|in:general,specialist',
+                    'price' => 'required|integer|min:0|max:999999',
+                    'is_active' => 'boolean',
+                ]);
 
-            $item = $modelClass::create($validated);
+                \Log::info('Duration validation passed', $validated);
+
+                // Check for uniqueness manually since the unique constraint is on the database
+                $existing = \App\Models\Duration::where('minutes', $validated['minutes'])
+                    ->where('duration_type', $validated['duration_type'])
+                    ->first();
+
+                if ($existing) {
+                    \Log::info('Duration already exists', ['existing_id' => $existing->id]);
+                    if ($request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'A duration with these minutes and type already exists.',
+                            'errors' => [
+                                'minutes' => ['A duration with these minutes and type already exists.']
+                            ]
+                        ], 422);
+                    }
+                    return redirect()->back()->withErrors(['minutes' => 'A duration with these minutes and type already exists.'])->withInput();
+                }
+
+                $item = $modelClass::create($validated);
+                \Log::info('Duration created successfully', ['id' => $item->id]);
+
+                // Handle AJAX requests
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Duration created successfully',
+                        'data' => $item
+                    ]);
+                }
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                \Log::error('Duration validation failed', ['errors' => $e->errors()]);
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Validation failed',
+                        'errors' => $e->errors()
+                    ], 422);
+                }
+                throw $e;
+            } catch (\Exception $e) {
+                \Log::error('Duration creation failed', ['error' => $e->getMessage()]);
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to create duration: ' . $e->getMessage()
+                    ], 500);
+                }
+                throw $e;
+            }
 
         } else {
             $data = $request->except(['_token']);
@@ -544,18 +595,68 @@ class AdminModelController extends Controller
         abort_unless($modelClass, 404);
 
         $item = $modelClass::findOrFail($id);
+
+        // Use dedicated view for durations
+        if ($modelKey === 'durations') {
+            return view('admin.durations.form', compact('modelKey', 'item'));
+        }
+
         return view('admin.model.form', compact('modelKey', 'item'));
+    }
+
+    public function show($modelKey = null, $id = null)
+    {
+        // Handle parameter passing - sometimes Laravel passes id as first param
+        if (is_numeric($modelKey) && !$id) {
+            $id = $modelKey;
+            $modelKey = null;
+        }
+
+        // If no modelKey provided, determine it from the route name
+        if (!$modelKey) {
+            $routeName = request()->route()->getName();
+            $modelKey = str_replace(['admin.', '.show'], '', $routeName);
+        }
+
+        $modelClass = $this->modelFor($modelKey);
+        abort_unless($modelClass, 404);
+
+        $item = $modelClass::findOrFail($id);
+
+        // Use dedicated view for durations
+        if ($modelKey === 'durations') {
+            return view('admin.durations.show', compact('modelKey', 'item'));
+        }
+
+        return view('admin.model.show', compact('modelKey', 'item'));
     }
 
     public function update(Request $request, $modelKey = null, $id = null)
     {
+        // Debug logging
+        \Log::info('AdminModelController::update called', [
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'route_name' => $request->route() ? $request->route()->getName() : 'no route',
+            'modelKey_param' => $modelKey,
+            'id_param' => $id,
+            'all_params' => $request->all(),
+            'headers' => [
+                'X-Requested-With' => $request->header('X-Requested-With'),
+                'X-CSRF-TOKEN' => $request->header('X-CSRF-TOKEN') ? 'present' : 'missing',
+            ]
+        ]);
+
         // If no modelKey provided, determine it from the route name
         if (!$modelKey) {
             $routeName = request()->route()->getName();
+            \Log::info('Determining modelKey from route name', ['route_name' => $routeName]);
             $modelKey = str_replace(['admin.', '.update'], '', $routeName);
+            \Log::info('Resolved modelKey', ['modelKey' => $modelKey]);
         }
 
         $modelClass = $this->modelFor($modelKey);
+        \Log::info('Resolved modelClass', ['modelClass' => $modelClass]);
         abort_unless($modelClass, 404);
 
         $item = $modelClass::findOrFail($id);
@@ -609,15 +710,62 @@ class AdminModelController extends Controller
 
             $item->update($validated);
         } elseif ($modelKey === 'durations') {
-            $validated = $request->validate([
-                'minutes' => 'required|integer|min:1|max:480', // Max 8 hours
-                'type' => 'nullable|string|in:general,specialist',
-                'general_price' => 'required|integer|min:0|max:999999',
-                'specialist_price' => 'required|integer|min:0|max:999999',
-                'is_active' => 'boolean',
-            ]);
+            try {
+                $validated = $request->validate([
+                    'minutes' => 'required|integer|min:1|max:480', // Max 8 hours
+                    'duration_type' => 'required|string|in:general,specialist',
+                    'price' => 'required|integer|min:0|max:999999',
+                    'is_active' => 'boolean',
+                ]);
 
-            $item->update($validated);
+                // Check for uniqueness manually since the unique constraint is on the database
+                // Exclude the current item when checking for duplicates
+                $existing = \App\Models\Duration::where('minutes', $validated['minutes'])
+                    ->where('duration_type', $validated['duration_type'])
+                    ->where('id', '!=', $id)
+                    ->first();
+
+                if ($existing) {
+                    if ($request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'A duration with these minutes and type already exists.',
+                            'errors' => [
+                                'minutes' => ['A duration with these minutes and type already exists.']
+                            ]
+                        ], 422);
+                    }
+                    return redirect()->back()->withErrors(['minutes' => 'A duration with these minutes and type already exists.'])->withInput();
+                }
+
+                $item->update($validated);
+
+                // Handle AJAX requests
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Duration updated successfully',
+                        'data' => $item
+                    ]);
+                }
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Validation failed',
+                        'errors' => $e->errors()
+                    ], 422);
+                }
+                throw $e;
+            } catch (\Exception $e) {
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to update duration: ' . $e->getMessage()
+                    ], 500);
+                }
+                throw $e;
+            }
 
         } else {
             $data = $request->except(['_token', '_method']);
@@ -635,10 +783,16 @@ class AdminModelController extends Controller
 
     public function destroy($modelKey = null, $id = null)
     {
+        // Handle parameter passing - sometimes Laravel passes id as first param
+        if (is_numeric($modelKey) && !$id) {
+            $id = $modelKey;
+            $modelKey = null;
+        }
+
         // If no modelKey provided, determine it from the route name
         if (!$modelKey) {
             $routeName = request()->route()->getName();
-            $modelKey = str_replace(['admin.', '.destroy'], '', $routeName);
+            $modelKey = str_replace(['admin.', '.destroy', '.delete'], '', $routeName);
         }
 
         $modelClass = $this->modelFor($modelKey);
@@ -664,6 +818,15 @@ class AdminModelController extends Controller
             
             if ($school->doctors()->count() > 0) {
                 return redirect()->back()->with('error', 'Cannot delete school that has doctors associated with it.');
+            }
+        }
+
+        // Special validation for durations - prevent deletion if they have related appointments
+        if ($modelKey === 'durations') {
+            $duration = $item;
+            
+            if ($duration->appointments()->count() > 0) {
+                return redirect()->route('admin.durations.index')->with('error', 'Cannot delete duration that has appointments associated with it.');
             }
         }
 
@@ -827,37 +990,62 @@ class AdminModelController extends Controller
         $defaultDurations = [
             [
                 'minutes' => 15,
-                'general_price' => 25000,
-                'specialist_price' => 40000,
-                'type' => 'general',
+                'price' => 25000,
+                'duration_type' => 'general',
                 'is_active' => true,
             ],
             [
                 'minutes' => 30,
-                'general_price' => 50000,
-                'specialist_price' => 75000,
-                'type' => 'general',
+                'price' => 50000,
+                'duration_type' => 'general',
                 'is_active' => true,
             ],
             [
                 'minutes' => 45,
-                'general_price' => 75000,
-                'specialist_price' => 112500,
-                'type' => 'general',
+                'price' => 75000,
+                'duration_type' => 'general',
                 'is_active' => true,
             ],
             [
                 'minutes' => 60,
-                'general_price' => 100000,
-                'specialist_price' => 150000,
-                'type' => 'general',
+                'price' => 100000,
+                'duration_type' => 'general',
                 'is_active' => true,
             ],
             [
                 'minutes' => 90,
-                'general_price' => 150000,
-                'specialist_price' => 225000,
-                'type' => 'general',
+                'price' => 150000,
+                'duration_type' => 'general',
+                'is_active' => true,
+            ],
+            [
+                'minutes' => 15,
+                'price' => 40000,
+                'duration_type' => 'specialist',
+                'is_active' => true,
+            ],
+            [
+                'minutes' => 30,
+                'price' => 75000,
+                'duration_type' => 'specialist',
+                'is_active' => true,
+            ],
+            [
+                'minutes' => 45,
+                'price' => 112500,
+                'duration_type' => 'specialist',
+                'is_active' => true,
+            ],
+            [
+                'minutes' => 60,
+                'price' => 150000,
+                'duration_type' => 'specialist',
+                'is_active' => true,
+            ],
+            [
+                'minutes' => 90,
+                'price' => 225000,
+                'duration_type' => 'specialist',
                 'is_active' => true,
             ],
         ];

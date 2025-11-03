@@ -152,7 +152,7 @@
                                     ];
                                     $genderColor = $genderColors[$patient->gender] ?? 'secondary';
                                 @endphp
-                                <span class="badge bg-{{ $genderColor }}">
+                                <span class="badge bg-{{ $genderColor }} text-white">
                                     <i class="fa fa-{{ $patient->gender === 'male' ? 'mars' : ($patient->gender === 'female' ? 'venus' : 'genderless') }} me-1"></i>{{ ucfirst($patient->gender ?? 'Unknown') }}
                                 </span>
                             </td>

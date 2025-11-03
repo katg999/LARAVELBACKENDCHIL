@@ -97,8 +97,8 @@ class AppServiceProvider extends ServiceProvider
                 try {
                     $marzPayService = new MarzPayService();
                     $balanceData = $marzPayService->getBalance();
-                    // Assuming the balance is in the response as 'balance' or 'available_balance'
-                    $walletBalance = $balanceData['balance'] ?? $balanceData['available_balance'] ?? 0;
+                    // Extract balance from the correct nested structure: data.account.balance.raw
+                    $walletBalance = $balanceData['data']['account']['balance']['raw'] ?? 0;
                 } catch (\Exception $e) {
                     // Log error but don't break the page - just show 0
                     \Log::error('Failed to fetch MarzPay wallet balance: ' . $e->getMessage());

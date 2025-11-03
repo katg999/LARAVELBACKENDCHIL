@@ -99,7 +99,8 @@
                                 @php
                                     $statusColors = [
                                         'pending' => 'warning',
-                                        'completed' => 'success',
+                                        'completed' => 'text-success bg-white border border-success',
+                                        'successful' => 'text-success bg-white border border-success',
                                         'failed' => 'danger',
                                         'cancelled' => 'secondary'
                                     ];
@@ -369,7 +370,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
             const statusColors = {
                 'pending': 'bg-warning text-dark',
-                'completed': 'bg-success',
+                'completed': 'text-success bg-white border border-success',
+                'successful': 'text-success bg-white border border-success',
                 'failed': 'bg-danger',
                 'cancelled': 'bg-secondary'
             };

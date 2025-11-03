@@ -36,7 +36,7 @@
             </div>
             <div class="row mt-5">
               <div class="col-12 mt-xl-2">
-                <p class="text-white font-weight-medium text-center">Copyright &copy; {{ date('Y') }} <a href="https://www.keti.ai/" class="text-muted" target="_blank">KETI AI</a>. All rights reserved.</p>
+                <p class="text-white font-weight-medium text-center">Copyright &copy; {{ date('Y') }} <a href="https://www.ketiai.com/" class="text-muted" target="_blank">KETI AI</a>. All rights reserved.</p>
               </div>
             </div>
           </div>

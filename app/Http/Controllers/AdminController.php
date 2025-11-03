@@ -36,9 +36,9 @@ class AdminController extends Controller
             // Count appointments for this month
             $appointmentsCount = \App\Models\Appointment::whereBetween('appointment_time', [$startDate, $endDate])->count();
 
-            // Sum revenue for this month from successful transactions
-            $monthlyRevenue = \App\Models\Transaction::where('status', 'successful')
-                ->whereHas('payment.appointment', function($query) use ($startDate, $endDate) {
+            // Sum revenue for this month from successful payments
+            $monthlyRevenue = \App\Models\Payment::where('status', 'completed')
+                ->whereHas('appointment', function($query) use ($startDate, $endDate) {
                     $query->whereBetween('appointment_time', [$startDate, $endDate]);
                 })
                 ->sum('amount');

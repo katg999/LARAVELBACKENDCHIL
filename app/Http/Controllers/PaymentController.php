@@ -531,7 +531,7 @@ class PaymentController extends Controller
 
                 // Update existing transaction or create new one for successful collection
                 $existingTransaction = \App\Models\Transaction::where('reference_id', $uuid ?? $reference)
-                    ->where('status', 'pending')
+                    ->whereNotIn('status', ['successful', 'failed']) // Don't update already completed transactions
                     ->first();
 
                 if ($existingTransaction) {
@@ -609,49 +609,46 @@ class PaymentController extends Controller
                 $appointment->payment_status = 'failed';
                 $appointment->save();
 
-                // Update Payment record
-                if ($payment) {
-                    $payment->update(['status' => 'failed']);
-                }
+                // Don't update Payment record for failed collections - only successful payments are registered
+            }
 
-                // Update existing transaction or create new one for failed collection
-                $existingTransaction = \App\Models\Transaction::where('reference_id', $uuid ?? $reference)
-                    ->where('status', 'pending')
-                    ->first();
+            // Update existing transaction or create new one for failed collection
+            $existingTransaction = \App\Models\Transaction::where('reference_id', $uuid ?? $reference)
+                ->whereNotIn('status', ['successful', 'failed']) // Don't update already completed transactions
+                ->first();
 
-                if ($existingTransaction) {
-                    // Update existing pending transaction
-                    $existingTransaction->update([
-                        'status' => 'failed',
-                        'webhook_event_type' => 'collection.failed',
-                        'collection_data' => $transaction,
-                        'processed_at' => now(),
-                    ]);
-                } else {
-                    // Create new transaction if no pending one exists
-                    \App\Models\Transaction::create([
-                        'payment_id' => $payment?->id,
-                        'reference_id' => $uuid ?? $reference,
-                        'amount' => $transaction['amount'] ?? 0,
-                        'status' => 'failed',
-                        'transaction_id' => $uuid,
-                        'provider' => 'marzpay',
-                        'provider_reference' => $uuid,
-                        'marzpay_uuid' => $uuid,
-                        'country' => 'UG',
-                        'description' => 'Appointment payment failed - ' . $appointment->id,
-                        'transaction_type' => 'collection',
-                        'webhook_event_type' => 'collection.failed',
-                        'collection_data' => $transaction,
-                        'processed_at' => now(),
-                    ]);
-                }
-
-                Log::warning('Appointment payment failed', [
-                    'appointment_id' => $appointment->id,
-                    'transaction_uuid' => $uuid
+            if ($existingTransaction) {
+                // Update existing transaction to failed
+                $existingTransaction->update([
+                    'status' => 'failed',
+                    'webhook_event_type' => 'collection.failed',
+                    'collection_data' => $transaction,
+                    'processed_at' => now(),
+                ]);
+            } else {
+                // Create new transaction if no existing one found or all existing are already final
+                \App\Models\Transaction::create([
+                    'payment_id' => $payment?->id,
+                    'reference_id' => $uuid ?? $reference,
+                    'amount' => $transaction['amount'] ?? 0,
+                    'status' => 'failed',
+                    'transaction_id' => $uuid,
+                    'provider' => 'marzpay',
+                    'provider_reference' => $uuid,
+                    'marzpay_uuid' => $uuid,
+                    'country' => 'UG',
+                    'description' => 'Appointment payment failed - ' . ($appointment ? $appointment->id : 'unknown'),
+                    'transaction_type' => 'collection',
+                    'webhook_event_type' => 'collection.failed',
+                    'collection_data' => $transaction,
+                    'processed_at' => now(),
                 ]);
             }
+
+            Log::warning('Appointment payment failed', [
+                'appointment_id' => $appointment?->id,
+                'transaction_uuid' => $uuid
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Handle Failed Collection Error: ' . $e->getMessage());
@@ -693,6 +690,38 @@ class PaymentController extends Controller
             if ($appointment) {
                 $appointment->payment_status = 'pending';
                 $appointment->save();
+
+                // Don't update Payment record for pending collections - only successful payments are registered
+            }
+
+            // Create or update transaction record for pending collection
+            $existingTransaction = \App\Models\Transaction::where('reference_id', $uuid ?? $reference)
+                ->whereNotIn('status', ['successful', 'failed']) // Don't update already completed transactions
+                ->first();
+
+            if ($existingTransaction) {
+                // Update existing transaction
+                $existingTransaction->update([
+                    'webhook_event_type' => 'collection.pending',
+                    'collection_data' => $transaction,
+                ]);
+            } else {
+                // Create new transaction if none exists or all existing are already final
+                \App\Models\Transaction::create([
+                    'payment_id' => $payment?->id,
+                    'reference_id' => $uuid ?? $reference,
+                    'amount' => $transaction['amount'] ?? 0,
+                    'status' => 'pending',
+                    'transaction_id' => $uuid,
+                    'provider' => 'marzpay',
+                    'provider_reference' => $uuid,
+                    'marzpay_uuid' => $uuid,
+                    'country' => 'UG',
+                    'description' => 'Appointment payment pending - ' . ($appointment ? $appointment->id : 'unknown'),
+                    'transaction_type' => 'collection',
+                    'webhook_event_type' => 'collection.pending',
+                    'collection_data' => $transaction,
+                ]);
             }
 
         } catch (\Exception $e) {
@@ -736,43 +765,40 @@ class PaymentController extends Controller
                 $appointment->payment_status = 'cancelled';
                 $appointment->save();
 
-                // Update Payment record
-                if ($payment) {
-                    $payment->update(['status' => 'cancelled']);
-                }
+                // Don't update Payment record for cancelled collections - only successful payments are registered
+            }
 
-                // Update existing transaction or create new one for cancelled collection
-                $existingTransaction = \App\Models\Transaction::where('reference_id', $uuid ?? $reference)
-                    ->where('status', 'pending')
-                    ->first();
+            // Create or update transaction record for cancelled collection
+            $existingTransaction = \App\Models\Transaction::where('reference_id', $uuid ?? $reference)
+                ->whereNotIn('status', ['successful', 'failed']) // Don't update already completed transactions
+                ->first();
 
-                if ($existingTransaction) {
-                    // Update existing pending transaction
-                    $existingTransaction->update([
-                        'status' => 'cancelled',
-                        'webhook_event_type' => 'collection.cancelled',
-                        'collection_data' => $transaction,
-                        'processed_at' => now(),
-                    ]);
-                } else {
-                    // Create new transaction if no pending one exists
-                    \App\Models\Transaction::create([
-                        'payment_id' => $payment?->id,
-                        'reference_id' => $uuid ?? $reference,
-                        'amount' => $transaction['amount'] ?? 0,
-                        'status' => 'cancelled',
-                        'transaction_id' => $uuid,
-                        'provider' => 'marzpay',
-                        'provider_reference' => $uuid,
-                        'marzpay_uuid' => $uuid,
-                        'country' => 'UG',
-                        'description' => 'Appointment payment cancelled - ' . $appointment->id,
-                        'transaction_type' => 'collection',
-                        'webhook_event_type' => 'collection.cancelled',
-                        'collection_data' => $transaction,
-                        'processed_at' => now(),
-                    ]);
-                }
+            if ($existingTransaction) {
+                // Update existing pending transaction
+                $existingTransaction->update([
+                    'status' => 'cancelled',
+                    'webhook_event_type' => 'collection.cancelled',
+                    'collection_data' => $transaction,
+                    'processed_at' => now(),
+                ]);
+            } else {
+                // Create new transaction if no pending one exists
+                \App\Models\Transaction::create([
+                    'payment_id' => $payment?->id,
+                    'reference_id' => $uuid ?? $reference,
+                    'amount' => $transaction['amount'] ?? 0,
+                    'status' => 'cancelled',
+                    'transaction_id' => $uuid,
+                    'provider' => 'marzpay',
+                    'provider_reference' => $uuid,
+                    'marzpay_uuid' => $uuid,
+                    'country' => 'UG',
+                    'description' => 'Appointment payment cancelled - ' . ($appointment ? $appointment->id : 'unknown'),
+                    'transaction_type' => 'collection',
+                    'webhook_event_type' => 'collection.cancelled',
+                    'collection_data' => $transaction,
+                    'processed_at' => now(),
+                ]);
             }
 
         } catch (\Exception $e) {

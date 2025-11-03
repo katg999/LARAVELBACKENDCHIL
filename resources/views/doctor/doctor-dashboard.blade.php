@@ -139,7 +139,14 @@
                                 @endphp
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
-                                        <strong>{{ $studentName }}</strong><br>
+                                        @if($appt->patient)
+                                            <a href="{{ route('patients.profile', ['patient' => $appt->patient->id]) }}" class="text-decoration-none" target="_blank">
+                                                <strong>{{ $studentName }}</strong>
+                                            </a>
+                                        @else
+                                            <strong>{{ $studentName }}</strong>
+                                        @endif
+                                        <br>
                                         <small class="text-muted">{{ $time }}</small>
                                     </div>
                                     <div class="d-flex gap-2">
