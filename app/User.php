@@ -17,7 +17,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password', 'is_admin',
+        'name', 'email', 'password', 'is_admin', 'school_id', 'health_facility_id',
     ];
 
     /**
@@ -97,5 +97,21 @@ class User extends Authenticatable
         if ($role) {
             $this->roles()->detach($role);
         }
+    }
+
+    /**
+     * Get the school that the user belongs to.
+     */
+    public function school()
+    {
+        return $this->belongsTo(\App\Models\School::class);
+    }
+
+    /**
+     * Get the health facility that the user belongs to.
+     */
+    public function healthFacility()
+    {
+        return $this->belongsTo(\App\Models\HealthFacility::class);
     }
 }

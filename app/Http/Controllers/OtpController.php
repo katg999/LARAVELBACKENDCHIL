@@ -276,30 +276,20 @@ class OtpController extends Controller
         // Get the school information
         $school = School::where('email', $request->email)->first();
 
-        // Generate one-time login token
-        $loginToken = OneTimeLoginToken::create([
-            'token' => OneTimeLoginToken::generateToken(),
-            'email' => $request->email,
-            'user_type' => 'school',
-            'user_id' => $school->id,
-            'expires_at' => now()->addMinutes(10), // Token expires in 10 minutes
-            'used' => false
-        ]);
-
-        $loginUrl = url("/auth/login/{$loginToken->token}");
-
-        \Log::info('OTP Verified Successfully - One-time login token created', [
-            'email' => $request->email,
+        \Log::info('School OTP Verified Successfully', [
             'school_id' => $school->id,
-            'token_id' => $loginToken->id
+            'email' => $request->email
         ]);
 
+        // Schools should NOT login with entity email
+        // The super admin must send an invitation to create the first admin user with a personal email
         return response()->json([
             'success' => true,
-            'message' => 'OTP verified successfully. Use the login link to access your dashboard.',
-            'login_url' => $loginUrl,
+            'message' => 'OTP verified successfully. School ownership confirmed. Please contact your system administrator to receive an invitation link. You will need to use your personal email address (not this school email) to create your account.',
+            'action' => 'contact_admin',
             'school_id' => $school->id,
-            'school_name' => $school->name
+            'school_name' => $school->name,
+            'note' => 'Entity emails are only for verification. Staff members use personal emails for dashboard access.'
         ]);
     }
 
@@ -479,30 +469,20 @@ class OtpController extends Controller
         // Get health facility details
         $healthFacility = HealthFacility::where('email', $request->email)->first();
 
-        // Generate one-time login token
-        $loginToken = OneTimeLoginToken::create([
-            'token' => OneTimeLoginToken::generateToken(),
-            'email' => $request->email,
-            'user_type' => 'health_facility',
-            'user_id' => $healthFacility->id,
-            'expires_at' => now()->addMinutes(10),
-            'used' => false
-        ]);
-
-        $loginUrl = url("/auth/login/{$loginToken->token}");
-
-        \Log::info('Health Facility OTP Verified Successfully - One-time login token created', [
+        \Log::info('Health Facility OTP Verified Successfully', [
             'health_facility_id' => $healthFacility->id,
-            'email' => $request->email,
-            'token_id' => $loginToken->id
+            'email' => $request->email
         ]);
 
+        // Health facilities should NOT login with entity email
+        // The super admin must send an invitation to create the first admin user with a personal email
         return response()->json([
             'success' => true,
-            'message' => 'OTP verified successfully. Use the login link to access your dashboard.',
-            'login_url' => $loginUrl,
+            'message' => 'OTP verified successfully. Health facility ownership confirmed. Please contact your system administrator to receive an invitation link. You will need to use your personal email address (not this facility email) to create your account.',
+            'action' => 'contact_admin',
             'health_facility_id' => $healthFacility->id,
-            'health_facility_name' => $healthFacility->name
+            'health_facility_name' => $healthFacility->name,
+            'note' => 'Entity emails are only for verification. Staff members use personal emails for dashboard access.'
         ]);
 
     } catch (\Exception $e) {

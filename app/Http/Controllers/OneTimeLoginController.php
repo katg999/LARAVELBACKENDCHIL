@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Str;
 use App\Models\OneTimeLoginToken;
 
 class OneTimeLoginController extends Controller
@@ -41,18 +42,19 @@ class OneTimeLoginController extends Controller
         // Get the user based on type
         $user = null;
         $redirectUrl = '';
+        $entityUser = null; // The actual entity (School, Doctor, HealthFacility)
 
         switch ($record->user_type) {
             case 'school':
-                $user = \App\Models\School::find($record->user_id);
+                $entityUser = \App\Models\School::find($record->user_id);
                 $redirectUrl = url("/school-dashboard");
                 break;
             case 'doctor':
-                $user = \App\Models\Doctor::find($record->user_id);
+                $entityUser = \App\Models\Doctor::find($record->user_id);
                 $redirectUrl = url('/doctor/dashboard');
                 break;
             case 'health_facility':
-                $user = \App\Models\HealthFacility::find($record->user_id);
+                $entityUser = \App\Models\HealthFacility::find($record->user_id);
                 $redirectUrl = url("/health-facility/dashboard");
                 break;
             default:
@@ -62,17 +64,28 @@ class OneTimeLoginController extends Controller
                 ]);
         }
 
-        if (!$user) {
+        if (!$entityUser) {
             return response()->view('one-time-login.error', [
                 'message' => 'User account not found.',
                 'seconds' => 10
             ]);
         }
 
+        // Health facilities and schools should NOT login with their entity email
+        // Staff members use their personal emails through the invitation system
+        // VoiceFlow OTP only validates entity ownership, not for dashboard access
+        if ($record->user_type === 'health_facility' || $record->user_type === 'school') {
+            return response()->view('one-time-login.error', [
+                'message' => 'Please use staff invitation links to access the dashboard with your personal email. Entity emails are only for verification.',
+                'seconds' => 15
+            ]);
+        }
+
         // Handle authentication based on user type
+        // Only doctors can use VoiceFlow OTP for direct dashboard access
         if ($record->user_type === 'doctor') {
             // Flush other sessions for this doctor (best-effort)
-            $this->flushSessionsForDoctor($user);
+            $this->flushSessionsForDoctor($entityUser);
 
             // Ensure any currently authenticated user is logged out and session invalidated
             try {
@@ -93,24 +106,19 @@ class OneTimeLoginController extends Controller
             // Store doctor info in session for session-based auth
             $request->session()->put('authenticated_user', [
                 'type' => $record->user_type,
-                'id' => $user->id,
-                'name' => $user->name,
+                'id' => $entityUser->id,
+                'name' => $entityUser->name,
                 'email' => $record->email
             ]);
 
             // Set session lifetime to 12 hours (720 minutes) for one-time login users
             $request->session()->put('_session_lifetime', 720);
         } else {
-            // For schools and health facilities, store user info in session
-            $request->session()->put('authenticated_user', [
-                'type' => $record->user_type,
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $record->email
+            // This shouldn't be reached as health_facility/school are blocked earlier
+            return response()->view('one-time-login.error', [
+                'message' => 'Invalid authentication type.',
+                'seconds' => 10
             ]);
-
-            // Set session lifetime to 12 hours (720 minutes) for one-time login users
-            $request->session()->put('_session_lifetime', 720);
         }
 
         // Regenerate session to prevent fixation
@@ -170,4 +178,9 @@ class OneTimeLoginController extends Controller
             // don't block login on cleanup failure; just continue
         }
     }
+
+    // Note: Health facilities and schools no longer login via VoiceFlow OTP
+    // Staff members must use personal emails through the invitation system
+    // The getOrCreateUserForHealthFacility and getOrCreateUserForSchool methods
+    // have been removed as they created accounts with entity emails
 }

@@ -73,6 +73,12 @@ Current Path: {{ $currentPath }}
         </a>
     </li>
     <li class="nav-item">
+        <a class="nav-link {{ Str::startsWith($currentRoute, 'admin.invitations.') ? 'active' : '' }}" href="{{ route('admin.invitations.index') }}">
+            <i class="mdi mdi-account-multiple-plus menu-icon"></i>
+            <span class="menu-title">Manage Invitations</span>
+        </a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link {{ Str::startsWith($currentRoute, 'admin.doctor-availabilities.') ? 'active' : '' }}" href="{{ route('admin.doctor-availabilities.index') }}">
             <i class="mdi mdi-clock menu-icon"></i>
             <span class="menu-title">Doctor Availabilities</span>

@@ -175,10 +175,30 @@ class VoiceFlowSimulation extends Command
 
             if ($verifyResponse['success']) {
                 $this->info('✅ OTP verified successfully!');
-                if (isset($verifyResponse['login_url'])) {
+                $this->info('📋 Message: ' . ($verifyResponse['message'] ?? 'Success'));
+                
+                // Handle different response types based on the new RBAC flow
+                if (isset($verifyResponse['action'])) {
+                    $action = $verifyResponse['action'];
+                    
+                    if ($action === 'contact_admin') {
+                        $this->info('');
+                        $this->warn('⚠️  Health facilities and schools CANNOT login with entity emails!');
+                        $this->info('');
+                        $this->info('📧 Entity email verified successfully.');
+                        $this->info('   This confirms ownership of the entity.');
+                        $this->info('');
+                        $this->info('🎯 Next Steps:');
+                        $this->info('   1. Contact your system administrator');
+                        $this->info('   2. Request an invitation link for your PERSONAL email');
+                        $this->info('   3. Accept the invitation using your personal email (not entity email)');
+                        $this->info('   4. Login at ' . $this->baseUrl . '/login with your personal credentials');
+                        $this->info('');
+                        $this->info('ℹ️  System admins can send invitations from the admin dashboard.');
+                    }
+                } elseif (isset($verifyResponse['login_url'])) {
+                    // Doctor flow (still uses login_url)
                     $this->info('🔗 Login URL: ' . $verifyResponse['login_url']);
-                } else {
-                    $this->info('🏠 Dashboard URL: N/A');
                 }
             } else {
                 $this->error('❌ OTP verification failed: ' . ($verifyResponse['message'] ?? 'Unknown error'));
@@ -203,10 +223,30 @@ class VoiceFlowSimulation extends Command
 
                 if ($verifyResponse['success']) {
                     $this->info('✅ OTP verified successfully!');
-                    if (isset($verifyResponse['login_url'])) {
+                    $this->info('📋 Message: ' . ($verifyResponse['message'] ?? 'Success'));
+                    
+                    // Handle different response types based on the new RBAC flow
+                    if (isset($verifyResponse['action'])) {
+                        $action = $verifyResponse['action'];
+                        
+                        if ($action === 'contact_admin') {
+                            $this->info('');
+                            $this->warn('⚠️  Health facilities and schools CANNOT login with entity emails!');
+                            $this->info('');
+                            $this->info('📧 Entity email verified successfully.');
+                            $this->info('   This confirms ownership of the entity.');
+                            $this->info('');
+                            $this->info('🎯 Next Steps:');
+                            $this->info('   1. Contact your system administrator');
+                            $this->info('   2. Request an invitation link for your PERSONAL email');
+                            $this->info('   3. Accept the invitation using your personal email (not entity email)');
+                            $this->info('   4. Login at ' . $this->baseUrl . '/login with your personal credentials');
+                            $this->info('');
+                            $this->info('ℹ️  System admins can send invitations from the admin dashboard.');
+                        }
+                    } elseif (isset($verifyResponse['login_url'])) {
+                        // Doctor flow (still uses login_url)
                         $this->info('🔗 Login URL: ' . $verifyResponse['login_url']);
-                    } else {
-                        $this->info('🏠 Dashboard URL: N/A');
                     }
                 } else {
                     $this->error('❌ OTP verification failed: ' . ($verifyResponse['message'] ?? 'Unknown error'));

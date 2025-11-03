@@ -524,7 +524,7 @@ Route::delete('/appointments/{appointment}', [\App\Http\Controllers\AppointmentC
 // Authentication routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Registration routes
 Route::get('register', [App\Http\Controllers\Auth\RegisterController::class, 'showRegistrationForm'])->name('register');
@@ -603,6 +603,11 @@ Route::prefix('admin')->middleware(['web', 'auth', 'role:admin'])->group(functio
     Route::get('/health-facilities/{id}/edit', [AdminModelController::class, 'edit'])->name('admin.health-facilities.edit');
     Route::put('/health-facilities/{id}', [AdminModelController::class, 'update'])->name('admin.health-facilities.update');
     Route::delete('/health-facilities/{id}', [AdminModelController::class, 'destroy'])->name('admin.health-facilities.destroy');
+
+    // Invitation Management Routes
+    Route::get('/invitations', [AdminController::class, 'invitations'])->name('admin.invitations.index');
+    Route::post('/invitations/{type}/{id}/resend', [AdminController::class, 'resendInvitation'])->name('admin.invitations.resend');
+    Route::delete('/invitations/{type}/{id}', [AdminController::class, 'revokeInvitation'])->name('admin.invitations.revoke');
 
     Route::get('/doctor-availabilities', [AdminModelController::class, 'index'])->name('admin.doctor-availabilities.index');
 
@@ -703,7 +708,7 @@ Route::get('/health-facilities-dashboard', function () {
 });
 
 
-Route::middleware(['auth', 'role:health-facility-staff'])->group(function () {
+Route::middleware(['auth', 'role:health-facility-staff,health-facility-admin,health-facility-medical-personnel'])->group(function () {
     Route::get('/health-facility/dashboard', function (Request $request) {
         $authenticatedUser = $request->current_user;
         return app(HealthFacilityController::class)->showDashboard($request, $authenticatedUser['id']);
@@ -749,6 +754,36 @@ Route::middleware(['auth', 'role:health-facility-staff'])->group(function () {
         $authenticatedUser = $request->current_user;
         return app(HealthFacilityController::class)->staff($request, $authenticatedUser['id']);
     })->name('health-facility.staff');
+});
+
+// Initial Admin Setup Routes (Public - accessed after VoiceFlow verification)
+Route::get('/initial-admin-setup/health-facility/{facilityId}', [\App\Http\Controllers\InitialAdminSetupController::class, 'showHealthFacilityForm'])->name('initial-admin-setup.health-facility');
+Route::post('/initial-admin-setup/health-facility/{facilityId}', [\App\Http\Controllers\InitialAdminSetupController::class, 'createHealthFacilityAdmin'])->name('initial-admin-setup.health-facility.store');
+Route::get('/initial-admin-setup/school/{schoolId}', [\App\Http\Controllers\InitialAdminSetupController::class, 'showSchoolForm'])->name('initial-admin-setup.school');
+Route::post('/initial-admin-setup/school/{schoolId}', [\App\Http\Controllers\InitialAdminSetupController::class, 'createSchoolAdmin'])->name('initial-admin-setup.school.store');
+
+// Health Facility Invitation Routes (Public)
+Route::get('/health-facility/invitation/accept/{token}', [\App\Http\Controllers\HealthFacilityInvitationController::class, 'showAcceptForm'])->name('health-facility.invitation.accept');
+Route::post('/health-facility/invitation/accept/{token}', [\App\Http\Controllers\HealthFacilityInvitationController::class, 'acceptInvitation'])->name('health-facility.invitation.accept.post');
+
+// Health Facility Staff Management Routes (Admin or Health Facility Admin)
+Route::middleware(['auth', 'role:admin,health-facility-admin'])->prefix('health-facility')->name('health-facility.')->group(function () {
+    Route::get('/staff/manage', [\App\Http\Controllers\HealthFacilityInvitationController::class, 'index'])->name('staff.manage');
+    Route::post('/staff/invite', [\App\Http\Controllers\HealthFacilityInvitationController::class, 'sendInvitation'])->name('staff.invite');
+    Route::delete('/staff/invitation/{id}', [\App\Http\Controllers\HealthFacilityInvitationController::class, 'revokeInvitation'])->name('staff.invitation.revoke');
+    Route::delete('/staff/{userId}', [\App\Http\Controllers\HealthFacilityInvitationController::class, 'removeStaffMember'])->name('staff.remove');
+});
+
+// School Invitation Routes (Public)
+Route::get('/school/invitation/accept/{token}', [\App\Http\Controllers\SchoolInvitationController::class, 'showAcceptForm'])->name('school.invitation.accept');
+Route::post('/school/invitation/accept/{token}', [\App\Http\Controllers\SchoolInvitationController::class, 'acceptInvitation'])->name('school.invitation.accept.post');
+
+// School Staff Management Routes (Admin or School Admin)
+Route::middleware(['auth', 'role:admin,school-admin'])->prefix('school')->name('school.')->group(function () {
+    Route::get('/staff/manage', [\App\Http\Controllers\SchoolInvitationController::class, 'index'])->name('staff.manage');
+    Route::post('/staff/invite', [\App\Http\Controllers\SchoolInvitationController::class, 'sendInvitation'])->name('staff.invite');
+    Route::delete('/staff/invitation/{id}', [\App\Http\Controllers\SchoolInvitationController::class, 'revokeInvitation'])->name('staff.invitation.revoke');
+    Route::delete('/staff/{userId}', [\App\Http\Controllers\SchoolInvitationController::class, 'removeStaffMember'])->name('staff.remove');
 });
 
 Route::put('/health-facilities/{id}', [HealthFacilityController::class, 'updateHealthFacility'])->name('health-facilities.update');
