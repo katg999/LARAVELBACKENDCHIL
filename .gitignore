@@ -5,7 +5,8 @@
 /vendor
 /storage/logs/*.log
 .env
-.env.testing
+.env.*
+!.env.example
 .phpunit.result.cache
 .phpunit.cache/
 Homestead.json
@@ -19,3 +20,13 @@ MARZPAY_DOCUMENTATION.txt
 
 selenium_test.py
 sendgrid.env
+
+# Temporary helper scripts
+apply-docker-to-branches.sh
+APPLY_DOCKER_GUIDE.md
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

@@ -61,18 +61,6 @@ services:
     networks:
       - laravel
 
-  # Mailhog for testing emails (optional) - commented out due to ARM compatibility
-  # mailhog:
-  #   image: mailhog/mailhog:latest
-  #   platform: linux/amd64
-  #   container_name: laravel_mailhog
-  #   restart: unless-stopped
-  #   ports:
-  #     - "1025:1025"  # SMTP
-  #     - "8025:8025"  # Web UI
-  #   networks:
-  #     - laravel
-
 volumes:
   postgres_data:
     driver: local
