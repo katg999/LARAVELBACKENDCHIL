@@ -287,7 +287,7 @@ Route::middleware(['auth', 'role:school-admin,school-staff'])->group(function ()
     Route::get('/staff', [App\Http\Controllers\SchoolInvitationController::class, 'index'])->name('school.staff.index');
     Route::get('/staff/invitations', [App\Http\Controllers\SchoolInvitationController::class, 'invitations'])->name('school.staff.invitations');
     Route::post('/staff/invite', [App\Http\Controllers\SchoolInvitationController::class, 'sendInvitation'])->name('school.staff.invite');
-    Route::delete('/staff/{user}/remove', [App\Http\Controllers\SchoolInvitationController::class, 'removeStaffMember'])->name('school.staff.remove');
+    Route::get('/staff/remove/{user}', [App\Http\Controllers\SchoolInvitationController::class, 'removeStaffMember'])->name('school.staff.remove');
     Route::delete('/staff/invitations/{invitation}/revoke', [App\Http\Controllers\SchoolInvitationController::class, 'revokeInvitation'])->name('school.staff.invitation.revoke');
 });
 
@@ -325,7 +325,7 @@ Route::get('/students/{school}', function (Request $request, App\Models\School $
         'school' => $school,
         'students' => $students
     ]);
-})->name('students');
+})->name('school.students');
 
 
 Route::delete('/students/{school}/{student}/delete', function ($schoolId, $studentId) {
@@ -347,7 +347,7 @@ Route::delete('/students/{school}/{student}/delete', function ($schoolId, $stude
     $student->delete();
 
     return redirect()->route('students', ['school' => $school->id])->with('success', 'Student deleted successfully.');
-})->name('students.delete');
+})->name('school.students.delete');
 
 Route::post('/students/create', function (Request $request) {
     // Get school from form data instead of session
@@ -421,7 +421,7 @@ Route::get('/lab-tests/{school}', function (App\Models\School $school) {
         'labTests' => $labTests,
         'students' => $school->students()->latest()->get()
     ]);
-})->name('lab-tests');
+})->name('school.lab-tests');
 
 // Handle lab test form submissions from web forms (redirect back to lab-tests page)
 Route::post('/lab-tests', function (Illuminate\Http\Request $request) {
@@ -451,7 +451,7 @@ Route::delete('/lab-tests/{school}/{labTest}', function (App\Models\School $scho
 
     $labTest->delete();
     return redirect()->route('lab-tests', ['school' => $school->id])->with('success', 'Lab test deleted');
-})->name('lab-tests.destroy');
+})->name('school.lab-tests.destroy');
 
 // Mark a lab test as completed (web)
 Route::post('/lab-tests/{school}/{labTest}/complete', function (App\Models\School $school, App\Models\LabTest $labTest) {
@@ -462,7 +462,7 @@ Route::post('/lab-tests/{school}/{labTest}/complete', function (App\Models\Schoo
 
     $labTest->update(['status' => 'completed']);
     return redirect()->route('lab-tests', ['school' => $school->id])->with('success', 'Lab test marked completed');
-})->name('lab-tests.complete');
+})->name('school.lab-tests.complete');
 
 
 Route::get('/book-doctor/{school}', function (App\Models\School $school) {
@@ -472,14 +472,14 @@ Route::get('/book-doctor/{school}', function (App\Models\School $school) {
         'patients' => $school->students()->latest()->get(),
         'doctors' => Doctor::latest()->get()
     ]);
-})->name('book-doctor');
+})->name('school.book-doctor');
 
 Route::get('/transactions/{school}', function (App\Models\School $school) {
     // Get transactions/payments related to this school
     // For now, we'll show appointments with payment status
     $appointments = $school->appointments()->with(['patient', 'doctor', 'duration'])->latest()->paginate(15);
     return view('school.school-transactions', compact('school', 'appointments'));
-})->name('school.transactions');
+})->name('school.transactions.view');
 
 
 // Appointment actions

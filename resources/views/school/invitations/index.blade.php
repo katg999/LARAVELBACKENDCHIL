@@ -45,7 +45,6 @@
                             <div class="stat-label mb-2">Total Invitations</div>
                             <h5 class="mb-0">{{ $invitations->total() }}</h5>
                         </div>
-                        <i class="mdi mdi-email-multiple icon-xl text-info"></i>
                     </div>
                 </div>
             </div>
@@ -58,7 +57,6 @@
                             <div class="stat-label mb-2">Pending</div>
                             <h5 class="mb-0">{{ $invitations->where('accepted', false)->where('expires_at', '>', now())->count() }}</h5>
                         </div>
-                        <i class="mdi mdi-email-clock icon-xl text-warning"></i>
                     </div>
                 </div>
             </div>
@@ -71,7 +69,6 @@
                             <div class="stat-label mb-2">Accepted</div>
                             <h5 class="mb-0">{{ $invitations->where('accepted', true)->count() }}</h5>
                         </div>
-                        <i class="mdi mdi-email-check icon-xl text-success"></i>
                     </div>
                 </div>
             </div>
@@ -104,7 +101,7 @@
                             <tr>
                                 <td>{{ $invitation->email }}</td>
                                 <td>
-                                    <span class="badge bg-{{ $invitation->role == 'school-admin' ? 'success' : 'info' }}">
+                                    <span class="badge bg-{{ $invitation->role == 'school-admin' ? 'success' : 'info' }} text-white">
                                         {{ ucwords(str_replace('-', ' ', str_replace('school-', '', $invitation->role))) }}
                                     </span>
                                 </td>

@@ -119,6 +119,14 @@ class SchoolInvitationController extends Controller
                 'email' => $validated['email'],
                 'school_id' => $school->id
             ]);
+            
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'This user is already a member of your school.'
+                ], 422);
+            }
+            
             return back()->with('error', 'This user is already a member of your school.');
         }
 
@@ -135,6 +143,14 @@ class SchoolInvitationController extends Controller
                 'invitation_id' => $pendingInvitation->id,
                 'expires_at' => $pendingInvitation->expires_at
             ]);
+            
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'An invitation has already been sent to this email address.'
+                ], 422);
+            }
+            
             return back()->with('error', 'An invitation has already been sent to this email address.');
         }
 
@@ -173,6 +189,15 @@ class SchoolInvitationController extends Controller
                 'invitation_id' => $invitation->id
             ]);
             
+            // Check if this is an AJAX request
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Invitation sent successfully to ' . $validated['email'] . '! They will receive an email with instructions to accept the invitation.',
+                    'invitation' => $invitation
+                ]);
+            }
+            
             return back()->with('success', 'Invitation sent successfully to ' . $validated['email'] . '! They will receive an email with instructions to accept the invitation.');
         } catch (\Exception $e) {
             \Log::error('School Invitation: Failed to send email', [
@@ -180,6 +205,15 @@ class SchoolInvitationController extends Controller
                 'error' => $e->getMessage(),
                 'invitation_url' => $invitationUrl
             ]);
+            
+            // Check if this is an AJAX request
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Invitation created but email could not be sent. Please check mail configuration. You can copy the link from the Manage Invitations page.',
+                    'invitation' => $invitation
+                ], 500);
+            }
             
             return back()->with('error', 'Invitation created but email could not be sent. Please check mail configuration. You can copy the link from the Manage Invitations page.');
         }
@@ -295,6 +329,12 @@ class SchoolInvitationController extends Controller
 
         // Don't allow removing yourself
         if ($staffMember->id === $user->id) {
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'You cannot remove yourself.'
+                ], 422);
+            }
             return back()->with('error', 'You cannot remove yourself.');
         }
 
@@ -303,6 +343,13 @@ class SchoolInvitationController extends Controller
         $staffMember->removeRole('school-admin');
         $staffMember->removeRole('school-staff');
         $staffMember->save();
+
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Staff member removed successfully.'
+            ]);
+        }
 
         return back()->with('success', 'Staff member removed successfully.');
     }
