@@ -78,13 +78,11 @@
             </div>
           </li>
           <li class="nav-item nav-user-status dropdown">
-              <p class="mb-0">
-                @if(auth()->check())
-                  School: {{ auth()->user()->school->name ?? 'N/A' }}
-                @else
-                  Last login: N/A
-                @endif
-              </p>
+              @if(auth()->check() && !auth()->user()->is_admin)
+                School: {{ auth()->user()->school->name ?? 'N/A' }}
+              @else
+                Administrator Account
+              @endif
           </li>
         </ul>
         <ul class="navbar-nav navbar-nav-right">

@@ -33,7 +33,11 @@ class RoleMiddleware
         }
 
         if (!$hasRole) {
-            abort(403, 'Unauthorized. You do not have the required role to access this page.');
+            // If user doesn't have required role, log them out and redirect to login
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('login')->with('error', 'Your access has been revoked. Please contact an administrator.');
         }
 
         return $next($request);

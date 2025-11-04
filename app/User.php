@@ -70,6 +70,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user has any of the specified roles.
+     */
+    public function hasAnyRole(array $roleSlugs): bool
+    {
+        return $this->roles()->whereIn('slug', $roleSlugs)->exists();
+    }
+
+    /**
      * Check if user has a specific permission.
      */
     public function hasPermission(string $permissionSlug): bool

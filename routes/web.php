@@ -35,6 +35,9 @@ use Illuminate\Support\Facades\Auth;
 */
 
 Route::get('/', function () {
+    if (Auth::check()) {
+        return redirect('/home');
+    }
     return redirect('https://ketiai.com');
 });
 
