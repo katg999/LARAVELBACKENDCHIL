@@ -52,6 +52,11 @@ class AuthController extends Controller
         if ($request->expectsJson()) {
             if (Auth::attempt($credentials, $request->boolean('remember'))) {
                 $request->session()->regenerate();
+                $user = Auth::user();
+                if (!$user->hasRole('admin')) {
+                    Auth::logout();
+                    return response()->json(['success' => false, 'errors' => ['email' => 'Access denied. This login is for administrators only.']], 422);
+                }
                 return response()->json(['success' => true, 'redirect' => '/admin']);
             }
             return response()->json(['success' => false, 'errors' => ['email' => 'Invalid credentials']], 422);
@@ -59,6 +64,11 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))){
             $request->session()->regenerate();
+            $user = Auth::user();
+            if (!$user->hasRole('admin')) {
+                Auth::logout();
+                return back()->withErrors(['email' => 'Access denied. This login is for administrators only.'])->onlyInput('email');
+            }
             return redirect()->intended('/admin');
         }
 
@@ -112,6 +122,11 @@ class AuthController extends Controller
                 'accepted_by' => $user->id,
                 'accepted_at' => now(),
             ]);
+
+            // For school and health-facility invitations, don't keep the user logged in
+            if (in_array($invitationType, ['school', 'health-facility'])) {
+                Auth::logout();
+            }
 
             if ($request->expectsJson()) {
                 return response()->json(['success' => true, 'redirect' => $this->getDashboardRoute($invitationType)]);
@@ -240,14 +255,7 @@ class AuthController extends Controller
 
     protected function getDashboardRoute(string $type)
     {
-        switch ($type) {
-            case 'school':
-                return '/school-dashboard';
-            case 'health-facility':
-                return '/health-facility/dashboard';
-            default:
-                return '/admin';
-        }
+        return '/';
     }
 
     public function logout(Request $request)

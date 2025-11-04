@@ -45,6 +45,7 @@ class RegisterController extends Controller
         $invitation = null;
         $invitationToken = null;
         $invitationType = null;
+        $existingUser = false;
 
         // Check for new invitation system (school/health-facility invitations)
         $invitationToken = $request->query('invitation_token');
@@ -80,9 +81,10 @@ class RegisterController extends Controller
             }
 
             $email = $invite->email;
+            $existingUser = \App\User::where('email', $email)->exists();
         }
 
-        return view('auth.register', compact('email', 'invite', 'invitation', 'invitationToken', 'invitationType'));
+        return view('auth.register', compact('email', 'invite', 'invitation', 'invitationToken', 'invitationType', 'existingUser'));
     }
 
     /**
@@ -105,7 +107,7 @@ class RegisterController extends Controller
             }
 
             // Legacy admin invite system
-            $user = $this->create($request->all());
+            $user = $this->createOrLogin($request->all());
 
             // Mark the invite as used if it exists
             if ($request->has('invite_token')) {
@@ -115,18 +117,18 @@ class RegisterController extends Controller
                 }
             }
 
+            // Log the user in
+            auth()->login($user);
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Registration successful! Welcome to the admin panel.',
-                    'redirect' => route('login')
+                    'redirect' => '/'
                 ], 201);
             }
 
-            // Log the user in for regular requests
-            // $this->guard()->login($user);
-
-            return redirect($this->redirectPath());
+            return redirect('/');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -174,27 +176,62 @@ class RegisterController extends Controller
      */
     protected function validator(array $data)
     {
-        return Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
+        $rules = [
+            'email' => ['required', 'string', 'email', 'max:255'],
+            'password' => ['required', 'string', 'min:8'],
+        ];
+
+        // Name is required only for new users, not for existing users accepting admin invites
+        if (!$this->isAdminRegistration() || !\App\User::where('email', $data['email'] ?? '')->exists()) {
+            $rules['name'] = ['required', 'string', 'max:255'];
+        }
+
+        // For admin invites, email doesn't need to be unique since existing users can accept
+        if (!$this->isAdminRegistration()) {
+            $rules['email'][] = 'unique:users';
+        }
+
+        // For existing users accepting admin invites, don't require password confirmation
+        if (!$this->isAdminRegistration() || !\App\User::where('email', $data['email'] ?? '')->exists()) {
+            $rules['password'][] = 'confirmed';
+        }
+
+        return Validator::make($data, $rules);
     }
 
     /**
-     * Create a new user instance after a valid registration.
+     * Create a new user instance after a valid registration, or login existing user.
      *
      * @param  array  $data
      * @return \App\User
      */
-    protected function create(array $data)
+    protected function createOrLogin(array $data)
     {
-        return User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'is_admin' => $this->isAdminRegistration(),
-        ]);
+        $user = User::where('email', $data['email'])->first();
+
+        if ($user) {
+            // User exists, check password and login
+            if (!Hash::check($data['password'], $user->password)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'password' => ['The provided password does not match our records.']
+                ]);
+            }
+            // Assign admin role if not already has it
+            if (!$user->hasRole('admin')) {
+                $user->assignRole('admin');
+                $user->is_admin = true;
+                $user->save();
+            }
+            return $user;
+        } else {
+            // Create new user
+            return User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'is_admin' => true,
+            ]);
+        }
     }
 
     /**
@@ -238,8 +275,10 @@ class RegisterController extends Controller
             'accepted_at' => now(),
         ]);
 
-        // Log the user in
-        auth()->login($user);
+        // Only login for admin invitations, not for school/health-facility
+        if ($invitationType !== 'school' && $invitationType !== 'health-facility') {
+            auth()->login($user);
+        }
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -290,13 +329,16 @@ class RegisterController extends Controller
      */
     protected function getDashboardRoute(string $type)
     {
-        switch ($type) {
-            case 'school':
-                return '/school-dashboard';
-            case 'health-facility':
-                return '/health-facility/dashboard';
-            default:
-                return '/admin';
-        }
+        return '/';
+    }
+
+    /**
+     * Check if this is an admin registration
+     *
+     * @return bool
+     */
+    protected function isAdminRegistration()
+    {
+        return request()->has('invite_token');
     }
 }

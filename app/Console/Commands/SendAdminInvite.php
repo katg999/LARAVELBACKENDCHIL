@@ -57,6 +57,7 @@ class SendAdminInvite extends Command
             $invite->update([
                 'token' => AdminInvite::generateToken(),
                 'expires_at' => now()->addHours(24),
+                'used' => false, // Reset used flag when resending
             ]);
         } else {
             $invite = AdminInvite::create([

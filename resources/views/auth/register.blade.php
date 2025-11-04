@@ -14,6 +14,8 @@
                         <h2 class="h4 mb-0 fw-bold">
                             @if(isset($invitation) && $invitation)
                                 Accept Invitation
+                            @elseif(isset($existingUser) && $existingUser)
+                                Accept Admin Invitation
                             @else
                                 Admin Registration
                             @endif
@@ -21,6 +23,8 @@
                         <p class="mb-0 opacity-75">
                             @if(isset($invitation) && $invitation)
                                 Create your account to join the team
+                            @elseif(isset($existingUser) && $existingUser)
+                                Login to accept your admin invitation
                             @else
                                 Create your admin account
                             @endif
@@ -89,6 +93,7 @@
                             @endif
 
                             <!-- Name Field -->
+                            @if(!isset($existingUser) || !$existingUser)
                             <div class="mb-4">
                                 <label for="name" class="form-label fw-bold text-muted mb-3">Full Name</label>
                                 <div class="input-group mb-3">
@@ -102,8 +107,7 @@
                                            value="{{ old('name') }}"
                                            placeholder="Enter your full name"
                                            required
-                                           autocomplete="name"
-                                           autofocus>
+                                           autocomplete="name">
                                 </div>
                                 @error('name')
                                     <div class="text-danger small mt-1">
@@ -111,6 +115,7 @@
                                     </div>
                                 @enderror
                             </div>
+                            @endif
 
                             <!-- Email Field -->
                             <div class="mb-4">
@@ -155,7 +160,8 @@
                                            class="form-control form-control-lg @error('password') is-invalid @enderror"
                                            placeholder="Enter your password"
                                            required
-                                           autocomplete="new-password">
+                                           autocomplete="{{ (isset($existingUser) && $existingUser) ? 'current-password' : 'new-password' }}"
+                                           {{ (!isset($existingUser) || !$existingUser) ? '' : 'autofocus' }}>
                                 </div>
                                 @error('password')
                                     <div class="text-danger small mt-1">
@@ -165,6 +171,7 @@
                             </div>
 
                             <!-- Confirm Password Field -->
+                            @if(!isset($existingUser) || !$existingUser)
                             <div class="mb-4">
                                 <label for="password_confirmation" class="form-label fw-bold text-muted mb-3">Confirm Password</label>
                                 <div class="input-group mb-3">
@@ -176,10 +183,10 @@
                                            name="password_confirmation"
                                            class="form-control form-control-lg"
                                            placeholder="Confirm your password"
-                                           required
                                            autocomplete="new-password">
                                 </div>
                             </div>
+                            @endif
 
                             <!-- Submit Button -->
                             <div class="mt-4">
@@ -188,6 +195,8 @@
                                         <i class="mdi mdi-account-plus me-2"></i>
                                         @if(isset($invitation) && $invitation)
                                             Accept Invitation & Create Account
+                                        @elseif(isset($existingUser) && $existingUser)
+                                            Accept Admin Invitation
                                         @else
                                             Create Account
                                         @endif
@@ -195,6 +204,8 @@
                                     <span class="btn-loading d-none">
                                         <i class="mdi mdi-loading mdi-spin me-2"></i>
                                         @if(isset($invitation) && $invitation)
+                                            Accepting Invitation...
+                                        @elseif(isset($existingUser) && $existingUser)
                                             Accepting Invitation...
                                         @else
                                             Creating Account...
@@ -352,8 +363,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                // Success - redirect to login
-                window.location.href = '{{ route("login") }}';
+                // Success - handle redirect based on invitation type
+                @if(isset($invitationToken) && $invitationToken)
+                    // For invitations, let the server redirect handle it
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    } else {
+                        window.location.href = '/';
+                    }
+                @else
+                    // For regular registration, redirect to login
+                    window.location.href = '{{ route("login") }}';
+                @endif
             } else {
                 // Show errors
                 showErrors(data.errors || data.message);
@@ -401,11 +422,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Auto-focus first empty field
-    const firstEmptyField = Array.from(inputs).find(input => !input.value);
-    if (firstEmptyField) {
-        firstEmptyField.focus();
-    }
+    // Auto-focus appropriate field
+    @if(isset($existingUser) && $existingUser)
+        document.getElementById('password').focus();
+    @else
+        const firstEmptyField = Array.from(inputs).find(input => !input.value);
+        if (firstEmptyField) {
+            firstEmptyField.focus();
+        } else {
+            document.getElementById('password').focus();
+        }
+    @endif
 });
 </script>
 @endsection
