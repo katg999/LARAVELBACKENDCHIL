@@ -11,12 +11,50 @@
                         <div class="mb-3">
                             <img src="{{ asset('images/emoji-logo-black.svg') }}" alt="KETI AI" class="img-fluid" style="height: 50px; width: auto;">
                         </div>
-                        <h2 class="h4 mb-0 fw-bold">Admin Registration</h2>
-                        <p class="mb-0 opacity-75">Create your admin account</p>
+                        <h2 class="h4 mb-0 fw-bold">
+                            @if(isset($invitation) && $invitation)
+                                Accept Invitation
+                            @else
+                                Admin Registration
+                            @endif
+                        </h2>
+                        <p class="mb-0 opacity-75">
+                            @if(isset($invitation) && $invitation)
+                                Create your account to join the team
+                            @else
+                                Create your admin account
+                            @endif
+                        </p>
                     </div>
 
                     <!-- Body -->
                     <div class="card-body p-4 p-lg-5 py-5">
+                        <!-- Invitation Info -->
+                        @if(isset($invitation) && $invitation)
+                            <div class="alert alert-info border-0 rounded-3 mb-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="mdi mdi-email-open text-info me-3 fs-4"></i>
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">Accepting Invitation</h6>
+                                        <p class="mb-0 text-muted">
+                                            You're creating an account to join
+                                            <strong class="text-info">
+                                                @if($invitationType === 'school')
+                                                    {{ $invitation->school->name }}
+                                                @else
+                                                    {{ $invitation->healthFacility->name }}
+                                                @endif
+                                            </strong>
+                                            as <strong>{{ ucwords(str_replace('-', ' ', str_replace($invitationType . '-', '', $invitation->role))) }}</strong>
+                                        </p>
+                                        <small class="text-muted">
+                                            Invitation expires: {{ $invitation->expires_at->format('F d, Y') }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
                         <!-- Error / Status container (used by server render and AJAX) -->
                         <div id="registerErrors">
                             @if($errors->any())
@@ -39,6 +77,12 @@
                         <!-- Registration Form -->
                         <form id="registerForm" method="POST" action="{{ route('register') }}" novalidate>
                             @csrf
+
+                            <!-- Hidden invitation fields -->
+                            @if(isset($invitationToken) && $invitationToken)
+                                <input type="hidden" name="invitation_token" value="{{ $invitationToken }}">
+                                <input type="hidden" name="invitation_type" value="{{ $invitationType }}">
+                            @endif
 
                             @if(isset($invite))
                                 <input type="hidden" name="invite_token" value="{{ $invite->token }}">
@@ -83,13 +127,19 @@
                                            placeholder="Enter your email address"
                                            required
                                            autocomplete="email"
-                                           {{ isset($email) ? 'readonly' : '' }}>
+                                           {{ (isset($email) && !empty($email)) ? 'readonly' : '' }}>
                                 </div>
                                 @error('email')
                                     <div class="text-danger small mt-1">
                                         <i class="mdi mdi-alert-circle me-1"></i>{{ $message }}
                                     </div>
                                 @enderror
+                                @if(isset($invitation) && $invitation)
+                                    <small class="text-muted">
+                                        <i class="mdi mdi-information me-1"></i>
+                                        Email is pre-filled from your invitation
+                                    </small>
+                                @endif
                             </div>
 
                             <!-- Password Field -->
@@ -135,14 +185,32 @@
                             <div class="mt-4">
                                 <button type="submit" id="registerBtn" class="btn btn-dark btn-lg w-100 fw-bold rounded-3 py-3">
                                     <span class="btn-text">
-                                        <i class="mdi mdi-account-plus me-2"></i>Create Account
+                                        <i class="mdi mdi-account-plus me-2"></i>
+                                        @if(isset($invitation) && $invitation)
+                                            Accept Invitation & Create Account
+                                        @else
+                                            Create Account
+                                        @endif
                                     </span>
                                     <span class="btn-loading d-none">
-                                        <i class="mdi mdi-loading mdi-spin me-2"></i>Creating Account...
+                                        <i class="mdi mdi-loading mdi-spin me-2"></i>
+                                        @if(isset($invitation) && $invitation)
+                                            Accepting Invitation...
+                                        @else
+                                            Creating Account...
+                                        @endif
                                     </span>
                                 </button>
                             </div>
                         </form>
+
+                        <!-- Login Link -->
+                        <div class="text-center mt-4">
+                            <p class="text-muted mb-2">Already have an account?</p>
+                            <a href="{{ route('login') }}" class="btn btn-outline-secondary rounded-3">
+                                <i class="mdi mdi-login me-2"></i>Sign In
+                            </a>
+                        </div>
                     </div>
 
                     <!-- Footer -->

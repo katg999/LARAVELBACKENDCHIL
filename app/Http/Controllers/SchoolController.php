@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\School;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class SchoolController extends Controller
 {
@@ -99,13 +100,34 @@ class SchoolController extends Controller
 
     public function showDashboard(Request $request)
     {
-        $authenticatedUser = $request->current_user;
-        $school = School::findOrFail($authenticatedUser['id']);
+        $user = Auth::user();
+        
+        // Get the school associated with the authenticated user
+        $school = School::findOrFail($user->school_id);
 
         $students = $school->students()->latest()->get();
         $labTests = $school->labTests()->with('patient')->latest()->get();
         $appointments = $school->appointments()->with(['patient', 'doctor'])->latest()->get();
         $doctors = $school->doctors()->latest()->get();
+
+        // Calculate weekly data for the chart (last 7 days)
+        $weeklyAppointments = [];
+        $weeklyLabTests = [];
+        
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->toDateString();
+            
+            $appointmentCount = $school->appointments()
+                ->whereDate('created_at', $date)
+                ->count();
+                
+            $labTestCount = $school->labTests()
+                ->whereDate('created_at', $date)
+                ->count();
+                
+            $weeklyAppointments[] = $appointmentCount;
+            $weeklyLabTests[] = $labTestCount;
+        }
 
         return view('school.school-dashboard', [
             'school' => $school,
@@ -117,6 +139,8 @@ class SchoolController extends Controller
             'appointmentsCount' => $appointments->count(),
             'labTestsCount' => $labTests->count(),
             'doctorsCount' => $doctors->count(),
+            'weeklyAppointments' => $weeklyAppointments,
+            'weeklyLabTests' => $weeklyLabTests,
         ]);
     }
 }

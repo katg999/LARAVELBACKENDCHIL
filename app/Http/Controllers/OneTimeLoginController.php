@@ -42,11 +42,11 @@ class OneTimeLoginController extends Controller
         // Get the user based on type
         $user = null;
         $redirectUrl = '';
-        $entityUser = null; // The actual entity (School, Doctor, HealthFacility)
+        $entityUser = null; // The actual entity (School, Doctor, HealthFacility) or User
 
         switch ($record->user_type) {
             case 'school':
-                $entityUser = \App\Models\School::find($record->user_id);
+                $entityUser = \App\User::find($record->user_id);
                 $redirectUrl = url("/school-dashboard");
                 break;
             case 'doctor':
@@ -54,7 +54,7 @@ class OneTimeLoginController extends Controller
                 $redirectUrl = url('/doctor/dashboard');
                 break;
             case 'health_facility':
-                $entityUser = \App\Models\HealthFacility::find($record->user_id);
+                $entityUser = \App\User::find($record->user_id);
                 $redirectUrl = url("/health-facility/dashboard");
                 break;
             default:
@@ -71,116 +71,95 @@ class OneTimeLoginController extends Controller
             ]);
         }
 
-        // Health facilities and schools should NOT login with their entity email
-        // Staff members use their personal emails through the invitation system
-        // VoiceFlow OTP only validates entity ownership, not for dashboard access
-        if ($record->user_type === 'health_facility' || $record->user_type === 'school') {
-            return response()->view('one-time-login.error', [
-                'message' => 'Please use staff invitation links to access the dashboard with your personal email. Entity emails are only for verification.',
-                'seconds' => 15
-            ]);
-        }
-
         // Handle authentication based on user type
-        // Only doctors can use VoiceFlow OTP for direct dashboard access
-        if ($record->user_type === 'doctor') {
-            // Flush other sessions for this doctor (best-effort)
-            $this->flushSessionsForDoctor($entityUser);
-
-            // Ensure any currently authenticated user is logged out and session invalidated
-            try {
-                $guard = Auth::guard();
-                $guard->logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-
-                // Forget remember-me recaller cookie if present
-                $recaller = $guard->getRecallerName();
-                if ($recaller) {
-                    Cookie::queue(Cookie::forget($recaller));
-                }
-            } catch (\Exception $e) {
-                // ignore
-            }
-
-            // Store doctor info in session for session-based auth
-            $request->session()->put('authenticated_user', [
-                'type' => $record->user_type,
-                'id' => $entityUser->id,
-                'name' => $entityUser->name,
-                'email' => $record->email
-            ]);
-
-            // Set session lifetime to 12 hours (720 minutes) for one-time login users
-            $request->session()->put('_session_lifetime', 720);
-        } else {
-            // This shouldn't be reached as health_facility/school are blocked earlier
-            return response()->view('one-time-login.error', [
-                'message' => 'Invalid authentication type.',
-                'seconds' => 10
-            ]);
+        switch ($record->user_type) {
+            case 'school':
+                return $this->handleSchoolUserLogin($entityUser, $record);
+            case 'doctor':
+                return $this->handleDoctorLogin($entityUser, $record);
+            case 'health_facility':
+                return $this->handleHealthFacilityUserLogin($entityUser, $record);
+            default:
+                return response()->view('one-time-login.error', [
+                    'message' => 'Invalid user type.',
+                    'seconds' => 10
+                ]);
         }
+    }
 
-        // Regenerate session to prevent fixation
-        $request->session()->regenerate();
+    protected function handleSchoolUserLogin($user, $record)
+    {
+        // Authenticate the existing user
+        Auth::login($user);
 
         // Mark token as used
         $record->markAsUsed();
 
-        \Log::info('One-time login successful', [
-            'user_type' => $record->user_type,
-            'user_id' => $record->user_id,
+        \Log::info('School user login successful', [
+            'user_id' => $user->id,
+            'school_id' => $user->school_id,
             'email' => $record->email
         ]);
 
-        // Redirect to appropriate dashboard
-        return redirect($redirectUrl);
+        return redirect($record->redirectUrl ?? url('/school-dashboard'));
     }
 
-    protected function flushSessionsForDoctor($doctor)
+    protected function handleDoctorLogin($doctor, $record)
     {
-        $driver = Config::get('session.driver', 'file');
+        // Flush other sessions for this doctor (best-effort)
+        $this->flushSessionsForDoctor($doctor);
 
+        // Ensure any currently authenticated user is logged out and session invalidated
         try {
-            if ($driver === 'database') {
-                // Remove rows in sessions table where user_id matches
-                DB::table(Config::get('session.table', 'sessions'))
-                    ->where('user_id', $doctor->id)
-                    ->delete();
+            $guard = Auth::guard();
+            $guard->logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
 
-                // Also try a payload search as a fallback
-                DB::table(Config::get('session.table', 'sessions'))
-                    ->where('payload', 'like', '%' . $doctor->id . '%')
-                    ->delete();
-                return;
+            // Forget remember-me recaller cookie if present
+            $recaller = $guard->getRecallerName();
+            if ($recaller) {
+                Cookie::queue(Cookie::forget($recaller));
             }
-
-            if ($driver === 'file') {
-                $dir = storage_path('framework/sessions');
-                if (File::isDirectory($dir)) {
-                    $files = File::files($dir);
-                    foreach ($files as $f) {
-                        $contents = File::get($f->getPathname());
-                        if (strpos($contents, (string) $doctor->id) !== false) {
-                            // best-effort: delete session file
-                            @unlink($f->getPathname());
-                        }
-                    }
-                }
-                return;
-            }
-
-            // For other drivers (redis, memcached) attempt DB fallback: delete by payload
-            DB::table(Config::get('session.table', 'sessions'))
-                ->where('payload', 'like', '%' . $doctor->id . '%')
-                ->delete();
         } catch (\Exception $e) {
-            // don't block login on cleanup failure; just continue
+            // ignore
         }
+
+        // Store doctor info in session for session-based auth
+        request()->session()->put('authenticated_user', [
+            'type' => $record->user_type,
+            'id' => $doctor->id,
+            'name' => $doctor->name,
+            'email' => $record->email
+        ]);
+
+        // Set session lifetime to 12 hours (720 minutes) for one-time login users
+        request()->session()->put('_session_lifetime', 720);
+
+        // Mark token as used
+        $record->markAsUsed();
+
+        return redirect($record->redirectUrl ?? url('/doctor/dashboard'));
     }
 
-    // Note: Health facilities and schools no longer login via VoiceFlow OTP
-    // Staff members must use personal emails through the invitation system
-    // The getOrCreateUserForHealthFacility and getOrCreateUserForSchool methods
-    // have been removed as they created accounts with entity emails
+    protected function handleHealthFacilityUserLogin($user, $record)
+    {
+        // Authenticate the existing user
+        Auth::login($user);
+
+        // Mark token as used
+        $record->markAsUsed();
+
+        \Log::info('Health facility user login successful', [
+            'user_id' => $user->id,
+            'health_facility_id' => $user->health_facility_id,
+            'email' => $record->email
+        ]);
+
+        return redirect($record->redirectUrl ?? url('/health-facility/dashboard'));
+    }
+
+    // Note: Only school and health facility admins/staff can login via VoiceFlow OTP
+    // They use their personal credentials (personal emails) instead of entity emails
+    // VoiceFlow OTP validates that the personal email belongs to an authorized user
 }

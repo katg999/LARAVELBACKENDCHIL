@@ -78,11 +78,11 @@
             </div>
           </li>
           <li class="nav-item nav-user-status dropdown">
-              <p class="mb-0">Last login: 
-                @if(isset($doctor))
-                  {{ $doctor->last_login_at ? $doctor->last_login_at->diffForHumans() : 'N/A' }}
+              <p class="mb-0">
+                @if(auth()->check())
+                  School: {{ auth()->user()->school->name ?? 'N/A' }}
                 @else
-                  {{ auth()->user() && auth()->user()->last_login_at ? auth()->user()->last_login_at->diffForHumans() : 'N/A' }}
+                  Last login: N/A
                 @endif
               </p>
           </li>

@@ -21,6 +21,24 @@ class SchoolInvitationController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+
+        if (!$user->hasPermission('manage-school-staff')) {
+            abort(403, 'Unauthorized to manage school staff');
+        }
+
+        $school = School::findOrFail($user->school_id);
+
+        $staffMembers = $school->users()->with('roles')->get();
+
+        return view('school.staff.index', compact('school', 'staffMembers'));
+    }
+
+    /**
+     * Display only invitations for a school
+     */
+    public function invitations(Request $request)
+    {
+        $user = $request->user();
         
         if (!$user->hasPermission('manage-school-staff')) {
             abort(403, 'Unauthorized to manage school staff');
@@ -33,9 +51,7 @@ class SchoolInvitationController extends Controller
             ->latest()
             ->paginate(15);
 
-        $staffMembers = $school->users()->with('roles')->get();
-
-        return view('school.staff.index', compact('school', 'invitations', 'staffMembers'));
+        return view('school.invitations.index', compact('school', 'invitations'));
     }
 
     /**

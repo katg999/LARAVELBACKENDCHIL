@@ -133,7 +133,7 @@ class OtpController extends Controller
     }
 
     /**
-     * Handle OTP request from VoiceFlow (email only)
+     * Handle OTP request from VoiceFlow (personal email validation)
      */
     public function sendLoginOtp(Request $request)
     {
@@ -142,14 +142,18 @@ class OtpController extends Controller
                 'required',
                 'email',
                 function ($attribute, $value, $fail) {
-                          $isInSchools = \App\Models\School::where('email', $value)->exists();
-                          $isInHealthFacilities = \App\Models\HealthFacility::where('email', $value)->exists();
-                          $isInDoctors = \App\Models\Doctor::where('email', $value)->exists();
-
-                              if (!$isInSchools && !$isInHealthFacilities && !$isInDoctors) {
-                             $fail("The selected email is not associated with any school, health facility, or doctor.");
-                                 }
-                           }
+                    // Check if email belongs to a user who is linked to a school or health facility
+                    $user = \App\User::where('email', $value)->first();
+                    if (!$user) {
+                        $fail("No user account found with this email address.");
+                        return;
+                    }
+                    
+                    if (!$user->school_id && !$user->health_facility_id) {
+                        $fail("This email is not associated with any school or health facility admin/staff account.");
+                        return;
+                    }
+                }
             ]
         ]);
         
@@ -157,7 +161,7 @@ class OtpController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'The selected email is not associated with any school, health facility, or doctor.'
+                'message' => $validator->errors()->first()
             ], 422);
         }
 
@@ -165,7 +169,7 @@ class OtpController extends Controller
             $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $expiresAt = now()->addHours(24);
 
-            // Store OTP with email (no school_id)
+            // Store OTP with email
             DB::table('otps')->updateOrInsert(
                 ['email' => $request->email],
                 [
@@ -177,19 +181,20 @@ class OtpController extends Controller
                 ]
             );
 
-            // Determine entity type by email
-            if (\App\Models\HealthFacility::where('email', $request->email)->exists()) {
-                $userType = 'health_facility';
-            } elseif (\App\Models\Doctor::where('email', $request->email)->exists()) {
-                $userType = 'doctor';
-            } elseif (\App\Models\School::where('email', $request->email)->exists()) {
-                $userType = 'school';
-            } else {
-                // This should not happen due to earlier validation
-                throw new \Exception('Email not associated with any entity'); 
+            // Get user and determine entity type
+            $user = \App\User::where('email', $request->email)->first();
+            
+            if ($user->school_id) {
+                $entityType = 'school';
+                $entityId = $user->school_id;
+                $entityName = \App\Models\School::find($user->school_id)->name ?? 'School';
+            } elseif ($user->health_facility_id) {
+                $entityType = 'health_facility';
+                $entityId = $user->health_facility_id;
+                $entityName = \App\Models\HealthFacility::find($user->health_facility_id)->name ?? 'Health Facility';
             }
 
-            Mail::to($request->email)->send(new SendOtpMail($otp, $userType, $expiresAt->diffInMinutes(now())));
+            Mail::to($request->email)->send(new SendOtpMail($otp, $entityType, $expiresAt->diffInMinutes(now())));
 
             return response()->json(['success' => true]);
 
@@ -203,7 +208,7 @@ class OtpController extends Controller
     }
 
     /**
-     * Verify OTP from VoiceFlow
+     * Verify OTP from VoiceFlow (for schools)
      */
     public function verifyOtp(Request $request)
     {
@@ -273,23 +278,52 @@ class OtpController extends Controller
           ->where('id', $otpRecord->id)
           ->update(['used' => true]);
 
-        // Get the school information
-        $school = School::where('email', $request->email)->first();
+        // Get the user account
+        $user = \App\User::where('email', $request->email)->first();
 
-        \Log::info('School OTP Verified Successfully', [
-            'school_id' => $school->id,
+        if (!$user || !$user->school_id) {
+            \Log::warning('User not found or not linked to school', [
+                'email' => $request->email,
+                'user_exists' => $user ? true : false,
+                'has_school_id' => $user ? ($user->school_id ? true : false) : false
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'User account not found or not associated with a school'
+            ], 401);
+        }
+
+        \Log::info('School User OTP Verified Successfully', [
+            'user_id' => $user->id,
+            'school_id' => $user->school_id,
             'email' => $request->email
         ]);
 
-        // Schools should NOT login with entity email
-        // The super admin must send an invitation to create the first admin user with a personal email
+        // Create one-time login token for user authentication
+        $loginToken = OneTimeLoginToken::create([
+            'token' => OneTimeLoginToken::generateToken(),
+            'email' => $request->email,
+            'user_type' => 'school',
+            'user_id' => $user->id, // This is the user ID, not school ID
+            'expires_at' => now()->addMinutes(10),
+            'used' => false
+        ]);
+
+        $loginUrl = url("/auth/login/{$loginToken->token}");
+
+        \Log::info('School User OTP Verified Successfully - One-time login token created', [
+            'user_id' => $user->id,
+            'school_id' => $user->school_id,
+            'email' => $request->email,
+            'token_id' => $loginToken->id
+        ]);
+
         return response()->json([
             'success' => true,
-            'message' => 'OTP verified successfully. School ownership confirmed. Please contact your system administrator to receive an invitation link. You will need to use your personal email address (not this school email) to create your account.',
-            'action' => 'contact_admin',
-            'school_id' => $school->id,
-            'school_name' => $school->name,
-            'note' => 'Entity emails are only for verification. Staff members use personal emails for dashboard access.'
+            'message' => 'OTP verified successfully. Use the login link to access your school dashboard.',
+            'login_url' => $loginUrl,
+            'user_id' => $user->id,
+            'school_id' => $user->school_id
         ]);
     }
 
@@ -410,7 +444,7 @@ class OtpController extends Controller
 
     // Validate input
     $validator = Validator::make($request->all(), [
-        'email' => 'required|email|exists:health_facilities,email',
+        'email' => 'required|email|exists:users,email',
         'otp' => 'required|string|min:6|max:6'
     ]);
 
@@ -432,7 +466,7 @@ class OtpController extends Controller
             ->first();
 
         if (!$otpRecord) {
-            \Log::warning('No OTP record found for health facility', [
+            \Log::warning('No OTP record found for health facility user', [
                 'email' => $request->email
             ]);
             return response()->json([
@@ -466,23 +500,52 @@ class OtpController extends Controller
             ->where('email', $request->email)
             ->update(['used' => true]);
 
-        // Get health facility details
-        $healthFacility = HealthFacility::where('email', $request->email)->first();
+        // Get the user account
+        $user = \App\User::where('email', $request->email)->first();
 
-        \Log::info('Health Facility OTP Verified Successfully', [
-            'health_facility_id' => $healthFacility->id,
+        if (!$user || !$user->health_facility_id) {
+            \Log::warning('User not found or not linked to health facility', [
+                'email' => $request->email,
+                'user_exists' => $user ? true : false,
+                'has_health_facility_id' => $user ? ($user->health_facility_id ? true : false) : false
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'User account not found or not associated with a health facility'
+            ], 401);
+        }
+
+        \Log::info('Health Facility User OTP Verified Successfully', [
+            'user_id' => $user->id,
+            'health_facility_id' => $user->health_facility_id,
             'email' => $request->email
         ]);
 
-        // Health facilities should NOT login with entity email
-        // The super admin must send an invitation to create the first admin user with a personal email
+        // Create one-time login token for health facility user login
+        $loginToken = OneTimeLoginToken::create([
+            'token' => OneTimeLoginToken::generateToken(),
+            'email' => $request->email,
+            'user_type' => 'health_facility',
+            'user_id' => $user->id, // This is the user ID, not health facility ID
+            'expires_at' => now()->addMinutes(10),
+            'used' => false
+        ]);
+
+        $loginUrl = url("/auth/login/{$loginToken->token}");
+
+        \Log::info('Health Facility User OTP Verified Successfully - One-time login token created', [
+            'user_id' => $user->id,
+            'health_facility_id' => $user->health_facility_id,
+            'email' => $request->email,
+            'token_id' => $loginToken->id
+        ]);
+
         return response()->json([
             'success' => true,
-            'message' => 'OTP verified successfully. Health facility ownership confirmed. Please contact your system administrator to receive an invitation link. You will need to use your personal email address (not this facility email) to create your account.',
-            'action' => 'contact_admin',
-            'health_facility_id' => $healthFacility->id,
-            'health_facility_name' => $healthFacility->name,
-            'note' => 'Entity emails are only for verification. Staff members use personal emails for dashboard access.'
+            'message' => 'OTP verified successfully. Use the login link to access your health facility dashboard.',
+            'login_url' => $loginUrl,
+            'user_id' => $user->id,
+            'health_facility_id' => $user->health_facility_id
         ]);
 
     } catch (\Exception $e) {

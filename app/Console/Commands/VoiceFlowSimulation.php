@@ -386,13 +386,21 @@ class VoiceFlowSimulation extends Command
      */
     protected function validateEmail(string $email, string $userType): bool
     {
+        // Check if email belongs to a user linked to the appropriate entity
+        $user = \App\User::where('email', $email)->first();
+        
+        if (!$user) {
+            return false;
+        }
+        
         switch ($userType) {
             case 'school':
-                return School::where('email', $email)->exists();
+                return $user->school_id !== null;
             case 'doctor':
+                // Doctors still use entity emails for now
                 return Doctor::where('email', $email)->exists();
             case 'health-facility':
-                return HealthFacility::where('email', $email)->exists();
+                return $user->health_facility_id !== null;
             default:
                 return false;
         }

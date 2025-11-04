@@ -118,6 +118,25 @@ Current Path: {{ $currentPath }}
         </a>
     </li>
     <li class="nav-item">
+        <a class="nav-link" data-toggle="collapse" href="#school-staff" aria-expanded="false" aria-controls="school-staff">
+            <i class="mdi mdi-account-group menu-icon"></i>
+            <span class="menu-title">Staff</span>
+            <i class="menu-arrow"></i>
+        </a>
+        <div class="collapse" id="school-staff">
+            <ul class="nav flex-column sub-menu">
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->is('staff') && !request()->is('staff/invitations*') ? 'active' : '' }}"
+                       href="{{ route('school.staff.index') }}">Staff Management</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->is('staff/invitations*') ? 'active' : '' }}"
+                       href="{{ route('school.staff.invitations') }}">Invitations</a>
+                </li>
+            </ul>
+        </div>
+    </li>
+    <li class="nav-item">
         <a class="nav-link {{ request()->is('transactions*') ? 'active' : '' }}" href="{{ route('school.transactions', ['school' => $school->id]) }}">
             <i class="mdi mdi-square-inc-cash menu-icon"></i>
             <span class="menu-title">Transactions</span>

@@ -42,9 +42,33 @@ class RegisterController extends Controller
     {
         $invite = null;
         $email = null;
+        $invitation = null;
+        $invitationToken = null;
+        $invitationType = null;
 
-        // If token is provided, validate the invite
-        if ($token) {
+        // Check for new invitation system (school/health-facility invitations)
+        $invitationToken = $request->query('invitation_token');
+        $invitationType = $request->query('invitation_type');
+
+        if ($invitationToken && $invitationType) {
+            $invitation = $this->getInvitation($invitationType, $invitationToken);
+
+            if (!$invitation) {
+                abort(404, 'Invalid invitation token.');
+            }
+
+            if ($invitation->accepted) {
+                abort(403, 'This invitation has already been accepted.');
+            }
+
+            if ($invitation->isExpired()) {
+                abort(403, 'This invitation has expired.');
+            }
+
+            $email = $invitation->email;
+        }
+        // Legacy admin invite system
+        elseif ($token) {
             $invite = \App\Models\AdminInvite::where('token', $token)->first();
 
             if (!$invite) {
@@ -58,7 +82,7 @@ class RegisterController extends Controller
             $email = $invite->email;
         }
 
-        return view('auth.register', compact('email', 'invite'));
+        return view('auth.register', compact('email', 'invite', 'invitation', 'invitationToken', 'invitationType'));
     }
 
     /**
@@ -72,6 +96,15 @@ class RegisterController extends Controller
         try {
             $this->validator($request->all())->validate();
 
+            // Check for new invitation system
+            $invitationToken = $request->input('invitation_token');
+            $invitationType = $request->input('invitation_type');
+
+            if ($invitationToken && $invitationType) {
+                return $this->handleInvitationRegistration($request, $invitationType, $invitationToken);
+            }
+
+            // Legacy admin invite system
             $user = $this->create($request->all());
 
             // Mark the invite as used if it exists
@@ -165,13 +198,105 @@ class RegisterController extends Controller
     }
 
     /**
-     * Check if this is an admin registration (via invite token)
-     *
-     * @return bool
+     * Handle invitation-based registration
      */
-    protected function isAdminRegistration()
+    protected function handleInvitationRegistration(Request $request, string $invitationType, string $invitationToken)
     {
-        return request()->has('invite_token') &&
-               \App\Models\AdminInvite::where('token', request()->invite_token)->exists();
+        $invitation = $this->getInvitation($invitationType, $invitationToken);
+
+        if (!$invitation) {
+            return back()->withErrors(['invitation' => 'Invalid invitation'])->withInput();
+        }
+
+        if ($invitation->accepted) {
+            return back()->withErrors(['invitation' => 'This invitation has already been accepted'])->withInput();
+        }
+
+        if ($invitation->isExpired()) {
+            return back()->withErrors(['invitation' => 'This invitation has expired'])->withInput();
+        }
+
+        // Check if email matches invitation
+        if ($request->email !== $invitation->email) {
+            return back()->withErrors(['email' => 'Email does not match invitation'])->withInput();
+        }
+
+        // Create user
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+
+        // Associate user with entity
+        $this->associateUserWithEntity($user, $invitation, $invitationType);
+
+        // Mark invitation as accepted
+        $invitation->update([
+            'accepted' => true,
+            'accepted_by' => $user->id,
+            'accepted_at' => now(),
+        ]);
+
+        // Log the user in
+        auth()->login($user);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration successful! Welcome to your dashboard.',
+                'redirect' => $this->getDashboardRoute($invitationType)
+            ], 201);
+        }
+
+        return redirect($this->getDashboardRoute($invitationType));
+    }
+
+    /**
+     * Get invitation by type and token
+     */
+    protected function getInvitation(string $type, string $token)
+    {
+        switch ($type) {
+            case 'school':
+                return \App\Models\SchoolInvitation::with('school')->where('token', $token)->first();
+            case 'health-facility':
+                return \App\Models\HealthFacilityInvitation::with('healthFacility')->where('token', $token)->first();
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Associate user with entity
+     */
+    protected function associateUserWithEntity($user, $invitation, string $type)
+    {
+        switch ($type) {
+            case 'school':
+                $user->school_id = $invitation->school_id;
+                $user->assignRole($invitation->role);
+                break;
+            case 'health-facility':
+                $user->health_facility_id = $invitation->health_facility_id;
+                $user->assignRole($invitation->role);
+                break;
+        }
+        $user->save();
+    }
+
+    /**
+     * Get dashboard route for invitation type
+     */
+    protected function getDashboardRoute(string $type)
+    {
+        switch ($type) {
+            case 'school':
+                return '/school-dashboard';
+            case 'health-facility':
+                return '/health-facility/dashboard';
+            default:
+                return '/admin';
+        }
     }
 }
