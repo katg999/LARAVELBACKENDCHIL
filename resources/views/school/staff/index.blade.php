@@ -32,90 +32,15 @@
         </div>
     @endif
 
-    <!-- Statistics Cards -->
+    <!-- Action Buttons -->
     <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <div class="stat-label mb-2">Total Staff</div>
-                            <h5 class="mb-0">{{ $staffMembers->count() }}</h5>
-                        </div>
-                        <i class="mdi mdi-account-group icon-xl text-success"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <div class="stat-label mb-2">Admins</div>
-                            <h5 class="mb-0">{{ $school->admins()->count() }}</h5>
-                        </div>
-                        <i class="mdi mdi-shield-account icon-xl text-primary"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <div class="stat-label mb-2">Staff Members</div>
-                            <h5 class="mb-0">{{ $school->staff()->count() }}</h5>
-                        </div>
-                        <i class="mdi mdi-account icon-xl text-info"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Send Invitation Card -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="card-title mb-0">
+        <div class="col-12">
+            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#sendInvitationModal">
                 <i class="mdi mdi-email-send me-2"></i>Send Invitation
-            </h5>
-        </div>
-        <div class="card-body">
-            <form action="{{ route('school.staff.invite') }}" method="POST">
-                @csrf
-                <div class="row">
-                    <div class="col-md-5">
-                        <label for="email" class="form-label">Email Address</label>
-                        <input type="email" class="form-control @error('email') is-invalid @enderror" 
-                               id="email" name="email" required value="{{ old('email') }}">
-                        @error('email')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-md-4">
-                        <label for="role" class="form-label">Role</label>
-                        <select class="form-select @error('role') is-invalid @enderror" id="role" name="role" required>
-                            <option value="">Select Role</option>
-                            <option value="school-admin" {{ old('role') == 'school-admin' ? 'selected' : '' }}>
-                                Admin (Can manage staff)
-                            </option>
-                            <option value="school-staff" {{ old('role') == 'school-staff' ? 'selected' : '' }}>
-                                Staff Member
-                            </option>
-                        </select>
-                        @error('role')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button type="submit" class="btn btn-success w-100">
-                            <i class="mdi mdi-send me-2"></i>Send Invitation
-                        </button>
-                    </div>
-                </div>
-            </form>
+            </button>
+            <a href="{{ route('school.staff.invitations') }}" class="btn btn-info ms-2">
+                <i class="mdi mdi-email-clock me-2"></i>View Invitations
+            </a>
         </div>
     </div>
 
@@ -180,78 +105,58 @@
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Pending Invitations -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="card-title mb-0">
-                <i class="mdi mdi-email-clock me-2"></i>Pending Invitations
-            </h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Invited By</th>
-                            <th>Sent Date</th>
-                            <th>Expires</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($invitations as $invitation)
-                            <tr>
-                                <td>{{ $invitation->email }}</td>
-                                <td>
-                                    <span class="badge bg-{{ $invitation->role == 'school-admin' ? 'success' : 'info' }}">
-                                        {{ ucwords(str_replace('-', ' ', str_replace('school-', '', $invitation->role))) }}
-                                    </span>
-                                </td>
-                                <td>{{ $invitation->inviter->name }}</td>
-                                <td>{{ $invitation->created_at->format('M d, Y') }}</td>
-                                <td>{{ $invitation->expires_at->format('M d, Y') }}</td>
-                                <td>
-                                    @if($invitation->accepted)
-                                        <span class="badge bg-success">Accepted</span>
-                                    @elseif($invitation->isExpired())
-                                        <span class="badge bg-danger">Expired</span>
-                                    @else
-                                        <span class="badge bg-warning">Pending</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if(!$invitation->accepted && !$invitation->isExpired())
-                                        <form action="{{ route('school.staff.invitation.revoke', $invitation->id) }}" method="POST"
-                                              onsubmit="return confirm('Are you sure you want to revoke this invitation?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                <i class="mdi mdi-cancel"></i> Revoke
-                                            </button>
-                                        </form>
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">
-                                    No invitations sent yet
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+<!-- Send Invitation Modal -->
+<div class="modal fade" id="sendInvitationModal" tabindex="-1" role="dialog" aria-labelledby="sendInvitationModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sendInvitationModalLabel">
+                    <i class="mdi mdi-email-send me-2"></i>Send Staff Invitation
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
+            <form action="{{ route('school.staff.invite') }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="modalEmail" class="form-label">Email Address</label>
+                        <input type="email" class="form-control @error('email') is-invalid @enderror" 
+                               id="modalEmail" name="email" required value="{{ old('email') }}">
+                        @error('email')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <div class="form-text">Enter the email address of the person you want to invite</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalRole" class="form-label">Role</label>
+                        <select class="form-select @error('role') is-invalid @enderror" id="modalRole" name="role" required>
+                            <option value="">Select Role</option>
+                            <option value="school-admin" {{ old('role') == 'school-admin' ? 'selected' : '' }}>
+                                Admin (Can manage staff)
+                            </option>
+                            <option value="school-staff" {{ old('role') == 'school-staff' ? 'selected' : '' }}>
+                                Staff Member
+                            </option>
+                        </select>
+                        @error('role')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <div class="form-text">Choose the role for the new staff member</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="mdi mdi-send me-2"></i>Send Invitation
+                    </button>
+                </div>
+            </form>
         </div>
-        @if($invitations->hasPages())
-            <div class="card-footer">
-                {{ $invitations->links() }}
-            </div>
-        @endif
     </div>
 </div>
+
 @endsection
