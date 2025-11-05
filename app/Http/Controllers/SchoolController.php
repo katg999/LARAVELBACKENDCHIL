@@ -141,6 +141,7 @@ class SchoolController extends Controller
             'doctorsCount' => $doctors->count(),
             'weeklyAppointments' => $weeklyAppointments,
             'weeklyLabTests' => $weeklyLabTests,
+            'pageTitle' => $school->name . ' - School Dashboard',
         ]);
     }
 }

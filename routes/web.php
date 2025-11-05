@@ -36,13 +36,13 @@ use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     if (Auth::check()) {
-        return redirect('/home');
+        return redirect('/admin');
     }
     return redirect('https://ketiai.com');
 });
 
 // Home Route (Fixed Controller Reference)
-Route::get('/home', [HomeController::class, 'index'])->name('home');
+// Route::get('/home', [HomeController::class, 'index'])->name('home');
 
 // API Dashboard Route
 Route::get('/api-dashboard', [ApiDashboardController::class, 'index'])->name('api-dashboard');
@@ -79,7 +79,7 @@ Route::post('/send-otp', [App\Http\Controllers\OtpController::class, 'sendOtp'])
 
 use App\Http\Controllers\SchoolController;
 
-Route::middleware(['auth', 'role:school-admin,school-staff'])->group(function () {
+Route::middleware(['auth', 'role:school-admin,school-staff,admin'])->group(function () {
     Route::get('/school-dashboard', [SchoolController::class, 'showDashboard'])
     ->name('school.dashboard');
 
@@ -578,6 +578,11 @@ Route::prefix('admin')->middleware(['web', 'auth', 'role:admin'])->group(functio
     Route::get('/invitations', [AdminController::class, 'invitations'])->name('admin.invitations.index');
     Route::post('/invitations/{type}/{id}/resend', [AdminController::class, 'resendInvitation'])->name('admin.invitations.resend');
     Route::delete('/invitations/{type}/{id}', [AdminController::class, 'revokeInvitation'])->name('admin.invitations.revoke');
+
+    // School Invitation Routes for Admin
+    Route::get('/schools/{school}/invitations', [App\Http\Controllers\SchoolInvitationController::class, 'invitations'])->name('admin.schools.invitations');
+    Route::post('/schools/{school}/invitations/send', [App\Http\Controllers\SchoolInvitationController::class, 'sendInvitation'])->name('admin.schools.invitations.send');
+    Route::delete('/schools/{school}/invitations/{invitation}/revoke', [App\Http\Controllers\SchoolInvitationController::class, 'revokeInvitation'])->name('admin.schools.invitations.revoke');
 
     Route::get('/doctor-availabilities', [AdminModelController::class, 'index'])->name('admin.doctor-availabilities.index');
 

@@ -5,17 +5,129 @@
     $currentPath = request()->path();
     $routeLength = strlen($currentRoute);
 @endphp
-<!-- Debug Info: 
+<!-- Debug Info:
 Current Route: '{{ $currentRoute }}'
 Current Path: '{{ $currentPath }}'
 Route Length: {{ $routeLength }}
 Route Dump: @json($currentRoute)
 -->
-<!-- Debug Info: 
+<!-- Debug Info:
 Current Route: {{ $currentRoute }}
 Current Path: {{ $currentPath }}
 -->
-@if($isAdmin)
+@if(isset($school) || Str::startsWith($currentRoute, 'school.'))
+<ul class="nav">
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('school-dashboard') ? 'active' : '' }}" href="{{ route('school.dashboard') }}">
+            <i class="typcn typcn-device-desktop menu-icon"></i>
+            <span class="menu-title">Dashboard</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('students*') ? 'active' : '' }}" href="{{ route('students') }}">
+            <i class="typcn typcn-user menu-icon"></i>
+            <span class="menu-title">Students</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('book-doctor*') ? 'active' : '' }}" href="{{ route('book-doctor') }}">
+            <i class="mdi mdi-calendar-clock menu-icon"></i>
+            <span class="menu-title">Appointments</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('lab-tests*') ? 'active' : '' }}" href="{{ route('lab-tests') }}">
+            <i class="mdi mdi-flask menu-icon"></i>
+            <span class="menu-title">Lab Tests</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-toggle="collapse" href="#school-staff" aria-expanded="false" aria-controls="school-staff">
+            <i class="mdi mdi-account-group menu-icon"></i>
+            <span class="menu-title">Staff</span>
+            <i class="menu-arrow"></i>
+        </a>
+        <div class="collapse" id="school-staff">
+            <ul class="nav flex-column sub-menu">
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->is('staff') && !request()->is('staff/invitations*') ? 'active' : '' }}"
+                       href="{{ route('school.staff.index') }}">Staff Management</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->is('staff/invitations*') ? 'active' : '' }}"
+                       href="{{ route('school.staff.invitations') }}">Invitations</a>
+                </li>
+            </ul>
+        </div>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('transactions*') ? 'active' : '' }}" href="{{ route('school.transactions') }}">
+            <i class="mdi mdi-square-inc-cash menu-icon"></i>
+            <span class="menu-title">Transactions</span>
+        </a>
+    </li>
+</ul>
+@elseif(isset($healthFacility) || Str::startsWith($currentRoute, 'health-facility.'))
+<ul class="nav">
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('health-facility/dashboard*') ? 'active' : '' }}" href="{{ route('health-facility.dashboard') }}">
+            <i class="mdi mdi-view-dashboard menu-icon"></i>
+            <span class="menu-title">Dashboard</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('health-facility/patients*') ? 'active' : '' }}" href="{{ route('health-facility.patients') }}">
+            <i class="mdi mdi-account-multiple menu-icon"></i>
+            <span class="menu-title">Patients</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('health-facility/book-doctor*') ? 'active' : '' }}" href="{{ route('health-facility.book-doctor') }}">
+            <i class="mdi mdi-calendar-plus menu-icon"></i>
+            <span class="menu-title">Appointments</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('health-facility/staff*') ? 'active' : '' }}" href="{{ route('health-facility.staff') }}">
+            <i class="mdi mdi-account-group menu-icon"></i>
+            <span class="menu-title">Staff</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('health-facility/transactions*') ? 'active' : '' }}" href="{{ route('health-facility.transactions') }}">
+            <i class="mdi mdi-square-inc-cash menu-icon"></i>
+            <span class="menu-title">Transactions</span>
+        </a>
+    </li>
+</ul>
+@elseif(isset($doctor) || Str::startsWith($currentRoute, 'doctor.'))
+<ul class="nav">
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('doctor/dashboard*') ? 'active' : '' }}" href="{{ route('doctor.dashboard') }}">
+            <i class="typcn typcn-device-desktop menu-icon"></i>
+            <span class="menu-title">Dashboard</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('doctor/appointments*') ? 'active' : '' }}" href="{{ route('doctor.appointments') }}">
+            <i class="typcn typcn-calendar menu-icon"></i>
+            <span class="menu-title">Appointments</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('doctor/meeting-link*') ? 'active' : '' }}" href="{{ route('doctor.meeting-link') }}">
+            <i class="typcn typcn-video menu-icon"></i>
+            <span class="menu-title">Meeting link</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('doctor/availability*') ? 'active' : '' }}" href="{{ route('doctor.availability') }}">
+            <i class="mdi mdi-calendar-clock menu-icon"></i>
+            <span class="menu-title">My Availability</span>
+        </a>
+    </li>
+</ul>
+@elseif($isAdmin)
 <ul class="nav">
     <li class="nav-item">
         <a class="nav-link {{ Str::startsWith($currentRoute, 'admin.index') ? 'active' : '' }}" href="{{ route('admin.index') }}">
@@ -88,118 +200,6 @@ Current Path: {{ $currentPath }}
         <a class="nav-link {{ Str::startsWith($currentRoute, 'admin.durations.') ? 'active' : '' }}" href="{{ route('admin.durations.index') }}">
             <i class="mdi mdi-timer menu-icon"></i>
             <span class="menu-title">Durations</span>
-        </a>
-    </li>
-</ul>
-@elseif(isset($school))
-<ul class="nav">
-    <li class="nav-item">
-        <a class="nav-link {{ request()->is('school-dashboard') ? 'active' : '' }}" href="{{ route('school.dashboard', ['school' => $school->id]) }}">
-            <i class="typcn typcn-device-desktop menu-icon"></i>
-            <span class="menu-title">Dashboard</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {{ request()->is('students*') ? 'active' : '' }}" href="{{ route('students', ['school' => $school->id]) }}">
-            <i class="typcn typcn-user menu-icon"></i>
-            <span class="menu-title">Students</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {{ request()->is('book-doctor*') ? 'active' : '' }}" href="{{ route('book-doctor', ['school' => $school->id]) }}">
-            <i class="mdi mdi-calendar-clock menu-icon"></i>
-            <span class="menu-title">Appointments</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {{ request()->is('lab-tests*') ? 'active' : '' }}" href="{{ route('lab-tests', ['school' => $school->id]) }}">
-            <i class="mdi mdi-flask menu-icon"></i>
-            <span class="menu-title">Lab Tests</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" data-toggle="collapse" href="#school-staff" aria-expanded="false" aria-controls="school-staff">
-            <i class="mdi mdi-account-group menu-icon"></i>
-            <span class="menu-title">Staff</span>
-            <i class="menu-arrow"></i>
-        </a>
-        <div class="collapse" id="school-staff">
-            <ul class="nav flex-column sub-menu">
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->is('staff') && !request()->is('staff/invitations*') ? 'active' : '' }}"
-                       href="{{ route('school.staff.index') }}">Staff Management</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->is('staff/invitations*') ? 'active' : '' }}"
-                       href="{{ route('school.staff.invitations') }}">Invitations</a>
-                </li>
-            </ul>
-        </div>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {{ request()->is('transactions*') ? 'active' : '' }}" href="{{ route('school.transactions', ['school' => $school->id]) }}">
-            <i class="mdi mdi-square-inc-cash menu-icon"></i>
-            <span class="menu-title">Transactions</span>
-        </a>
-    </li>
-</ul>
-@elseif(isset($healthFacility))
-<ul class="nav">
-    <li class="nav-item">
-        <a class="nav-link {{ request()->is('health-facility/dashboard*') ? 'active' : '' }}" href="{{ route('health-facility.dashboard') }}">
-            <i class="mdi mdi-view-dashboard menu-icon"></i>
-            <span class="menu-title">Dashboard</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {{ request()->is('health-facility/patients*') ? 'active' : '' }}" href="{{ route('health-facility.patients') }}">
-            <i class="mdi mdi-account-multiple menu-icon"></i>
-            <span class="menu-title">Patients</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {{ request()->is('health-facility/book-doctor*') ? 'active' : '' }}" href="{{ route('health-facility.book-doctor') }}">
-            <i class="mdi mdi-calendar-plus menu-icon"></i>
-            <span class="menu-title">Appointments</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {{ request()->is('health-facility/staff*') ? 'active' : '' }}" href="{{ route('health-facility.staff') }}">
-            <i class="mdi mdi-account-group menu-icon"></i>
-            <span class="menu-title">Staff</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {{ request()->is('health-facility/transactions*') ? 'active' : '' }}" href="{{ route('health-facility.transactions') }}">
-            <i class="mdi mdi-square-inc-cash menu-icon"></i>
-            <span class="menu-title">Transactions</span>
-        </a>
-    </li>
-</ul>
-@elseif(isset($doctor))
-<ul class="nav">
-    <li class="nav-item">
-        <a class="nav-link {{ request()->is('doctor/dashboard*') ? 'active' : '' }}" href="{{ route('doctor.dashboard') }}">
-            <i class="typcn typcn-device-desktop menu-icon"></i>
-            <span class="menu-title">Dashboard</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {{ request()->is('doctor/appointments*') ? 'active' : '' }}" href="{{ route('doctor.appointments') }}">
-            <i class="typcn typcn-calendar menu-icon"></i>
-            <span class="menu-title">Appointments</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {{ request()->is('doctor/meeting-link*') ? 'active' : '' }}" href="{{ route('doctor.meeting-link') }}">
-            <i class="typcn typcn-video menu-icon"></i>
-            <span class="menu-title">Meeting link</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {{ request()->is('doctor/availability*') ? 'active' : '' }}" href="{{ route('doctor.availability') }}">
-            <i class="mdi mdi-calendar-clock menu-icon"></i>
-            <span class="menu-title">My Availability</span>
         </a>
     </li>
 </ul>

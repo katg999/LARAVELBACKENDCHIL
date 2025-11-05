@@ -53,10 +53,14 @@
             <a class="nav-link" href="#" data-toggle="dropdown" id="profileDropdown">
               <img src="{{ asset('images/profile.png') }}" alt="profile"/>
               <span class="nav-profile-name">
-                @if(auth()->user() && auth()->user()->is_admin)
-                  Admin - {{ auth()->user()->name }}
+                @if(isset($school))
+                  School Admin - {{ auth()->user()->name }}
+                @elseif(isset($healthFacility))
+                  Health Facility Admin - {{ auth()->user()->name }}
                 @elseif(isset($doctor))
                   Dr. {{ $doctor->name }}
+                @elseif(auth()->user() && auth()->user()->is_admin)
+                  Admin - {{ auth()->user()->name }}
                 @else
                   {{ auth()->user()->name ?? 'User' }}
                 @endif
@@ -78,10 +82,16 @@
             </div>
           </li>
           <li class="nav-item nav-user-status dropdown">
-              @if(auth()->check() && !auth()->user()->is_admin)
-                School: {{ auth()->user()->school->name ?? 'N/A' }}
-              @else
+              @if(isset($school))
+                School: {{ $school->name }}
+              @elseif(isset($healthFacility))
+                Health Facility: {{ $healthFacility->name }}
+              @elseif(isset($doctor))
+                Doctor Account
+              @elseif(auth()->check() && auth()->user()->is_admin)
                 Administrator Account
+              @else
+                User Account
               @endif
           </li>
         </ul>

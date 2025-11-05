@@ -91,7 +91,7 @@ class RouteHealthCheckTest extends TestCase
         // Public routes that don't require authentication
         $publicRoutes = [
             ['method' => 'GET', 'uri' => '/'],
-            ['method' => 'GET', 'uri' => '/home'],
+            // ['method' => 'GET', 'uri' => '/home'], // Removed - route no longer exists
             ['method' => 'GET', 'uri' => '/api-dashboard'],
             ['method' => 'GET', 'uri' => '/finance-dashboard'],
             ['method' => 'GET', 'uri' => '/login'],
