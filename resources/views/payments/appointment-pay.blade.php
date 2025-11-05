@@ -230,7 +230,7 @@
               @if($appointment->school_id)
                 window.location.href = '{{ route("book-doctor", ["school" => $appointment->school_id]) }}';
               @elseif($appointment->healthFacility)
-                window.location.href = '{{ route("health-facility.book-doctor", $appointment->healthFacility->id) }}';
+                window.location.href = '{{ route("health-facility.appointments", $appointment->healthFacility->id) }}';
               @else
                 window.location.href = '/'; // fallback to home
               @endif
@@ -287,7 +287,7 @@
           @if($appointment->school_id)
             window.location.href = '{{ route("book-doctor", ["school" => $appointment->school_id]) }}';
           @elseif($appointment->healthFacility)
-            window.location.href = '{{ route("health-facility.book-doctor", $appointment->healthFacility->id) }}';
+            window.location.href = '{{ route("health-facility.appointments", $appointment->healthFacility->id) }}';
           @else
             window.location.href = '/'; // fallback to home
           @endif

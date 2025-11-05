@@ -33,7 +33,7 @@ class PaymentController extends Controller
                 return redirect()->route('book-doctor', ['school' => $appointment->school_id])
                     ->with('success', 'This appointment has already been confirmed and paid for.');
             } elseif ($appointment->health_facility_id) {
-                return redirect()->route('health-facility.book-doctor', ['id' => $appointment->health_facility_id])
+                return redirect()->route('health-facility.appointments', ['id' => $appointment->health_facility_id])
                     ->with('success', 'This appointment has already been confirmed and paid for.');
             } else {
                 return redirect('/')->with('success', 'This appointment has already been confirmed and paid for.');

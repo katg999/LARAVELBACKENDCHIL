@@ -30,7 +30,13 @@ Current Path: {{ $currentPath }}
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {{ request()->is('book-doctor*') ? 'active' : '' }}" href="{{ route('book-doctor') }}">
+        <a class="nav-link {{ request()->is('doctors*') ? 'active' : '' }}" href="{{ route('doctors') }}">
+            <i class="mdi mdi-stethoscope menu-icon"></i>
+            <span class="menu-title">Doctors</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('book-doctor*') ? 'active' : '' }}" href="{{ route('appointments') }}">
             <i class="mdi mdi-calendar-clock menu-icon"></i>
             <span class="menu-title">Appointments</span>
         </a>
@@ -82,7 +88,13 @@ Current Path: {{ $currentPath }}
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {{ request()->is('health-facility/book-doctor*') ? 'active' : '' }}" href="{{ route('health-facility.book-doctor') }}">
+        <a class="nav-link {{ request()->is('health-facility/doctors*') ? 'active' : '' }}" href="{{ route('health-facility.doctors') }}">
+            <i class="mdi mdi-stethoscope menu-icon"></i>
+            <span class="menu-title">Doctors</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('health-facility/book-doctor*') ? 'active' : '' }}" href="{{ route('health-facility.appointments') }}">
             <i class="mdi mdi-calendar-plus menu-icon"></i>
             <span class="menu-title">Appointments</span>
         </a>

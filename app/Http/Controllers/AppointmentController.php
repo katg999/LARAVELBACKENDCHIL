@@ -158,7 +158,7 @@ class AppointmentController extends Controller
 
             // Redirect based on context
             if ($appointment->health_facility_id) {
-                return redirect()->route('health-facility.book-doctor', ['id' => $appointment->health_facility_id])
+                return redirect()->route('health-facility.appointments', ['id' => $appointment->health_facility_id])
                     ->with('success', 'Appointment booked successfully');
             }
             if ($appointment->school_id) {

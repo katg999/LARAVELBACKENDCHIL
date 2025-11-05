@@ -38,7 +38,7 @@ Route::get('/', function () {
     if (Auth::check()) {
         return redirect('/admin');
     }
-    return redirect('https://ketiai.com');
+    return redirect('/login');
 });
 
 // Home Route (Fixed Controller Reference)
@@ -265,7 +265,7 @@ Route::middleware(['auth', 'role:school-admin,school-staff,admin'])->group(funct
         return redirect()->route('lab-tests')->with('success', 'Lab test marked completed');
     })->name('lab-tests.complete');
 
-    Route::get('/book-doctor', function (Request $request) {
+    Route::get('/appointments', function (Request $request) {
         $user = Auth::user();
         $school = \App\Models\School::findOrFail($user->school_id);
 
@@ -275,7 +275,101 @@ Route::middleware(['auth', 'role:school-admin,school-staff,admin'])->group(funct
             'patients' => $school->students()->latest()->get(),
             'doctors' => Doctor::latest()->get()
         ]);
-    })->name('book-doctor');
+    })->name('appointments');
+
+    // New booking flow routes
+    Route::get('/book-appointment/{doctor}', function (Request $request, Doctor $doctor) {
+        $user = Auth::user();
+        $school = \App\Models\School::findOrFail($user->school_id);
+
+        $selectedDate = $request->query('date');
+        if (!$selectedDate) {
+            return redirect()->back()->with('error', 'Please select a date to book an appointment.');
+        }
+
+        return view('booking.step1', [
+            'school' => $school,
+            'doctor' => $doctor,
+            'patients' => $school->students()->latest()->get(),
+            'durations' => \App\Models\Duration::active()->get(),
+            'selectedDate' => $selectedDate
+        ]);
+    })->name('book.appointment.step1');
+
+    Route::post('/book-appointment/{doctor}/step1', function (Request $request, Doctor $doctor) {
+        $user = Auth::user();
+        $school = \App\Models\School::findOrFail($user->school_id);
+
+        $validated = $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'duration_id' => 'required|exists:durations,id',
+            'appointment_date' => 'required|date',
+            'appointment_time' => 'required|date_format:H:i',
+        ]);
+
+        // Combine date and time
+        $appointmentDateTime = $validated['appointment_date'] . ' ' . $validated['appointment_time'] . ':00';
+
+        // Validate that the appointment is in the future
+        if (\Carbon\Carbon::parse($appointmentDateTime)->isPast()) {
+            return redirect()->back()->withErrors(['appointment_time' => 'Appointment time must be in the future.'])->withInput();
+        }
+
+        // Store booking data in session for step 2
+        session([
+            'booking' => [
+                'doctor_id' => $doctor->id,
+                'patient_id' => $validated['patient_id'],
+                'duration_id' => $validated['duration_id'],
+                'appointment_time' => $appointmentDateTime,
+                'school_id' => $school->id,
+            ]
+        ]);
+
+        return redirect()->route('book.appointment.step2', $doctor);
+    })->name('book.appointment.step1.process');
+
+    Route::get('/book-appointment/{doctor}/step2', function (Request $request, Doctor $doctor) {
+        $booking = session('booking');
+        if (!$booking || $booking['doctor_id'] != $doctor->id) {
+            return redirect()->route('book.appointment.step1', $doctor)->with('error', 'Please start the booking process again.');
+        }
+
+        $user = Auth::user();
+        $school = \App\Models\School::findOrFail($user->school_id);
+        $patient = \App\Models\Patient::findOrFail($booking['patient_id']);
+        $duration = \App\Models\Duration::findOrFail($booking['duration_id']);
+
+        return view('booking.step2', [
+            'school' => $school,
+            'doctor' => $doctor,
+            'patient' => $patient,
+            'duration' => $duration,
+            'appointment_time' => $booking['appointment_time'],
+            'price' => $duration->getPriceForDoctor($doctor)
+        ]);
+    })->name('book.appointment.step2');
+
+    Route::get('/doctors', function (Request $request) {
+        $user = Auth::user();
+        $school = \App\Models\School::findOrFail($user->school_id);
+
+        $query = \App\Models\Doctor::query();
+
+        // Filter by date if provided
+        if ($request->filled('date')) {
+            $dayOfWeek = \Carbon\Carbon::parse($request->date)->format('l'); // e.g., "Monday"
+            $query->availableOnDay($dayOfWeek);
+        }
+
+        $doctors = $query->latest()->paginate(12);
+
+        return view('doctors.index', [
+            'school' => $school,
+            'doctors' => $doctors,
+            'selectedDate' => $request->date
+        ]);
+    })->name('doctors');
 
     Route::get('/transactions', function (Request $request) {
         $user = Auth::user();
@@ -710,10 +804,104 @@ Route::middleware(['auth', 'role:health-facility-staff,health-facility-admin,hea
         return app(HealthFacilityController::class)->destroyPatient($request, $user->health_facility_id, $patientId);
     })->name('health-facility.patients.destroy');
 
-    Route::get('/health-facility/book-doctor', function (Request $request) {
+    Route::get('/health-facility/doctors', function (Request $request) {
+        $user = Auth::user();
+        $healthFacility = \App\Models\HealthFacility::findOrFail($user->health_facility_id);
+
+        $query = \App\Models\Doctor::query();
+
+        // Filter by date if provided
+        if ($request->filled('date')) {
+            $dayOfWeek = \Carbon\Carbon::parse($request->date)->format('l'); // e.g., "Monday"
+            $query->availableOnDay($dayOfWeek);
+        }
+
+        $doctors = $query->latest()->paginate(12);
+
+        return view('doctors.index', [
+            'healthFacility' => $healthFacility,
+            'doctors' => $doctors,
+            'selectedDate' => $request->date
+        ]);
+    })->name('health-facility.doctors');
+
+    Route::get('/health-facility/appointments', function (Request $request) {
         $user = Auth::user();
         return app(HealthFacilityController::class)->bookDoctor($request, $user->health_facility_id);
-    })->name('health-facility.book-doctor');
+    })->name('health-facility.appointments');
+
+    // New booking flow routes for health facilities
+    Route::get('/health-facility/book-appointment/{doctor}', function (Request $request, Doctor $doctor) {
+        $user = Auth::user();
+        $healthFacility = \App\Models\HealthFacility::findOrFail($user->health_facility_id);
+
+        $selectedDate = $request->query('date');
+        if (!$selectedDate) {
+            return redirect()->back()->with('error', 'Please select a date to book an appointment.');
+        }
+
+        return view('booking.step1', [
+            'healthFacility' => $healthFacility,
+            'doctor' => $doctor,
+            'patients' => $healthFacility->patients()->latest()->get(),
+            'durations' => \App\Models\Duration::active()->get(),
+            'selectedDate' => $selectedDate
+        ]);
+    })->name('health-facility.book.appointment.step1');
+
+    Route::post('/health-facility/book-appointment/{doctor}/step1', function (Request $request, Doctor $doctor) {
+        $user = Auth::user();
+        $healthFacility = \App\Models\HealthFacility::findOrFail($user->health_facility_id);
+
+        $validated = $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'duration_id' => 'required|exists:durations,id',
+            'appointment_date' => 'required|date',
+            'appointment_time' => 'required|date_format:H:i',
+        ]);
+
+        // Combine date and time
+        $appointmentDateTime = $validated['appointment_date'] . ' ' . $validated['appointment_time'] . ':00';
+
+        // Validate that the appointment is in the future
+        if (\Carbon\Carbon::parse($appointmentDateTime)->isPast()) {
+            return redirect()->back()->withErrors(['appointment_time' => 'Appointment time must be in the future.'])->withInput();
+        }
+
+        // Store booking data in session for step 2
+        session([
+            'booking' => [
+                'doctor_id' => $doctor->id,
+                'patient_id' => $validated['patient_id'],
+                'duration_id' => $validated['duration_id'],
+                'appointment_time' => $appointmentDateTime,
+                'health_facility_id' => $healthFacility->id,
+            ]
+        ]);
+
+        return redirect()->route('health-facility.book.appointment.step2', $doctor);
+    })->name('health-facility.book.appointment.step1.process');
+
+    Route::get('/health-facility/book-appointment/{doctor}/step2', function (Request $request, Doctor $doctor) {
+        $booking = session('booking');
+        if (!$booking || $booking['doctor_id'] != $doctor->id) {
+            return redirect()->route('health-facility.book.appointment.step1', $doctor)->with('error', 'Please start the booking process again.');
+        }
+
+        $user = Auth::user();
+        $healthFacility = \App\Models\HealthFacility::findOrFail($user->health_facility_id);
+        $patient = \App\Models\Patient::findOrFail($booking['patient_id']);
+        $duration = \App\Models\Duration::findOrFail($booking['duration_id']);
+
+        return view('booking.step2', [
+            'healthFacility' => $healthFacility,
+            'doctor' => $doctor,
+            'patient' => $patient,
+            'duration' => $duration,
+            'appointment_time' => $booking['appointment_time'],
+            'price' => $duration->getPriceForDoctor($doctor)
+        ]);
+    })->name('health-facility.book.appointment.step2');
 
     Route::get('/health-facility/lab-tests', function (Request $request) {
         $user = Auth::user();
