@@ -164,16 +164,6 @@
                                 </button>
                             </div>
                         </form>
-
-                        <!-- Register Link -->
-                        @if(!isset($invitation) || !$invitation)
-                            <div class="text-center mt-4">
-                                <p class="text-muted mb-2">Don't have an account?</p>
-                                <a href="{{ route('register') }}" class="btn btn-outline-secondary rounded-3">
-                                    <i class="mdi mdi-account-plus me-2"></i>Create Account
-                                </a>
-                            </div>
-                        @endif
                     </div>
 
                     <!-- Footer -->
