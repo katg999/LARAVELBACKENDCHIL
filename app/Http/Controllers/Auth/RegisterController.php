@@ -225,12 +225,15 @@ class RegisterController extends Controller
             return $user;
         } else {
             // Create new user
-            return User::create([
+            $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
                 'is_admin' => true,
             ]);
+
+            // Assign admin role to new admin users
+            $user->assignRole('admin');
         }
     }
 
