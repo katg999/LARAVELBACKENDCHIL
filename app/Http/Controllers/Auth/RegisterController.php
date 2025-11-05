@@ -234,6 +234,7 @@ class RegisterController extends Controller
 
             // Assign admin role to new admin users
             $user->assignRole('admin');
+            return $user;
         }
     }
 
