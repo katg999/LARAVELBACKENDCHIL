@@ -86,7 +86,8 @@ class RbacIntegrationTest extends TestCase
 
         // Staff cannot access admin routes
         $response = $this->actingAs($staffUser)->get('/admin-only');
-        $response->assertStatus(403);
+        $response->assertStatus(302); // Redirect to login when role not found
+        $response->assertRedirect('/login');
 
         // Staff can access staff routes
         $response = $this->actingAs($staffUser)->get('/staff-only');
@@ -95,7 +96,8 @@ class RbacIntegrationTest extends TestCase
 
         // Admin can also access staff routes (if they have the role, but in this case admin doesn't)
         $response = $this->actingAs($adminUser)->get('/staff-only');
-        $response->assertStatus(403);
+        $response->assertStatus(302); // Redirect to login when role not found
+        $response->assertRedirect('/login');
     }
 
     /** @test */
@@ -161,8 +163,10 @@ class RbacIntegrationTest extends TestCase
 
         // Check roles were created
         $this->assertDatabaseHas('roles', ['slug' => 'admin']);
+        $this->assertDatabaseHas('roles', ['slug' => 'school-admin']);
         $this->assertDatabaseHas('roles', ['slug' => 'school-staff']);
-        $this->assertDatabaseHas('roles', ['slug' => 'health-facility-staff']);
+        $this->assertDatabaseHas('roles', ['slug' => 'health-facility-admin']);
+        $this->assertDatabaseHas('roles', ['slug' => 'health-facility-medical-personnel']);
 
         // Check permissions were created
         $this->assertDatabaseHas('permissions', ['slug' => 'view-admin-dashboard']);
@@ -175,7 +179,7 @@ class RbacIntegrationTest extends TestCase
         // Check role-permission relationships
         $adminRole = Role::where('slug', 'admin')->first();
         $schoolRole = Role::where('slug', 'school-staff')->first();
-        $healthRole = Role::where('slug', 'health-facility-staff')->first();
+        $healthRole = Role::where('slug', 'health-facility-medical-personnel')->first();
 
         $this->assertNotNull($adminRole);
         $this->assertNotNull($schoolRole);

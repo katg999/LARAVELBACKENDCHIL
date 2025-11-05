@@ -35,8 +35,13 @@ class RoleMiddleware
         if (!$hasRole) {
             // If user doesn't have required role, log them out and redirect to login
             Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+            
+            // Only manipulate session if it's available (not in testing or API contexts)
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+            
             return redirect()->route('login')->with('error', 'Your access has been revoked. Please contact an administrator.');
         }
 
