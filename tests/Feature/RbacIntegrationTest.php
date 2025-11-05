@@ -5,12 +5,12 @@ namespace Tests\Feature;
 use App\User;
 use App\Models\Role;
 use App\Models\Permission;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class RbacIntegrationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /** @test */
     public function complete_rbac_workflow_works_end_to_end()

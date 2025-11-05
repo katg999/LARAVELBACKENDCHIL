@@ -5,12 +5,12 @@ namespace Tests\Unit;
 use App\Models\Role;
 use App\Models\Permission;
 use App\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class RoleModelTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /** @test */
     public function it_can_create_a_role()

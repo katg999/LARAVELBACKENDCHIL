@@ -3,13 +3,13 @@
 namespace Tests\Feature;
 
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use App\Models\NewsletterSubscriber;
 use PHPUnit\Framework\Attributes\Test;
 
 class NewsletterUnsubscribeTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     #[Test]
     public function it_unsubscribes_via_post_and_is_case_insensitive()

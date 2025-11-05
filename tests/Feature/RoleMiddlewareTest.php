@@ -4,12 +4,12 @@ namespace Tests\Feature;
 
 use App\User;
 use App\Models\Role;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class RoleMiddlewareTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /** @test */
     public function authenticated_user_with_required_role_can_access_protected_route()

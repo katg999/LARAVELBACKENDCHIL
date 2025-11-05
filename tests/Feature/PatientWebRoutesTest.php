@@ -9,13 +9,13 @@ use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\LabTest;
 use App\Models\Duration;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\CreatesTestDurations;
 use Tests\TestCase;
 
 class PatientWebRoutesTest extends TestCase
 {
-    use RefreshDatabase, CreatesTestDurations;
+    use DatabaseTransactions, CreatesTestDurations;
 
     protected function setUp(): void
     {

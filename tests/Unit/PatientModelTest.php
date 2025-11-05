@@ -5,12 +5,12 @@ namespace Tests\Unit;
 use App\Models\Patient;
 use App\Models\School;
 use App\Models\HealthFacility;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class PatientModelTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /** @test */
     public function it_generates_unique_patient_ids_on_creation()

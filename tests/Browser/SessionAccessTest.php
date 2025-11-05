@@ -4,13 +4,13 @@ namespace Tests\Browser;
 
 use App\Models\School;
 use App\Models\OneTimeLoginToken;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 class SessionAccessTest extends DuskTestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /** @test */
     public function user_can_login_with_one_time_token()

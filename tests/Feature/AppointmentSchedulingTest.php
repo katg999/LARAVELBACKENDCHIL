@@ -7,12 +7,12 @@ use App\Models\Doctor;
 use App\Models\Patient;
 use App\Models\School;
 use App\Models\HealthFacility;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class AppointmentSchedulingTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /** @test */
     public function it_can_schedule_appointment_via_ajax_for_school_patient()

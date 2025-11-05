@@ -5,12 +5,12 @@ namespace Tests\Unit;
 use App\User;
 use App\Models\Role;
 use App\Models\Permission;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class UserRbacTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     /** @test */
     public function user_can_have_multiple_roles()

@@ -4,12 +4,12 @@ namespace Tests\Unit;
 
 use App\Models\Doctor;
 use App\Models\DoctorAvailability;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class DoctorAvailabilityTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function test_doctor_scope_available_on_day_returns_correct_doctors()
     {

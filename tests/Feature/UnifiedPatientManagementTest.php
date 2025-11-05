@@ -10,13 +10,13 @@ use App\Models\LabRequest;
 use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\Duration;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\CreatesTestDurations;
 use Tests\TestCase;
 
 class UnifiedPatientManagementTest extends TestCase
 {
-    use RefreshDatabase, CreatesTestDurations;
+    use DatabaseTransactions, CreatesTestDurations;
 
     protected function setUp(): void
     {
