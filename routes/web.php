@@ -42,7 +42,7 @@ Route::get('/', function () {
 });
 
 // Home Route (Fixed Controller Reference)
-// Route::get('/home', [HomeController::class, 'index'])->name('home');
+Route::get('/home', [HomeController::class, 'index'])->name('home');
 
 // API Dashboard Route
 Route::get('/api-dashboard', [ApiDashboardController::class, 'index'])->name('api-dashboard');
