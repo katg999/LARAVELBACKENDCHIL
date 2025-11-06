@@ -35,7 +35,7 @@
                         @foreach($doctors as $doctor)
                         <tr>
                             <td>{{ $doctor->id }}</td>
-                            <td>{{ $doctor->name }}</td>
+                            <td>{{ $doctor->display_name }}</td>
                             <td>{{ $doctor->email }}</td>
                             <td>{{ $doctor->specialization ?? 'General' }}</td>
                             <td>

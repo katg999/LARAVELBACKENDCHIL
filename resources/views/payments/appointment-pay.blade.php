@@ -27,7 +27,7 @@
             <div class="col-12 col-md-7">
               <dl class="row small mb-0">
                 <dt class="col-4">Patient</dt><dd class="col-8">{{ optional($appointment->patient)->name ?? '—' }}</dd>
-                <dt class="col-4">Doctor</dt><dd class="col-8">{{ optional($appointment->doctor)->name ? 'Dr. ' . $appointment->doctor->name : '—' }}</dd>
+                <dt class="col-4">Doctor</dt><dd class="col-8">{{ optional($appointment->doctor)->display_name ?? '—' }}</dd>
                 <dt class="col-4">Time</dt><dd class="col-8">{{ optional($appointment->appointment_time)->format('D, M j, Y g:i A') }}</dd>
                 <dt class="col-4">Amount</dt><dd class="col-8">{{ $appointment->duration ? number_format($appointment->duration->getPriceForDoctor($appointment->doctor), 0) . ' UGX' : '—' }}</dd>
                 <dt class="col-4">Status</dt><dd class="col-8"><span class="badge bg-warning text-dark">{{ $appointment->status }}</span></dd>
@@ -230,7 +230,7 @@
               @if($appointment->school_id)
                 window.location.href = '{{ route("book-doctor", ["school" => $appointment->school_id]) }}';
               @elseif($appointment->healthFacility)
-                window.location.href = '{{ route("health-facility.book-doctor", $appointment->healthFacility->id) }}';
+                window.location.href = '{{ route("health-facility.appointments", $appointment->healthFacility->id) }}';
               @else
                 window.location.href = '/'; // fallback to home
               @endif
@@ -287,7 +287,7 @@
           @if($appointment->school_id)
             window.location.href = '{{ route("book-doctor", ["school" => $appointment->school_id]) }}';
           @elseif($appointment->healthFacility)
-            window.location.href = '{{ route("health-facility.book-doctor", $appointment->healthFacility->id) }}';
+            window.location.href = '{{ route("health-facility.appointments", $appointment->healthFacility->id) }}';
           @else
             window.location.href = '/'; // fallback to home
           @endif

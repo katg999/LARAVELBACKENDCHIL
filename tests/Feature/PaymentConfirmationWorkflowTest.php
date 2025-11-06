@@ -9,13 +9,13 @@ use App\Models\School;
 use App\Models\HealthFacility;
 use App\Models\Duration;
 use App\Mail\AppointmentConfirmationMail;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class PaymentConfirmationWorkflowTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private $school;
     private $healthFacility;
@@ -156,6 +156,14 @@ class PaymentConfirmationWorkflowTest extends TestCase
     /** @test */
     public function doctor_only_sees_confirmed_appointments_in_dashboard()
     {
+        // Authenticate as doctor via session (doctors use session-based auth)
+        session(['authenticated_user' => [
+            'type' => 'doctor',
+            'id' => $this->doctor->id,
+            'name' => $this->doctor->name,
+            'email' => $this->doctor->email
+        ]]);
+
         // Initially, doctor should not see any appointments (both are awaiting_payment)
         $response = $this->get(route('doctor.dashboard'));
 
@@ -177,8 +185,13 @@ class PaymentConfirmationWorkflowTest extends TestCase
     /** @test */
     public function doctor_getDoctorAppointments_only_returns_confirmed_appointments()
     {
-        // Authenticate as the doctor
-        $this->actingAs($this->doctor, 'doctor');
+        // Authenticate as doctor via session (doctors use session-based auth)
+        session(['authenticated_user' => [
+            'type' => 'doctor',
+            'id' => $this->doctor->id,
+            'name' => $this->doctor->name,
+            'email' => $this->doctor->email
+        ]]);
 
         // Initially no confirmed appointments
         $response = $this->get(route('doctor.appointments', ['id' => $this->doctor->id]));

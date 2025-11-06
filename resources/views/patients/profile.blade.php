@@ -373,7 +373,7 @@
                                 <td>{{ $appointment->notes ?: 'No notes' }}</td>
                                 <td>
                                     @if($appointment->status === 'awaiting_payment')
-                                        <a href="{{ route('payment.appointment.pay', $appointment) }}" class="btn btn-sm btn-success">
+                                        <a href="{{ route('appointment.pay.step2', $appointment) }}" class="btn btn-sm btn-success">
                                             <i class="typcn typcn-credit-card mr-1"></i>Pay Now
                                         </a>
                                     @elseif($appointment->payment_status !== 'completed' && $appointment->status !== 'cancelled')

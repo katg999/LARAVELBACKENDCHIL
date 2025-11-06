@@ -4,12 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Doctor;
 use App\Models\DoctorAvailability;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class ResetDoctorAvailabilityCommandTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function test_command_resets_doctor_availability_for_all_doctors()
     {

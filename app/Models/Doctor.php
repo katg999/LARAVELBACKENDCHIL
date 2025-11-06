@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Doctor extends Authenticatable
 {
+    use HasFactory;
     protected $fillable = [
         'school_id',
         'name',
@@ -64,5 +66,22 @@ class Doctor extends Authenticatable
             ->where('day', strtolower($dayOfWeek))
             ->where('available', true)
             ->exists();
+    }
+
+    /**
+     * Get the doctor's display name with "Dr." prefix if not already present
+     */
+    public function getDisplayNameAttribute()
+    {
+        if (!$this->name) {
+            return 'Doctor';
+        }
+        
+        // Check if name already starts with "Dr." (case-insensitive)
+        if (preg_match('/^dr\.\s*/i', $this->name)) {
+            return $this->name;
+        }
+        
+        return 'Dr. ' . $this->name;
     }
 }

@@ -382,10 +382,12 @@ class MarzPayTest extends TestCase
         $appointment->refresh();
         $this->assertEquals('failed', $appointment->payment_status);
 
-        // When no Payment record exists, no transaction should be created
-        // (transactions are only created when payments are initiated)
+        // A transaction should be created for webhook tracking purposes
         $transaction = \App\Models\Transaction::where('reference_id', 'test-uuid-new')->first();
-        $this->assertNull($transaction);
+        $this->assertNotNull($transaction);
+        $this->assertEquals('failed', $transaction->status);
+        $this->assertEquals('collection.failed', $transaction->webhook_event_type);
+        $this->assertNull($transaction->payment_id); // No associated payment record
     }
 
     public function test_handles_failed_collection_does_not_update_successful_transaction()

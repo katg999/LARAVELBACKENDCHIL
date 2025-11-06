@@ -3,6 +3,14 @@ FROM richarvey/nginx-php-fpm:3.1.6
 # Copy application files
 COPY . /var/www/html/
 
+# Install PHP dependencies (including dev dependencies for testing)
+RUN composer install --no-interaction --optimize-autoloader
+
+# Set proper permissions and run Laravel optimizations
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html/storage && \
+    chmod -R 755 /var/www/html/bootstrap/cache
+
 # Image config
 ENV WEBROOT /var/www/html/public
 ENV PHP_ERRORS_STDERR 1

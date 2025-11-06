@@ -108,10 +108,19 @@ class HealthFacilityController extends Controller
         ]);
     }
 
-    public function showDashboard(Request $request)
+    public function showDashboard(Request $request, $healthFacilityId = null)
     {
-        $authenticatedUser = $request->current_user;
-        $healthFacility = HealthFacility::findOrFail($authenticatedUser['id']);
+        // Get health facility ID from parameter or authenticated user
+        if ($healthFacilityId === null) {
+            $authenticatedUser = $request->current_user;
+            $healthFacilityId = $authenticatedUser['id'] ?? null;
+        }
+        
+        if ($healthFacilityId === null) {
+            abort(403, 'No health facility associated with user');
+        }
+        
+        $healthFacility = HealthFacility::findOrFail($healthFacilityId);
     
         $notifications = collect(); 
     
@@ -190,18 +199,16 @@ class HealthFacilityController extends Controller
         ]);
     }
 
-    public function patients(Request $request)
+    public function patients(Request $request, $healthFacilityId)
     {
-        $authenticatedUser = $request->current_user;
-        $healthFacility = HealthFacility::findOrFail($authenticatedUser['id']);
-        $patients = Patient::forHealthFacility($healthFacility->id)->latest()->get();
+        $healthFacility = HealthFacility::findOrFail($healthFacilityId);
+        $patients = Patient::forHealthFacility($healthFacility->id)->latest()->paginate(10);
         return view('health-facility/patients', compact('healthFacility', 'patients'));
     }
 
-    public function destroyAllPatients(Request $request)
+    public function destroyAllPatients(Request $request, $healthFacilityId)
     {
-        $authenticatedUser = $request->current_user;
-        $healthFacility = HealthFacility::findOrFail($authenticatedUser['id']);
+        $healthFacility = HealthFacility::findOrFail($healthFacilityId);
         
         // Check if a specific patient ID is provided
         if ($request->has('patient_id')) {
@@ -238,10 +245,9 @@ class HealthFacilityController extends Controller
         }
     }
 
-    public function destroyPatient(Request $request, $patientId)
+    public function destroyPatient(Request $request, $healthFacilityId, $patientId)
     {
-        $authenticatedUser = $request->current_user;
-        $healthFacility = HealthFacility::findOrFail($authenticatedUser['id']);
+        $healthFacility = HealthFacility::findOrFail($healthFacilityId);
 
         Log::info('Destroy patient called', ['health_facility_id' => $healthFacility->id, 'patient_id_param' => $patientId]);
 
@@ -264,17 +270,15 @@ class HealthFacilityController extends Controller
             ->with('success', 'Patient and their appointments deleted successfully.');
     }
 
-    public function createPatient(Request $request)
+    public function createPatient(Request $request, $healthFacilityId)
     {
-        $authenticatedUser = $request->current_user;
-        $healthFacility = HealthFacility::findOrFail($authenticatedUser['id']);
+        $healthFacility = HealthFacility::findOrFail($healthFacilityId);
         return view('health-facility/patients-create', compact('healthFacility'));
     }
 
-    public function bookDoctor(Request $request)
+    public function bookDoctor(Request $request, $healthFacilityId)
     {
-        $authenticatedUser = $request->current_user;
-        $healthFacility = HealthFacility::findOrFail($authenticatedUser['id']);
+        $healthFacility = HealthFacility::findOrFail($healthFacilityId);
         $patients = Patient::forHealthFacility($healthFacility->id)->latest()->get();
         $doctors = Doctor::latest()->get();
         $appointments = Appointment::where('health_facility_id', $healthFacility->id)
@@ -284,19 +288,17 @@ class HealthFacilityController extends Controller
         return view('health-facility/book-doctor', compact('healthFacility', 'patients', 'doctors', 'appointments'));
     }
 
-    public function labTests(Request $request)
+    public function labTests(Request $request, $healthFacilityId)
     {
-        $authenticatedUser = $request->current_user;
-        $healthFacility = HealthFacility::findOrFail($authenticatedUser['id']);
+        $healthFacility = HealthFacility::findOrFail($healthFacilityId);
         // Placeholder: if LabTest supports health_facility_id, filter; else show empty list
         $labTests = collect();
         return view('health-facility/lab-tests', compact('healthFacility', 'labTests'));
     }
 
-    public function transactions(Request $request)
+    public function transactions(Request $request, $healthFacilityId)
     {
-        $authenticatedUser = $request->current_user;
-        $healthFacility = HealthFacility::findOrFail($authenticatedUser['id']);
+        $healthFacility = HealthFacility::findOrFail($healthFacilityId);
         // Get transactions/payments related to this health facility
         // For now, we'll show appointments with payment status
         $appointments = Appointment::where('health_facility_id', $healthFacility->id)
@@ -306,10 +308,9 @@ class HealthFacilityController extends Controller
         return view('health-facility/transactions', compact('healthFacility', 'appointments'));
     }
 
-    public function staff(Request $request)
+    public function staff(Request $request, $healthFacilityId)
     {
-        $authenticatedUser = $request->current_user;
-        $healthFacility = HealthFacility::findOrFail($authenticatedUser['id']);
+        $healthFacility = HealthFacility::findOrFail($healthFacilityId);
         // Get doctors associated with this health facility
         $doctors = Doctor::where('health_facility_id', $healthFacility->id)->latest()->get();
         return view('health-facility/staff', compact('healthFacility', 'doctors'));

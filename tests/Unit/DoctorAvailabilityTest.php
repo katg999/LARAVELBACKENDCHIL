@@ -4,33 +4,33 @@ namespace Tests\Unit;
 
 use App\Models\Doctor;
 use App\Models\DoctorAvailability;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class DoctorAvailabilityTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function test_doctor_scope_available_on_day_returns_correct_doctors()
     {
         // Create doctors
         $doctor1 = Doctor::create([
             'name' => 'Dr. Monday',
-            'email' => 'monday@example.com',
+            'email' => 'monday_' . uniqid() . '@example.com',
             'specialization' => 'General Practitioner',
             'contact' => '111111111'
         ]);
 
         $doctor2 = Doctor::create([
             'name' => 'Dr. Tuesday',
-            'email' => 'tuesday@example.com',
+            'email' => 'tuesday_' . uniqid() . '@example.com',
             'specialization' => 'Cardiologist',
             'contact' => '222222222'
         ]);
 
         $doctor3 = Doctor::create([
             'name' => 'Dr. Unavailable',
-            'email' => 'unavailable@example.com',
+            'email' => 'unavailable_' . uniqid() . '@example.com',
             'specialization' => 'Dentist',
             'contact' => '333333333'
         ]);
@@ -55,7 +55,7 @@ class DoctorAvailabilityTest extends TestCase
     {
         $doctor = Doctor::create([
             'name' => 'Dr. Test',
-            'email' => 'test@example.com',
+            'email' => 'test_available_' . uniqid() . '@example.com',
             'specialization' => 'General Practitioner',
             'contact' => '123456789'
         ]);
@@ -78,7 +78,7 @@ class DoctorAvailabilityTest extends TestCase
     {
         $doctor = Doctor::create([
             'name' => 'Dr. Test',
-            'email' => 'test@example.com',
+            'email' => 'test_relationship_' . uniqid() . '@example.com',
             'specialization' => 'General Practitioner',
             'contact' => '123456789'
         ]);
@@ -99,7 +99,7 @@ class DoctorAvailabilityTest extends TestCase
     {
         $doctor = Doctor::create([
             'name' => 'Dr. Test',
-            'email' => 'test@example.com',
+            'email' => 'test_case_insensitive_' . uniqid() . '@example.com',
             'specialization' => 'General Practitioner',
             'contact' => '123456789'
         ]);

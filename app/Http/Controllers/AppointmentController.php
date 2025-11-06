@@ -144,10 +144,122 @@ class AppointmentController extends Controller
                 'appointment_time' => $appointment->appointment_time
             ]);
 
-            // Send confirmation if needed
-            // $this->sendAppointmentConfirmation($appointment); // Removed - confirmation now requires payment
+            // Initiate payment if phone number is provided
+            if ($request->filled('phone_number') && $request->filled('payment_method') && $request->payment_method === 'marzpay') {
+                try {
+                    $duration = $appointment->duration;
+                    $amount = $duration->getPriceForDoctor($appointment->doctor);
+                    
+                    $marzPayService = new \App\Services\MarzPayService();
+                    
+                    // Normalize phone number (same as PaymentController)
+                    $raw = $request->phone_number;
+                    $digits = preg_replace('/\D/', '', $raw);
+                    
+                    if (strlen($digits) === 10 && str_starts_with($digits, '07')) {
+                        // 07XXXXXXXX -> +2567XXXXXXXX
+                        $phone = '+256' . substr($digits, 1);
+                    } elseif (strlen($digits) === 12 && str_starts_with($digits, '2567')) {
+                        // 2567XXXXXXXX -> +2567XXXXXXXX
+                        $phone = '+' . $digits;
+                    } elseif (strlen($digits) === 13 && str_starts_with($digits, '2560')) {
+                        // 25607XXXXXXXX -> +2567XXXXXXXX
+                        $phone = '+256' . substr($digits, 4);
+                    } elseif (strlen($digits) === 9 && str_starts_with($digits, '7')) {
+                        // 7XXXXXXXX -> +2567XXXXXXXX
+                        $phone = '+256' . $digits;
+                    } else {
+                        $phone = '+' . $digits;
+                    }
+                    
+                    $data = [
+                        'amount' => $amount,
+                        'phone_number' => $phone,
+                        'country' => 'UG',
+                        'reference' => (string) \Illuminate\Support\Str::uuid(),
+                        'description' => 'Appointment payment - ' . $appointment->id,
+                        'callback_url' => route('marzpay.webhook'),
+                    ];
+                    
+                    \Log::info('Initiating MarzPay collection', $data);
+                    
+                    $result = $marzPayService->collectMoney($data);
+                    
+                    if (($result['status'] ?? null) === 'success') {
+                        \Log::info('MarzPay collection initiated successfully', ['result' => $result]);
+                        
+                        // Create Payment record
+                        $payment = \App\Models\Payment::create([
+                            'appointment_id' => $appointment->id,
+                            'amount' => $amount,
+                            'phone_number' => $phone,
+                            'reference_id' => $result['data']['transaction']['uuid'] ?? (string) \Illuminate\Support\Str::uuid(),
+                            'status' => 'pending',
+                            'metadata' => [
+                                'marzpay_response' => $result,
+                                'requested_at' => now(),
+                            ]
+                        ]);
 
-            // Check if this is an AJAX request
+                        // Store payment reference on appointment for tracking
+                        $appointment->payment_reference = $payment->reference_id;
+                        $appointment->payment_status = 'pending';
+                        $appointment->save();
+
+                        // Create initial Transaction record
+                        \App\Models\Transaction::create([
+                            'payment_id' => $payment->id,
+                            'reference_id' => $payment->reference_id,
+                            'amount' => $amount,
+                            'status' => 'pending',
+                            'transaction_id' => $result['data']['transaction']['uuid'] ?? null,
+                            'provider' => 'marzpay',
+                            'provider_reference' => $result['data']['transaction']['uuid'] ?? null,
+                            'marzpay_uuid' => $result['data']['transaction']['uuid'] ?? null,
+                            'country' => 'UG',
+                            'description' => 'Appointment payment - ' . $appointment->id,
+                            'transaction_type' => 'collection',
+                            'webhook_event_type' => 'collection.pending',
+                            'collection_data' => $result,
+                        ]);
+                        
+                        $message = 'Payment request sent. Please approve on your phone.';
+                        if ($request->ajax() || $request->wantsJson()) {
+                            return response()->json([
+                                'success' => true,
+                                'message' => $message,
+                                'status' => 'pending',
+                                'reference_id' => $appointment->payment_reference,
+                                'appointment' => $appointment->load(['patient', 'doctor'])
+                            ]);
+                        }
+                    } else {
+                        \Log::warning('MarzPay collection failed', ['result' => $result]);
+                        
+                        $message = $result['message'] ?? 'Failed to initiate payment';
+                        if ($request->ajax() || $request->wantsJson()) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => $message
+                            ], 422);
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Error initiating payment', [
+                        'appointment_id' => $appointment->id,
+                        'error' => $e->getMessage()
+                    ]);
+                    
+                    if ($request->ajax() || $request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Error initiating payment: ' . $e->getMessage()
+                        ], 500);
+                    }
+                }
+            }
+
+            // Check if this is an AJAX request (fallback if no payment)
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => true,
@@ -158,7 +270,7 @@ class AppointmentController extends Controller
 
             // Redirect based on context
             if ($appointment->health_facility_id) {
-                return redirect()->route('health-facility.book-doctor', ['id' => $appointment->health_facility_id])
+                return redirect()->route('health-facility.appointments', ['id' => $appointment->health_facility_id])
                     ->with('success', 'Appointment booked successfully');
             }
             if ($appointment->school_id) {
@@ -218,8 +330,8 @@ class AppointmentController extends Controller
             'doctor_id' => 'required|exists:doctors,id',
             'duration_id' => 'required|exists:durations,id',
             'appointment_time' => 'required|date',
-            'reason' => 'required|string|max:500',
-            'patient_id' => 'required|exists:patients,id',
+            'reason' => 'nullable|string|max:500',
+            'patient_id' => 'nullable|exists:patients,id',
             'school_id' => 'nullable|exists:schools,id',
             'health_facility_id' => 'nullable|exists:health_facilities,id'
         ]);
@@ -290,15 +402,21 @@ class AppointmentController extends Controller
         });
 
         if ($validator->fails()) {
+            // Check if it's a conflict error
+            $conflictError = $validator->errors()->first('appointment_time');
+            
             return response()->json([
                 'valid' => false,
+                'available' => false,
+                'message' => $conflictError ?: 'Validation failed',
                 'errors' => $validator->errors()
             ], 422);
         }
 
         return response()->json([
             'valid' => true,
-            'message' => 'Appointment data is valid'
+            'available' => true,
+            'message' => 'Time slot is available'
         ]);
     }
 
@@ -504,6 +622,64 @@ class AppointmentController extends Controller
                     'error' => $e->getMessage()
                 ]);
             }
+        }
+    }
+
+    /**
+     * Delete an appointment (only if cancelled or awaiting_payment)
+     */
+    public function destroy(Request $request, $id)
+    {
+        try {
+            $appointment = Appointment::findOrFail($id);
+
+            // Only allow deletion of cancelled or awaiting_payment appointments
+            if (!in_array($appointment->status, ['cancelled', 'awaiting_payment'])) {
+                \Log::warning('Attempted to delete appointment with invalid status', [
+                    'appointment_id' => $id,
+                    'status' => $appointment->status
+                ]);
+
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Only cancelled or pending appointments can be deleted.'
+                    ], 400);
+                }
+
+                return redirect()->back()->with('error', 'Only cancelled or pending appointments can be deleted.');
+            }
+
+            \Log::info('Deleting appointment', [
+                'appointment_id' => $id,
+                'status' => $appointment->status
+            ]);
+
+            $appointment->delete();
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Appointment deleted successfully.'
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Appointment deleted successfully.');
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to delete appointment', [
+                'appointment_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to delete appointment: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Failed to delete appointment.');
         }
     }
 }
