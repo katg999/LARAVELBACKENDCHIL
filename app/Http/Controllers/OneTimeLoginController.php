@@ -91,6 +91,9 @@ class OneTimeLoginController extends Controller
     {
         // Authenticate the existing user
         Auth::login($user);
+        
+        // Regenerate session to prevent fixation attacks and ensure session is saved
+        request()->session()->regenerate();
 
         // Mark token as used
         $record->markAsUsed();
@@ -98,7 +101,10 @@ class OneTimeLoginController extends Controller
         \Log::info('School user login successful', [
             'user_id' => $user->id,
             'school_id' => $user->school_id,
-            'email' => $record->email
+            'email' => $record->email,
+            'session_id' => request()->session()->getId(),
+            'auth_check_after_login' => Auth::check(),
+            'user_roles' => $user->roles->pluck('slug')->toArray()
         ]);
 
         return redirect($record->redirectUrl ?? url('/school-dashboard'));
@@ -147,6 +153,9 @@ class OneTimeLoginController extends Controller
     {
         // Authenticate the existing user
         Auth::login($user);
+        
+        // Regenerate session to prevent fixation attacks and ensure session is saved
+        request()->session()->regenerate();
 
         // Mark token as used
         $record->markAsUsed();

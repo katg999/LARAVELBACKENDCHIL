@@ -22,7 +22,8 @@ class SchoolInvitationController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->hasPermission('manage-school-staff')) {
+        // Only school admins can manage staff
+        if (!$user->hasRole('school-admin')) {
             abort(403, 'Unauthorized to manage school staff');
         }
 
@@ -40,7 +41,8 @@ class SchoolInvitationController extends Controller
     {
         $user = $request->user();
         
-        if (!$user->hasPermission('manage-school-staff')) {
+        // Only school admins can manage staff
+        if (!$user->hasRole('school-admin')) {
             abort(403, 'Unauthorized to manage school staff');
         }
 
@@ -68,16 +70,16 @@ class SchoolInvitationController extends Controller
             'user_roles' => $user->roles->pluck('slug')->toArray()
         ]);
         
-        // Check if user has permission (existing admin) OR is a super admin
+        // Check if user is school admin OR super admin
         $isSuperAdmin = $user->hasRole('admin'); // System admin role
-        $hasPermission = $user->hasPermission('manage-school-staff');
+        $isSchoolAdmin = $user->hasRole('school-admin');
         
         \Log::info('School Invitation: Permission check', [
             'is_super_admin' => $isSuperAdmin,
-            'has_permission' => $hasPermission
+            'is_school_admin' => $isSchoolAdmin
         ]);
         
-        if (!$hasPermission && !$isSuperAdmin) {
+        if (!$isSchoolAdmin && !$isSuperAdmin) {
             \Log::warning('School Invitation: Unauthorized access attempt', ['user_id' => $user->id]);
             abort(403, 'Unauthorized to manage school staff');
         }
@@ -293,7 +295,8 @@ class SchoolInvitationController extends Controller
     {
         $user = $request->user();
         
-        if (!$user->hasPermission('manage-school-staff')) {
+        // Only school admins can manage staff
+        if (!$user->hasRole('school-admin')) {
             abort(403, 'Unauthorized to manage school staff');
         }
 
@@ -316,7 +319,8 @@ class SchoolInvitationController extends Controller
     {
         $user = $request->user();
         
-        if (!$user->hasPermission('manage-school-staff')) {
+        // Only school admins can manage staff
+        if (!$user->hasRole('school-admin')) {
             abort(403, 'Unauthorized to manage school staff');
         }
 
