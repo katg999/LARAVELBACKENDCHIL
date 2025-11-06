@@ -107,7 +107,8 @@ class OneTimeLoginController extends Controller
     protected function handleDoctorLogin($doctor, $record)
     {
         // Flush other sessions for this doctor (best-effort)
-        $this->flushSessionsForDoctor($doctor);
+        // Note: flushSessionsForDoctor method not implemented yet
+        // $this->flushSessionsForDoctor($doctor);
 
         // Ensure any currently authenticated user is logged out and session invalidated
         try {
