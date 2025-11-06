@@ -1,7 +1,7 @@
 services:
   # Laravel Application
   app:
-    image: richarvey/nginx-php-fpm:3.1.6
+    image: richarvey/nginx-php-fpm:latest
     container_name: laravel_app
     restart: unless-stopped
     working_dir: /var/www/html

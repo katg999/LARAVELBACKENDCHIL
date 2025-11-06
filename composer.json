@@ -24,7 +24,6 @@
     "require-dev": {
         "fakerphp/faker": "^1.23",
         "filp/whoops": "^2.15",
-        "laravel/dusk": "^8.3",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.1",
         "phpunit/phpunit": "^11.0"
@@ -32,7 +31,8 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "platform-check": false
     },
     "extra": {
         "laravel": {

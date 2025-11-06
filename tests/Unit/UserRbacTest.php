@@ -17,7 +17,7 @@ class UserRbacTest extends TestCase
     {
         $user = User::create([
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'test_user_' . uniqid() . '@example.com',
             'password' => bcrypt('password')
         ]);
 
@@ -43,7 +43,7 @@ class UserRbacTest extends TestCase
     {
         $user = User::create([
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'test_user_role_' . uniqid() . '@example.com',
             'password' => bcrypt('password')
         ]);
 
@@ -64,7 +64,7 @@ class UserRbacTest extends TestCase
     {
         $user = User::create([
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'test_user_perm_' . uniqid() . '@example.com',
             'password' => bcrypt('password')
         ]);
 
@@ -89,7 +89,7 @@ class UserRbacTest extends TestCase
     {
         $user = User::create([
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'test_user_no_perm_' . uniqid() . '@example.com',
             'password' => bcrypt('password')
         ]);
 
@@ -101,7 +101,7 @@ class UserRbacTest extends TestCase
     {
         $user = User::create([
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'test_user_assign_' . uniqid() . '@example.com',
             'password' => bcrypt('password')
         ]);
 
@@ -124,7 +124,7 @@ class UserRbacTest extends TestCase
     {
         $user = User::create([
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'test_user_duplicate_' . uniqid() . '@example.com',
             'password' => bcrypt('password')
         ]);
 
@@ -145,7 +145,7 @@ class UserRbacTest extends TestCase
     {
         $user = User::create([
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'test_user_remove_' . uniqid() . '@example.com',
             'password' => bcrypt('password')
         ]);
 
@@ -171,7 +171,7 @@ class UserRbacTest extends TestCase
     {
         $user = User::create([
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'test_user_non_assign_' . uniqid() . '@example.com',
             'password' => bcrypt('password')
         ]);
 
@@ -186,7 +186,7 @@ class UserRbacTest extends TestCase
     {
         $user = User::create([
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'test_user_perms_rel_' . uniqid() . '@example.com',
             'password' => bcrypt('password')
         ]);
 
@@ -220,7 +220,7 @@ class UserRbacTest extends TestCase
     {
         $user = User::create([
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'test_user_multi_perms_' . uniqid() . '@example.com',
             'password' => bcrypt('password')
         ]);
 
