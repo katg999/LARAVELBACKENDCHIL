@@ -185,7 +185,7 @@ class PatientController extends Controller
      * @param  \App\Models\Patient  $patient
      * @return \Illuminate\Http\Response
      */
-    public function show(Patient $patient)
+    public function show(Patient $patient, Request $request)
     {
         // Load related data
         $patient->load([
@@ -198,10 +198,14 @@ class PatientController extends Controller
             'medicalHistories.doctor'
         ]);
 
-        // Determine which sidebar to show based on patient association
+        // Determine which sidebar to show based on authenticated user type
+        $authenticatedUser = $request->session()->get('authenticated_user');
         $viewData = ['patient' => $patient];
 
-        if ($patient->school) {
+        if ($authenticatedUser && $authenticatedUser['type'] === 'doctor') {
+            $doctor = \App\Models\Doctor::find($authenticatedUser['id']);
+            $viewData['doctor'] = $doctor;
+        } elseif ($patient->school) {
             $viewData['school'] = $patient->school;
         } elseif ($patient->healthFacility) {
             $viewData['healthFacility'] = $patient->healthFacility;
