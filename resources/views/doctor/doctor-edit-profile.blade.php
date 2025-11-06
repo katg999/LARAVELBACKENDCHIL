@@ -92,7 +92,7 @@
                          alt="Profile preview"
                          class="rounded-circle mb-3 border border-white border-3"
                          style="width: 100px; height: 100px; object-fit: cover;">
-                    <h5>{{ $doctor->name }}</h5>
+                    <h5>{{ $doctor->display_name }}</h5>
                     <p class="text-muted mb-1">
                         <i class="mdi mdi-doctor me-1"></i>{{ $doctor->specialization ?? 'General Practitioner' }}
                     </p>

@@ -56,8 +56,8 @@ class RoleMiddlewareTest extends TestCase
 
         $response = $this->actingAs($user)->get('/test-protected-route');
 
-        $response->assertStatus(302); // Redirect to login when role not found
-        $response->assertRedirect('/login');
+        $response->assertStatus(302); // Redirect to home when role not authorized
+        $response->assertRedirect('/');
     }
 
     /** @test */
@@ -177,7 +177,7 @@ class RoleMiddlewareTest extends TestCase
 
         $response = $this->actingAs($user)->get('/test-protected-route');
 
-        $response->assertStatus(302); // Redirect to login when wrong role
-        $response->assertRedirect('/login');
+        $response->assertStatus(302); // Redirect to home when wrong role
+        $response->assertRedirect('/');
     }
 }

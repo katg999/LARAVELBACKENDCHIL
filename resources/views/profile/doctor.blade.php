@@ -14,7 +14,7 @@
                                  class="rounded-circle me-5 border border-white border-3"
                                  style="width: 80px; height: 80px; object-fit: cover;">
                             <div>
-                                <h1 class="h3 mb-1 fw-bold">{{ $doctor->name }}</h1>
+                                <h1 class="h3 mb-1 fw-bold">{{ $doctor->display_name }}</h1>
                                 <p class="mb-1 opacity-85">
                                     <i class="mdi mdi-doctor me-2"></i>{{ $doctor->specialization ?? 'General Practitioner' }}
                                 </p>
@@ -104,7 +104,7 @@
                 <div class="card-body">
                     <dl class="row mb-0">
                         <dt class="col-sm-4 text-muted fw-semibold">Name</dt>
-                        <dd class="col-sm-8">{{ $doctor->name }}</dd>
+                        <dd class="col-sm-8">{{ $doctor->display_name }}</dd>
 
                         <dt class="col-sm-4 text-muted fw-semibold">Specialization</dt>
                         <dd class="col-sm-8">{{ $doctor->specialization ?? 'Not specified' }}</dd>

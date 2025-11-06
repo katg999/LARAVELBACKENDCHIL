@@ -65,7 +65,7 @@
                                             <div class="doctor-avatar mb-3">
                                                 @if($doctor->file_url)
                                                     <img src="{{ $doctor->file_url }}"
-                                                         alt="Dr. {{ $doctor->name }}"
+                                                         alt="{{ $doctor->display_name }}"
                                                          class="rounded-circle img-fluid"
                                                          style="width: 100px; height: 100px; object-fit: cover;">
                                                 @else
@@ -77,7 +77,7 @@
                                             </div>
 
                                             <!-- Doctor Info -->
-                                            <h5 class="card-title mb-1">Dr. {{ $doctor->name }}</h5>
+                                            <h5 class="card-title mb-1">{{ $doctor->display_name }}</h5>
                                             <p class="text-muted mb-2">{{ $doctor->specialization ?? 'General Practitioner' }}</p>
 
                                             <!-- Availability Status -->

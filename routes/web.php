@@ -36,9 +36,21 @@ use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     if (Auth::check()) {
-        return redirect('/admin');
+        $user = Auth::user();
+        
+        // Redirect based on user role
+        if ($user->hasRole('admin')) {
+            return redirect('/admin');
+        } elseif ($user->hasAnyRole(['school-admin', 'school-staff'])) {
+            return redirect()->route('school.dashboard');
+        } elseif ($user->hasAnyRole(['health-facility-admin', 'health-facility-staff', 'health-facility-medical-personnel'])) {
+            return redirect()->route('health-facility.dashboard');
+        }
+        
+        // Default fallback - show a message
+        return view('welcome')->with('message', 'You are logged in but do not have access to any dashboard. Please contact support.');
     }
-    return redirect('/login');
+    return redirect('https://ketiai.com');
 });
 
 // Home Route (Fixed Controller Reference)
@@ -287,6 +299,12 @@ Route::middleware(['auth', 'role:school-admin,school-staff,admin'])->group(funct
             return redirect()->back()->with('error', 'Please select a date to book an appointment.');
         }
 
+        // Clear session booking data if doctor has changed
+        $booking = session('booking');
+        if ($booking && isset($booking['doctor_id']) && $booking['doctor_id'] != $doctor->id) {
+            session()->forget('booking');
+        }
+
         return view('booking.step1', [
             'school' => $school,
             'doctor' => $doctor,
@@ -350,7 +368,7 @@ Route::middleware(['auth', 'role:school-admin,school-staff,admin'])->group(funct
         ]);
     })->name('book.appointment.step2');
 
-    Route::get('/doctors', function (Request $request) {
+    Route::get('/available-doctors', function (Request $request) {
         $user = Auth::user();
         $school = \App\Models\School::findOrFail($user->school_id);
 
@@ -369,7 +387,7 @@ Route::middleware(['auth', 'role:school-admin,school-staff,admin'])->group(funct
             'doctors' => $doctors,
             'selectedDate' => $request->date
         ]);
-    })->name('doctors');
+    })->name('available-doctors');
 
     Route::get('/transactions', function (Request $request) {
         $user = Auth::user();
@@ -784,6 +802,27 @@ Route::middleware(['auth', 'role:health-facility-staff,health-facility-admin,hea
         return app(HealthFacilityController::class)->showDashboard($request, $user->health_facility_id);
     })->name('health-facility.dashboard');
 
+    Route::get('/health-facility/available-doctors', function (Request $request) {
+        $user = Auth::user();
+        $healthFacility = \App\Models\HealthFacility::findOrFail($user->health_facility_id);
+
+        $query = \App\Models\Doctor::query();
+
+        // Filter by date if provided
+        if ($request->filled('date')) {
+            $dayOfWeek = \Carbon\Carbon::parse($request->date)->format('l'); // e.g., "Monday"
+            $query->availableOnDay($dayOfWeek);
+        }
+
+        $doctors = $query->latest()->paginate(12);
+
+        return view('doctors.index', [
+            'healthFacility' => $healthFacility,
+            'doctors' => $doctors,
+            'selectedDate' => $request->date
+        ]);
+    })->name('health-facility.available-doctors');
+
     // Health Facility section routes
     Route::get('/health-facility/patients', function (Request $request) {
         $user = Auth::user();
@@ -805,27 +844,6 @@ Route::middleware(['auth', 'role:health-facility-staff,health-facility-admin,hea
         return app(HealthFacilityController::class)->destroyPatient($request, $user->health_facility_id, $patientId);
     })->name('health-facility.patients.destroy');
 
-    Route::get('/health-facility/doctors', function (Request $request) {
-        $user = Auth::user();
-        $healthFacility = \App\Models\HealthFacility::findOrFail($user->health_facility_id);
-
-        $query = \App\Models\Doctor::query();
-
-        // Filter by date if provided
-        if ($request->filled('date')) {
-            $dayOfWeek = \Carbon\Carbon::parse($request->date)->format('l'); // e.g., "Monday"
-            $query->availableOnDay($dayOfWeek);
-        }
-
-        $doctors = $query->latest()->paginate(12);
-
-        return view('doctors.index', [
-            'healthFacility' => $healthFacility,
-            'doctors' => $doctors,
-            'selectedDate' => $request->date
-        ]);
-    })->name('health-facility.doctors');
-
     Route::get('/health-facility/appointments', function (Request $request) {
         $user = Auth::user();
         return app(HealthFacilityController::class)->bookDoctor($request, $user->health_facility_id);
@@ -839,6 +857,12 @@ Route::middleware(['auth', 'role:health-facility-staff,health-facility-admin,hea
         $selectedDate = $request->query('date');
         if (!$selectedDate) {
             return redirect()->back()->with('error', 'Please select a date to book an appointment.');
+        }
+
+        // Clear session booking data if doctor has changed
+        $booking = session('booking');
+        if ($booking && isset($booking['doctor_id']) && $booking['doctor_id'] != $doctor->id) {
+            session()->forget('booking');
         }
 
         return view('booking.step1', [
@@ -1021,6 +1045,27 @@ Route::get('/success', function () {
 
 // New appointment payment routes
 Route::get('/appointment/pay/{appointment}', [PaymentController::class, 'showAppointmentPayForm'])->name('payment.appointment.pay');
+Route::get('/appointment/pay-step2/{appointment}', function(\App\Models\Appointment $appointment) {
+    // Load necessary relations
+    $appointment->load(['doctor', 'patient', 'duration', 'school', 'healthFacility']);
+    
+    // Set up session data for step 2
+    session()->put('booking', [
+        'doctor_id' => $appointment->doctor_id,
+        'patient_id' => $appointment->patient_id,
+        'duration_id' => $appointment->duration_id,
+        'appointment_time' => $appointment->appointment_time->format('Y-m-d H:i:s'),
+    ]);
+    
+    // Redirect to appropriate step 2 based on context
+    if ($appointment->school_id) {
+        return redirect()->route('book.appointment.step2', $appointment->doctor);
+    } elseif ($appointment->health_facility_id) {
+        return redirect()->route('health-facility.book.appointment.step2', $appointment->doctor);
+    }
+    
+    return redirect()->back()->with('error', 'Unable to process payment for this appointment.');
+})->name('appointment.pay.step2');
 Route::post('/appointment/checkout', [PaymentController::class, 'createAppointmentCheckout'])->name('payment.appointment.checkout');
 
 Route::get('/appointment/success/{appointment}', [PaymentController::class, 'appointmentSuccess'])->name('payment.appointment.success');

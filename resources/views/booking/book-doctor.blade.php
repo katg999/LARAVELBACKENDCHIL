@@ -54,7 +54,7 @@
                                         <td class="text-end">
                                             @if($appointment->status === 'awaiting_payment')
                                                 <div class="btn-group" role="group">
-                                                    <a href="{{ route('payment.appointment.pay', $appointment) }}" class="btn btn-sm btn-primary">
+                                                    <a href="{{ route('appointment.pay.step2', $appointment) }}" class="btn btn-sm btn-primary">
                                                         <i class="fa fa-credit-card me-1"></i> Pay
                                                     </a>
                                                     <button class="btn btn-sm btn-warning cancel-appointment" 

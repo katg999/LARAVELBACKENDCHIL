@@ -67,4 +67,21 @@ class Doctor extends Authenticatable
             ->where('available', true)
             ->exists();
     }
+
+    /**
+     * Get the doctor's display name with "Dr." prefix if not already present
+     */
+    public function getDisplayNameAttribute()
+    {
+        if (!$this->name) {
+            return 'Doctor';
+        }
+        
+        // Check if name already starts with "Dr." (case-insensitive)
+        if (preg_match('/^dr\.\s*/i', $this->name)) {
+            return $this->name;
+        }
+        
+        return 'Dr. ' . $this->name;
+    }
 }

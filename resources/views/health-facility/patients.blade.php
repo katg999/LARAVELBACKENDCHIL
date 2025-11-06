@@ -57,6 +57,16 @@
                 </table>
             </div>
         </div>
+        <div class="card-footer">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted">
+                    Showing {{ $patients->firstItem() ?? 0 }} to {{ $patients->lastItem() ?? 0 }} of {{ $patients->total() }} patients
+                </div>
+                <div>
+                    {{ $patients->links() }}
+                </div>
+            </div>
+        </div>
     </div>
     @else
         <div class="alert alert-info">No patients yet.</div>

@@ -190,7 +190,7 @@
                                     {{ strtoupper(substr($doctor->name ?? 'D', 0, 1)) }}
                                 </div>
                                 <div class="flex-grow-1">
-                                    <h6 class="mb-1 fw-bold text-white" style="font-size: 1.1rem;">{{ $doctor->name ?? '-' }}</h6>
+                                    <h6 class="mb-1 fw-bold text-white" style="font-size: 1.1rem;">{{ $doctor->display_name ?? '-' }}</h6>
                                     <small class="opacity-85">#{{ $doctor->id }}</small>
                                     @if($doctor->specialization)
                                         <div class="mt-1">

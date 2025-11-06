@@ -2,15 +2,6 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <h3 class="m-0">Book Doctor</h3>
-        <div class="d-flex gap-2">
-            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#bookDoctorModal">
-                <i class="mdi mdi-calendar-plus me-2"></i> New Appointment
-            </button>
-        </div>
-    </div>
-
     @if(session('success'))
         <div class="alert alert-light text-dark">{{ session('success') }}</div>
     @endif
@@ -63,7 +54,7 @@
                                     </button>
                                 @elseif($appt->status === 'awaiting_payment')
                                     <div class="btn-group" role="group">
-                                        <a href="{{ route('payment.appointment.pay', $appt) }}" class="btn btn-sm btn-primary">
+                                        <a href="{{ route('appointment.pay.step2', $appt) }}" class="btn btn-sm btn-primary">
                                             <i class="mdi mdi-credit-card me-1"></i> Pay
                                         </a>
                                         <button class="btn btn-sm btn-warning cancel-appointment" 

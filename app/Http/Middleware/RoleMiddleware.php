@@ -66,16 +66,8 @@ class RoleMiddleware
                     'required_roles' => $roles
                 ]);
             }
-            // If user doesn't have required role, log them out and redirect to login
-            Auth::logout();
-            
-            // Only manipulate session if it's available (not in testing or API contexts)
-            if ($request->hasSession()) {
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-            }
-            
-            return redirect()->route('login')->with('error', 'Your access has been revoked. Please contact an administrator.');
+            // Redirect to home page with error message instead of logging out
+            return redirect('/')->with('error', 'You do not have permission to access this page.');
         }
 
         return $next($request);

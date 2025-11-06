@@ -22,9 +22,8 @@ class SessionAuthMiddleware
         $authenticatedUser = $request->session()->get('authenticated_user');
 
         if (!$authenticatedUser) {
-            // Instead of redirecting to '/', show the logout countdown page
-            // This handles cases where users are unauthenticated and try to access protected routes
-            return response()->view('auth.logout');
+            // Redirect to homepage for unauthenticated access
+            return redirect('/')->with('error', 'Please log in to access this page.');
         }
 
         // If specific user type is required, check it

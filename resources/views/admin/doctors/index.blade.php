@@ -86,7 +86,7 @@
                                         {{ strtoupper(substr($doctor->name ?? 'D', 0, 1)) }}
                                     </div>
                                     <div>
-                                        <div class="fw-bold">{{ $doctor->name ?? '-' }}</div>
+                                        <div class="fw-bold">{{ $doctor->display_name ?? '-' }}</div>
                                         @if($doctor->specialization)
                                             <small class="text-muted">{{ $doctor->specialization }}</small>
                                         @endif

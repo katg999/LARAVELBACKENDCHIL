@@ -86,8 +86,8 @@ class RbacIntegrationTest extends TestCase
 
         // Staff cannot access admin routes
         $response = $this->actingAs($staffUser)->get('/admin-only');
-        $response->assertStatus(302); // Redirect to login when role not found
-        $response->assertRedirect('/login');
+        $response->assertStatus(302); // Redirect to home when role not authorized
+        $response->assertRedirect('/');
 
         // Staff can access staff routes
         $response = $this->actingAs($staffUser)->get('/staff-only');
@@ -96,8 +96,8 @@ class RbacIntegrationTest extends TestCase
 
         // Admin can also access staff routes (if they have the role, but in this case admin doesn't)
         $response = $this->actingAs($adminUser)->get('/staff-only');
-        $response->assertStatus(302); // Redirect to login when role not found
-        $response->assertRedirect('/login');
+        $response->assertStatus(302); // Redirect to home when role not authorized
+        $response->assertRedirect('/');
     }
 
     /** @test */

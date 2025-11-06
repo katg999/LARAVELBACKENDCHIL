@@ -61,12 +61,26 @@ The system is currently deployed on Render:
 - **File Storage**: DigitalOcean Spaces (S3-compatible)
 - **CI/CD**: Render automatic deployments
 
-## 📦 Installation
+## � Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/) folder:
+
+- **[Documentation Index](docs/INDEX.md)** - Complete documentation overview
+- **Setup Guides**: Docker, deployment, and configuration
+- **RBAC System**: Role-based access control implementation
+- **Voiceflow Integration**: Chatbot and OTP authentication
+
+### Quick Links
+- [Docker Setup Guide](docs/DOCKER.md)
+- [RBAC Implementation](docs/RBAC_IMPLEMENTATION.md)
+- [Voiceflow Quick Start](docs/VOICEFLOW_QUICK_START.md)
+
+## �📦 Installation
 
 ```bash
 # Clone the repository
 git clone https://github.com/katg999/LARAVELBACKENDCHIL
-cd php-laravel-docker
+cd LARAVELBACKENDCHIL
 
 # Copy environment file
 cp .env.example .env

@@ -10,7 +10,7 @@
         @if(isset($school) && $school && !is_null($school))
             {{ $school->name ?? 'School' }} - Dashboard
         @elseif(isset($doctor) && $doctor && !is_null($doctor))
-            Dr. {{ $doctor->name ?? 'Doctor' }} - Dashboard
+            {{ $doctor->display_name ?? 'Doctor' }} - Dashboard
         @elseif(isset($healthFacility) && $healthFacility && !is_null($healthFacility))
             {{ $healthFacility->name ?? 'Health Facility' }} - Dashboard
         @else
@@ -58,7 +58,7 @@
                 @elseif(isset($healthFacility) && $healthFacility && !is_null($healthFacility))
                   Health Facility Admin - {{ auth()->user()->name ?? 'User' }}
                 @elseif(isset($doctor) && $doctor && !is_null($doctor))
-                  Dr. {{ $doctor->name ?? 'Doctor' }}
+                  {{ $doctor->display_name ?? 'Doctor' }}
                 @elseif(auth()->user() && auth()->user()->is_admin)
                   Admin - {{ auth()->user()->name ?? 'User' }}
                 @else
