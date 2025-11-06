@@ -1,7 +1,62 @@
 @extends('layouts.base')
 
 @section('content')
-    <!-- Statistics Cards -->
+    <!-- Sta    <div class="row mt-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-dark">Weekly Activity</div>
+                <div class="card-body">
+                    <canvas id="weeklyActivityChart" height="120"></canvas>
+                </div>
+            </div>
+
+            <!-- Appointments Awaiting Approval -->
+            @php
+                $awaitingApprovalAppointments = $appointments->where('status', 'awaiting_approval')->take(5);
+            @endphp
+            @if($awaitingApprovalAppointments->count() > 0)
+            <div class="card mt-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Appointments Awaiting Approval</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Doctor</th>
+                                    <th>Date & Time</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($awaitingApprovalAppointments as $appointment)
+                                <tr>
+                                    <td>{{ $appointment->patient->name }}</td>
+                                    <td>Dr. {{ $appointment->doctor->name }}</td>
+                                    <td>{{ $appointment->appointment_time->format('M j, Y g:i A') }}</td>
+                                    <td>
+                                        <form method="POST" action="{{ route('appointments.approve', $appointment) }}" class="d-inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @if($appointments->where('status', 'awaiting_approval')->count() > 5)
+                    <div class="text-center mt-3">
+                        <a href="#" class="btn btn-outline-primary">View All Awaiting Approval</a>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
+        </div>ards -->
     <div class="row mb-4">
         <!-- Students -->
         <div class="col-lg-3 col-sm-6 mb-2">

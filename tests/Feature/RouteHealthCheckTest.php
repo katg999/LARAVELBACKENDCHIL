@@ -182,9 +182,9 @@ class RouteHealthCheckTest extends TestCase
     {
         $doctor = Doctor::create([
             'name' => 'Dr. Test',
-            'email' => 'dr@test.com',
+            'email' => 'dr-test-mock@test.com',
             'specialization' => 'General',
-            'contact' => '+256700000001',
+            'contact' => '+256700000002',
         ]);
 
         $this->mockAuthenticatedDoctor($doctor);
@@ -228,9 +228,9 @@ class RouteHealthCheckTest extends TestCase
 
         $doctor = Doctor::create([
             'name' => 'Dr. Test',
-            'email' => 'dr@test.com',
+            'email' => 'dr-test-params@test.com',
             'specialization' => 'General',
-            'contact' => '+256700000001',
+            'contact' => '+256700000003',
         ]);
 
         $patient = Patient::create([

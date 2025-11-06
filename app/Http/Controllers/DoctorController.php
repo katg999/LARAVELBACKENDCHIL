@@ -139,7 +139,7 @@ class DoctorController extends Controller
         $doctor = Doctor::findOrFail($authenticatedUser['id']);
 
         $appointments = Appointment::where('doctor_id', $doctor->id)
-            ->where('status', '!=', 'cancelled') // Exclude cancelled appointments
+            ->whereIn('status', ['confirmed', 'completed']) // Only show confirmed and completed appointments
             ->with(['patient', 'school', 'healthFacility', 'duration'])
             ->latest()
             ->paginate(10);
@@ -270,15 +270,15 @@ class DoctorController extends Controller
             $authenticatedUser = $request->current_user;
             $doctor = Doctor::findOrFail($authenticatedUser['id']);
 
-            // Fetch appointments with related data (exclude cancelled)
+            // Fetch appointments with related data (only confirmed and completed)
             $appointments = Appointment::where('doctor_id', $doctor->id)
-                ->where('status', '!=', 'cancelled')
+                ->whereIn('status', ['confirmed', 'completed'])
                 ->with(['patient', 'duration'])
                 ->get();
 
-            // Get upcoming appointments (next 7 days, exclude cancelled)
+            // Get upcoming appointments (next 7 days, only confirmed and completed)
             $upcomingAppointments = Appointment::where('doctor_id', $doctor->id)
-                ->where('status', '!=', 'cancelled')
+                ->whereIn('status', ['confirmed', 'completed'])
                 ->with(['patient'])
                 ->where('appointment_time', '>', now())
                 ->where('appointment_time', '<=', now()->addDays(7))

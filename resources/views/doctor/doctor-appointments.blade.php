@@ -55,7 +55,7 @@
                         <td class="appt-time">{{ $appointment->appointment_time->format('M d, Y h:i A') }}</td>
                         <td class="appt-patient">
                             @if($appointment->patient)
-                                <a href="{{ route('patients.profile', ['patient' => $appointment->patient->id]) }}" class="text-decoration-none" target="_blank">
+                                <a href="{{ route('patients.profile', ['patient' => $appointment->patient->id]) }}" class="text-decoration-none">
                                     {{ $appointment->patient->name }}
                                 </a>
                             @else
@@ -80,7 +80,7 @@
                         </td>
                         <td>{{ $appointment->duration ? $appointment->duration->minutes . ' mins' : 'N/A' }}</td>
                         <td class="appt-status">
-                            <span class="badge bg-{{ $appointment->status == 'confirmed' ? 'success' : ($appointment->status == 'cancelled' ? 'danger' : ($appointment->status=='completed' ? 'secondary' : 'warning')) }}">{{ ucfirst($appointment->status) }}</span>
+                            <span class="badge bg-{{ $appointment->status == 'confirmed' ? 'success' : ($appointment->status == 'cancelled' ? 'danger' : ($appointment->status=='completed' ? 'success' : 'warning')) }}">{{ ucfirst($appointment->status) }}</span>
                         </td>
                         <td>
                             <div class="btn-group" role="group">
@@ -92,7 +92,7 @@
                                         <i class="mdi mdi-close"></i>
                                     </button>
                                 @endif
-                                @if($appointment->status === 'pending')
+                                @if($appointment->status === 'confirmed')
                                     <button class="btn btn-sm btn-success btn-complete" data-id="{{ $appointment->id }}" title="Mark Complete">
                                         <i class="mdi mdi-check"></i>
                                     </button>
@@ -167,40 +167,120 @@
             }
         }
 
+        // Modal confirmation variables
+        let currentAction = null;
+        let currentId = null;
+        let currentUrl = null;
+        let currentStatusBadge = null;
+        let currentButton = null;
+
+        // Initialize modal
+        const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+        const confirmActionBtn = document.getElementById('confirmActionBtn');
+        const confirmationModalBody = document.getElementById('confirmationModalBody');
+
         document.querySelectorAll('.btn-cancel').forEach(btn => {
-            btn.addEventListener('click', async function(){
-                if (!confirm('Cancel this appointment?')) return;
-                const id = btn.getAttribute('data-id');
-                const url = `/appointments/${id}/cancel`;
-                const data = await sendAction(url,'PATCH');
-                if (data && data.success){
-                    const row = document.querySelector(`tr[data-id='${id}']`);
-                    if (row){
-                        row.querySelector('.appt-status').innerHTML = '<span class="badge bg-danger">Cancelled</span>';
-                        btn.remove();
-                    }
-                }
+            btn.addEventListener('click', function(){
+                currentAction = 'cancel';
+                currentId = btn.getAttribute('data-id');
+                currentUrl = `/appointments/${currentId}/cancel`;
+                currentStatusBadge = '<span class="badge bg-danger">Cancelled</span>';
+                currentButton = btn;
+
+                confirmationModalBody.textContent = 'Are you sure you want to cancel this appointment?';
+                confirmationModal.show();
             });
         });
 
         document.querySelectorAll('.btn-complete').forEach(btn => {
-            btn.addEventListener('click', async function(){
-                if (!confirm('Mark as completed?')) return;
-                const id = btn.getAttribute('data-id');
-                const url = `/appointments/${id}/complete`;
-                const data = await sendAction(url,'PATCH');
-                if (data && data.success){
-                    const row = document.querySelector(`tr[data-id='${id}']`);
-                    if (row){
-                        row.querySelector('.appt-status').innerHTML = '<span class="badge bg-secondary">Completed</span>';
-                        btn.remove();
+            btn.addEventListener('click', function(){
+                currentAction = 'complete';
+                currentId = btn.getAttribute('data-id');
+                currentUrl = `/appointments/${currentId}/complete`;
+                currentStatusBadge = '<span class="badge bg-warning">Awaiting Approval</span>';
+                currentButton = btn;
+
+                // Get institution name from the row
+                const row = btn.closest('tr');
+                const schoolCell = row.querySelector('.appt-school');
+                const facilityCell = row.querySelector('.appt-facility');
+                
+                let institutionName = '';
+                if (schoolCell && schoolCell.textContent.trim() !== '-' && schoolCell.textContent.trim() !== '') {
+                    institutionName = schoolCell.textContent.split('\n')[0].trim(); // Get first line (school name)
+                } else if (facilityCell && facilityCell.textContent.trim() !== 'N/A' && facilityCell.textContent.trim() !== '') {
+                    institutionName = facilityCell.textContent.split('\n')[0].trim(); // Get first line (facility name)
+                }
+
+                const message = institutionName 
+                    ? `Are you sure you want to mark this appointment as completed? It will be sent to ${institutionName} for approval.`
+                    : 'Are you sure you want to mark this appointment as completed? It will be sent for approval.';
+
+                confirmationModalBody.textContent = message;
+                confirmationModal.show();
+            });
+        });
+
+        // Handle modal confirm button
+        confirmActionBtn.addEventListener('click', async function(){
+            if (!currentUrl) return;
+
+            // Show loading state
+            confirmActionBtn.disabled = true;
+            confirmActionBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
+
+            // Don't hide modal yet - keep it visible during processing
+
+            const data = await sendAction(currentUrl, 'PATCH');
+
+            // Hide loading state
+            confirmActionBtn.disabled = false;
+            confirmActionBtn.innerHTML = 'Confirm';
+
+            if (data && data.success){
+                // Now hide the modal after successful processing
+                confirmationModal.hide();
+
+                const row = document.querySelector(`tr[data-id='${currentId}']`);
+                if (row && currentStatusBadge){
+                    row.querySelector('.appt-status').innerHTML = currentStatusBadge;
+                    if (currentButton) {
+                        currentButton.remove();
                     }
                 }
-            });
+            }
+
+            // Reset variables
+            currentAction = null;
+            currentId = null;
+            currentUrl = null;
+            currentStatusBadge = null;
+            currentButton = null;
         });
 
     })();
 </script>
 @endpush
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalLabel">Confirm Action</h5>
+                <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="mdi mdi-close"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="confirmationModalBody">
+                Are you sure you want to proceed?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmActionBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection

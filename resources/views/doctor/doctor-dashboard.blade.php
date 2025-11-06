@@ -140,7 +140,7 @@
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
                                         @if($appt->patient)
-                                            <a href="{{ route('patients.profile', ['patient' => $appt->patient->id]) }}" class="text-decoration-none" target="_blank">
+                                            <a href="{{ route('patients.profile', ['patient' => $appt->patient->id]) }}" class="text-decoration-none">
                                                 <strong>{{ $studentName }}</strong>
                                             </a>
                                         @else

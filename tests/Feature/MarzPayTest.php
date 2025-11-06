@@ -155,8 +155,8 @@ class MarzPayTest extends TestCase
             'school_id' => $school->id,
             'name' => 'Test Doctor',
             'specialization' => 'General',
-            'email' => 'doctor@test.com',
-            'contact' => '+256700000000'
+            'email' => 'doctor-webhook-completed@test.com',
+            'contact' => '+256700000010'
         ]);
         
         $duration = Duration::create([
@@ -208,8 +208,8 @@ class MarzPayTest extends TestCase
             'school_id' => $school->id,
             'name' => 'Test Doctor',
             'specialization' => 'General',
-            'email' => 'doctor@test.com',
-            'contact' => '+256700000000'
+            'email' => 'doctor-webhook-failed@test.com',
+            'contact' => '+256700000011'
         ]);
         
         $duration = Duration::create([
@@ -258,8 +258,8 @@ class MarzPayTest extends TestCase
             'school_id' => $school->id,
             'name' => 'Test Doctor',
             'specialization' => 'General',
-            'email' => 'doctor@test.com',
-            'contact' => '+256700000000'
+            'email' => 'doctor-webhook-update-existing@test.com',
+            'contact' => '+256700000012'
         ]);
 
         $duration = Duration::create([
@@ -339,8 +339,8 @@ class MarzPayTest extends TestCase
             'school_id' => $school->id,
             'name' => 'Test Doctor',
             'specialization' => 'General',
-            'email' => 'doctor@test.com',
-            'contact' => '+256700000000'
+            'email' => 'doctor-webhook-new@test.com',
+            'contact' => '+256700000013'
         ]);
 
         $duration = Duration::create([
@@ -400,8 +400,8 @@ class MarzPayTest extends TestCase
             'school_id' => $school->id,
             'name' => 'Test Doctor',
             'specialization' => 'General',
-            'email' => 'doctor@test.com',
-            'contact' => '+256700000000'
+            'email' => 'doctor-webhook-successful@test.com',
+            'contact' => '+256700000014'
         ]);
 
         $duration = Duration::create([
@@ -510,8 +510,8 @@ class MarzPayTest extends TestCase
             'school_id' => $school->id,
             'name' => 'Test Doctor',
             'specialization' => 'General',
-            'email' => 'doctor@test.com',
-            'contact' => '+256700000000'
+            'email' => 'doctor-checkout@test.com',
+            'contact' => '+256700000015'
         ]);
         
         $duration = Duration::create([

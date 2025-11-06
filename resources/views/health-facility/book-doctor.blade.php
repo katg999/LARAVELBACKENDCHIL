@@ -46,13 +46,22 @@
                                 <span class="badge bg-{{ 
                                     $appt->status == 'confirmed' ? 'success' : 
                                     ($appt->status == 'awaiting_payment' ? 'warning' : 
-                                    ($appt->status == 'cancelled' ? 'danger' : 'secondary')) 
+                                    ($appt->status == 'awaiting_approval' ? 'info' : 
+                                    ($appt->status == 'cancelled' ? 'danger' : 'secondary'))) 
                                 }} text-white">
                                     {{ ucfirst(str_replace('_', ' ', $appt->status)) }}
                                 </span>
                             </td>
                             <td>
-                                @if($appt->status === 'awaiting_payment')
+                                @if($appt->status === 'awaiting_approval')
+                                    <button type="button" class="btn btn-success btn-sm btn-approve" 
+                                            data-appointment-id="{{ $appt->id }}"
+                                            data-doctor-name="{{ optional($appt->doctor)->name ? 'Dr. ' . $appt->doctor->name : 'N/A' }}"
+                                            data-toggle="modal" 
+                                            data-target="#approveAppointmentModal">
+                                        <i class="fas fa-check me-1"></i>Approve
+                                    </button>
+                                @elseif($appt->status === 'awaiting_payment')
                                     <div class="btn-group" role="group">
                                         <a href="{{ route('payment.appointment.pay', $appt) }}" class="btn btn-sm btn-primary">
                                             <i class="mdi mdi-credit-card me-1"></i> Pay
@@ -208,6 +217,35 @@
                         <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-danger btn-sm">Delete Appointment</button>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Approve Appointment Modal --}}
+    <div class="modal fade" id="approveAppointmentModal" tabindex="-1" role="dialog" aria-labelledby="approveAppointmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="approveAppointmentModalLabel">Approve Appointment</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to approve this completed appointment? This will mark it as officially completed and notify the doctor.</p>
+                    <div class="appointment-details">
+                        <strong>Patient:</strong> <span id="approve-patient-name"></span><br>
+                        <strong>Doctor:</strong> <span id="approve-doctor-name"></span><br>
+                        <strong>Time:</strong> <span id="approve-appointment-time"></span><br>
+                        <strong>Status:</strong> <span class="badge badge-info">Awaiting Approval</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success btn-sm" id="confirmApproveBtn">
+                        <i class="fas fa-check me-1"></i>Approve Appointment
+                    </button>
                 </div>
             </div>
         </div>
@@ -383,6 +421,90 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('deleteForm').action = deleteUrl;
             document.getElementById('deleteAppointmentId').value = appointmentId;
         }
+    });
+
+    // Handle approve appointment button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('btn-approve') || e.target.closest('.btn-approve')) {
+            e.preventDefault();
+            const button = e.target.classList.contains('btn-approve') ? e.target : e.target.closest('.btn-approve');
+            const appointmentId = button.getAttribute('data-appointment-id');
+            const doctorName = button.getAttribute('data-doctor-name');
+            
+            // Find the appointment row to get details
+            const row = button.closest('tr');
+            const patientName = row.cells[1].textContent;
+            const appointmentTime = row.cells[3].textContent;
+            
+            // Populate approve modal
+            document.getElementById('approve-patient-name').textContent = patientName;
+            document.getElementById('approve-doctor-name').textContent = doctorName;
+            document.getElementById('approve-appointment-time').textContent = appointmentTime;
+            
+            // Store appointment ID for the confirm button
+            document.getElementById('confirmApproveBtn').setAttribute('data-appointment-id', appointmentId);
+        }
+    });
+
+    // Handle approve confirmation
+    document.getElementById('confirmApproveBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        const appointmentId = this.getAttribute('data-appointment-id');
+        const button = this;
+
+        // Show loading state
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Approving...';
+
+        // Make AJAX request to approve appointment
+        fetch(`/appointments/${appointmentId}/approve`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                _method: 'PATCH'
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP error! status: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Hide modal
+                $('#approveAppointmentModal').modal('hide');
+                
+                // Update the row status
+                const row = document.querySelector(`tr:has(button[data-appointment-id="${appointmentId}"])`);
+                if (row) {
+                    const statusCell = row.cells[6]; // Status column
+                    statusCell.innerHTML = '<span class="badge bg-success text-white">Completed</span>';
+                    
+                    // Remove the approve button
+                    const actionsCell = row.cells[7]; // Actions column
+                    actionsCell.innerHTML = '—';
+                }
+                
+                // Show success message
+                showAlert('Appointment approved successfully! Doctor has been notified.', 'success');
+            } else {
+                throw new Error(data.message || 'Failed to approve appointment');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('An error occurred while approving the appointment.', 'danger');
+        })
+        .finally(() => {
+            // Reset button state
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-check me-1"></i>Approve Appointment';
+        });
     });
 
     // Handle delete form submission

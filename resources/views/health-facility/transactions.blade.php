@@ -34,6 +34,7 @@ use Illuminate\Support\Str;
                             <th>Payment Status</th>
                             <th>Amount</th>
                             <th>Payment Reference</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -158,7 +159,7 @@ $(document).ready(function() {
         });
     });
 
-    // Handle delete appointment
+        // Handle delete appointment
     $(document).on('click', '.btn-delete-appointment', function() {
         const button = $(this);
         const appointmentId = button.data('id');
@@ -198,6 +199,8 @@ $(document).ready(function() {
             }
         });
     });
+});
+</script>
 });
 </script>
 @endsection

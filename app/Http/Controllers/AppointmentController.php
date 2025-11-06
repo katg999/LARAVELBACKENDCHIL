@@ -370,29 +370,50 @@ class AppointmentController extends Controller
         return redirect()->back()->with('success', 'Appointment cancelled');
     }
 
-    /**
-     * Mark an appointment as completed
+        /**
+     * Mark an appointment as completed (doctor marks as done, awaiting institution approval)
      */
     public function complete(Request $request, Appointment $appointment)
     {
-        $appointment->status = 'completed';
-        $appointment->save();
-
-        if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'status' => 'completed']);
+        // If route model binding didn't work (e.g., in tests), find the appointment manually
+        if (!$appointment->exists) {
+            $appointmentId = $request->route('appointment');
+            if (is_object($appointmentId)) {
+                $appointmentId = $appointmentId->id;
+            }
+            $appointment = Appointment::findOrFail($appointmentId);
         }
 
-        return redirect()->back()->with('success', 'Appointment marked completed');
+        $appointment->status = 'awaiting_approval';
+        $appointment->save();
+
+        // Send notification to institution
+        $this->sendApprovalNotification($appointment);
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'status' => 'awaiting_approval']);
+        }
+
+        return redirect()->back()->with('success', 'Appointment marked as completed, awaiting institution approval');
     }
 
     /**
-     * Delete a cancelled appointment
+     * Approve an appointment (institution approves completed appointment)
      */
-    public function destroy(Request $request, Appointment $appointment)
+    public function approve(Request $request, Appointment $appointment)
     {
-        // Only allow deletion of cancelled appointments
-        if ($appointment->status !== 'cancelled') {
-            $message = 'Only cancelled appointments can be deleted.';
+        // If route model binding didn't work (e.g., in tests), find the appointment manually
+        if (!$appointment->exists) {
+            $appointmentId = $request->route('appointment');
+            if (is_object($appointmentId)) {
+                $appointmentId = $appointmentId->id;
+            }
+            $appointment = Appointment::findOrFail($appointmentId);
+        }
+
+        // Check if appointment is awaiting approval
+        if ($appointment->status !== 'awaiting_approval') {
+            $message = 'Only appointments awaiting approval can be approved.';
 
             if ($request->wantsJson()) {
                 return response()->json([
@@ -404,13 +425,17 @@ class AppointmentController extends Controller
             return redirect()->back()->with('error', $message);
         }
 
-        $appointment->delete();
+        $appointment->status = 'completed';
+        $appointment->save();
+
+        // Send notification to doctor
+        $this->sendApprovalNotificationToDoctor($appointment);
 
         if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'message' => 'Appointment deleted successfully']);
+            return response()->json(['success' => true, 'status' => 'completed']);
         }
 
-        return redirect()->back()->with('success', 'Appointment deleted successfully');
+        return redirect()->back()->with('success', 'Appointment approved successfully');
     }
 
     protected function sendAppointmentConfirmation(Appointment $appointment)
@@ -445,5 +470,40 @@ class AppointmentController extends Controller
     {
         // SMS sending implementation
         \Log::info('SMS would be sent to: ' . $number, ['message' => $message]);
+    }
+
+    protected function sendApprovalNotification(Appointment $appointment)
+    {
+        $institution = $appointment->school ?? $appointment->healthFacility;
+
+        if ($institution && $institution->email) {
+            try {
+                \Mail::to($institution->email)->send(new \App\Mail\AppointmentApprovalMail($appointment));
+            } catch (\Exception $e) {
+                \Log::error('Failed to send approval notification email', [
+                    'appointment_id' => $appointment->id,
+                    'institution_email' => $institution->email,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+    }
+
+    protected function sendApprovalNotificationToDoctor(Appointment $appointment)
+    {
+        $doctor = $appointment->doctor;
+        $institution = $appointment->school ?? $appointment->healthFacility;
+
+        if ($doctor && $doctor->email) {
+            try {
+                \Mail::to($doctor->email)->send(new \App\Mail\AppointmentApprovedMail($appointment));
+            } catch (\Exception $e) {
+                \Log::error('Failed to send approval notification email to doctor', [
+                    'appointment_id' => $appointment->id,
+                    'doctor_email' => $doctor->email,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
     }
 }

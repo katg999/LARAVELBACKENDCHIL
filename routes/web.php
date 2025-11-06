@@ -489,6 +489,7 @@ Route::get('/transactions/{school}', function (App\Models\School $school) {
 Route::post('/appointments/validate', [\App\Http\Controllers\AppointmentController::class, 'validateAppointment'])->name('appointments.validate');
 Route::patch('/appointments/{appointment}/cancel', [\App\Http\Controllers\AppointmentController::class, 'cancel'])->name('appointments.cancel');
 Route::patch('/appointments/{appointment}/complete', [\App\Http\Controllers\AppointmentController::class, 'complete'])->name('appointments.complete');
+Route::patch('/appointments/{appointment}/approve', [\App\Http\Controllers\AppointmentController::class, 'approve'])->name('appointments.approve');
 Route::delete('/appointments/{appointment}', [\App\Http\Controllers\AppointmentController::class, 'destroy'])->name('appointments.destroy');
 
 // Authentication routes
