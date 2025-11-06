@@ -158,8 +158,8 @@ class RbacIntegrationTest extends TestCase
     /** @test */
     public function rbac_seeder_creates_expected_data()
     {
-        // Run the seeder
-        $this->artisan('db:seed', ['--class' => 'RbacSeeder']);
+        // Run the seeder - use seed method which properly resolves the class
+        $this->seed(\Database\Seeders\RbacSeeder::class);
 
         // Check roles were created
         $this->assertDatabaseHas('roles', ['slug' => 'admin']);

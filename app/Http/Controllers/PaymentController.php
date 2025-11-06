@@ -628,25 +628,23 @@ class PaymentController extends Controller
                     'processed_at' => now(),
                 ]);
             } else {
-                // Create new transaction if no existing one found or all existing are already final, and we have a payment record
-                if ($payment) {
-                    \App\Models\Transaction::create([
-                        'payment_id' => $payment->id,
-                        'reference_id' => $uuid ?? $reference,
-                        'amount' => $transaction['amount'] ?? 0,
-                        'status' => 'failed',
-                        'transaction_id' => $uuid,
-                        'provider' => 'marzpay',
-                        'provider_reference' => $uuid,
-                        'marzpay_uuid' => $uuid,
-                        'country' => 'UG',
-                        'description' => 'Appointment payment failed - ' . ($appointment ? $appointment->id : 'unknown'),
-                        'transaction_type' => 'collection',
-                        'webhook_event_type' => 'collection.failed',
-                        'collection_data' => $transaction,
-                        'processed_at' => now(),
-                    ]);
-                }
+                // Create new transaction for webhook tracking purposes (even without payment record)
+                \App\Models\Transaction::create([
+                    'payment_id' => $payment?->id, // May be null if no payment record exists
+                    'reference_id' => $uuid ?? $reference,
+                    'amount' => $transaction['amount'] ?? 0,
+                    'status' => 'failed',
+                    'transaction_id' => $uuid,
+                    'provider' => 'marzpay',
+                    'provider_reference' => $uuid,
+                    'marzpay_uuid' => $uuid,
+                    'country' => 'UG',
+                    'description' => 'Appointment payment failed - ' . ($appointment ? $appointment->id : 'unknown'),
+                    'transaction_type' => 'collection',
+                    'webhook_event_type' => 'collection.failed',
+                    'collection_data' => $transaction,
+                    'processed_at' => now(),
+                ]);
             }
 
             Log::warning('Appointment payment failed', [
