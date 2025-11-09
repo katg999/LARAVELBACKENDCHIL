@@ -730,6 +730,11 @@ Route::middleware(['auth', 'role:health-facility-staff,health-facility-admin,hea
         $user = Auth::user();
         return app(HealthFacilityController::class)->staff($request, $user->health_facility_id);
     })->name('health-facility.staff');
+    
+    // Health facility staff invitation management
+    Route::post('/health-facility/staff/invite', [App\Http\Controllers\HealthFacilityInvitationController::class, 'sendInvitation'])->name('health-facility.staff.invite');
+    Route::delete('/health-facility/staff/invitations/{invitation}/revoke', [App\Http\Controllers\HealthFacilityInvitationController::class, 'revokeInvitation'])->name('health-facility.staff.invitation.revoke');
+    Route::get('/health-facility/staff/remove/{user}', [App\Http\Controllers\HealthFacilityInvitationController::class, 'removeStaffMember'])->name('health-facility.staff.remove');
 });
 
 // Initial Admin Setup Routes (Public - accessed after VoiceFlow verification)
