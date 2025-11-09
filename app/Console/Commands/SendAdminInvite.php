@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\AdminInviteMail;
 use App\Models\AdminInvite;
-use App\User;
+use App\Models\User;
 
 class SendAdminInvite extends Command
 {

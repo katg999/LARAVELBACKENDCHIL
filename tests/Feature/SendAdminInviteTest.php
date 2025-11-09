@@ -160,7 +160,7 @@ class SendAdminInviteTest extends TestCase
         $email = 'admin@example.com';
 
         // Create an admin user with this email
-        \App\User::create([
+        \App\Models\User::create([
             'name' => 'Test Admin',
             'email' => $email,
             'password' => bcrypt('password'),

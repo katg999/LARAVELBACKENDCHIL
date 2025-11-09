@@ -62,7 +62,7 @@ class SchoolInvitation extends Model
      */
     public function inviter()
     {
-        return $this->belongsTo(\App\User::class, 'invited_by');
+        return $this->belongsTo(\App\Models\User::class, 'invited_by');
     }
 
     /**
@@ -70,6 +70,6 @@ class SchoolInvitation extends Model
      */
     public function acceptedByUser()
     {
-        return $this->belongsTo(\App\User::class, 'accepted_by');
+        return $this->belongsTo(\App\Models\User::class, 'accepted_by');
     }
 }

@@ -386,8 +386,8 @@ class VoiceFlowSimulation extends Command
      */
     protected function validateEmail(string $email, string $userType): bool
     {
-        // Check if email belongs to a user linked to the appropriate entity
-        $user = \App\User::where('email', $email)->first();
+    // Check if email belongs to a user linked to the appropriate entity
+    $user = \App\Models\User::where('email', $email)->first();
         
         if (!$user) {
             return false;

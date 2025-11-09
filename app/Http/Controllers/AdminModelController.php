@@ -17,7 +17,7 @@ class AdminModelController extends Controller
         'health-facilities' => \App\Models\HealthFacility::class,
         'doctor-availabilities' => \App\Models\Doctor::class,
         'durations' => \App\Models\Duration::class,
-        'users' => \App\User::class,
+    'users' => \App\Models\User::class,
     ];
 
     protected function modelFor($key)

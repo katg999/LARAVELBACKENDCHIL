@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\HealthFacilityInvitation;
 use App\Models\HealthFacility;
-use App\User;
+use App\Models\User;
 use App\Models\Role;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;

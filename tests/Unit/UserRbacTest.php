@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\User;
+use App\Models\User;
 use App\Models\Role;
 use App\Models\Permission;
 use Illuminate\Foundation\Testing\DatabaseTransactions;

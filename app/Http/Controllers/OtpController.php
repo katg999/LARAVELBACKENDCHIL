@@ -143,7 +143,7 @@ class OtpController extends Controller
                 'email',
                 function ($attribute, $value, $fail) {
                     // Check if email belongs to a user who is linked to a school or health facility
-                    $user = \App\User::where('email', $value)->first();
+                    $user = \App\Models\User::where('email', $value)->first();
                     if (!$user) {
                         $fail("No user account found with this email address.");
                         return;
@@ -182,7 +182,7 @@ class OtpController extends Controller
             );
 
             // Get user and determine entity type
-            $user = \App\User::where('email', $request->email)->first();
+            $user = \App\Models\User::where('email', $request->email)->first();
             
             if ($user->school_id) {
                 $entityType = 'school';
@@ -219,7 +219,7 @@ class OtpController extends Controller
         ]);
 
         // Debug: Log all parameters received
-        \Log::debug('Full Request Payload:', $request->all());
+                                $user = \App\Models\User::where('email', $request->email)->first();
 
         $otpRecord = DB::table('otps')
               ->where('email', $request->email)
@@ -278,8 +278,8 @@ class OtpController extends Controller
           ->where('id', $otpRecord->id)
           ->update(['used' => true]);
 
-        // Get the user account
-        $user = \App\User::where('email', $request->email)->first();
+    // Get the user account
+    $user = \App\Models\User::where('email', $request->email)->first();
 
         if (!$user || !$user->school_id) {
             \Log::warning('User not found or not linked to school', [
@@ -500,8 +500,8 @@ class OtpController extends Controller
             ->where('email', $request->email)
             ->update(['used' => true]);
 
-        // Get the user account
-        $user = \App\User::where('email', $request->email)->first();
+    // Get the user account
+    $user = \App\Models\User::where('email', $request->email)->first();
 
         if (!$user || !$user->health_facility_id) {
             \Log::warning('User not found or not linked to health facility', [

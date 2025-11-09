@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use App\User;
+use App\Models\User;
 // use Illuminate\Foundation\Auth\RegistersUsers; // Commented out due to Laravel 11 changes
 
 class RegisterController extends Controller
@@ -81,7 +81,7 @@ class RegisterController extends Controller
             }
 
             $email = $invite->email;
-            $existingUser = \App\User::where('email', $email)->exists();
+            $existingUser = \App\Models\User::where('email', $email)->exists();
         }
 
         return view('auth.register', compact('email', 'invite', 'invitation', 'invitationToken', 'invitationType', 'existingUser'));
@@ -182,7 +182,7 @@ class RegisterController extends Controller
         ];
 
         // Name is required only for new users, not for existing users accepting admin invites
-        if (!$this->isAdminRegistration() || !\App\User::where('email', $data['email'] ?? '')->exists()) {
+        if (!$this->isAdminRegistration() || !\App\Models\User::where('email', $data['email'] ?? '')->exists()) {
             $rules['name'] = ['required', 'string', 'max:255'];
         }
 
@@ -192,7 +192,7 @@ class RegisterController extends Controller
         }
 
         // For existing users accepting admin invites, don't require password confirmation
-        if (!$this->isAdminRegistration() || !\App\User::where('email', $data['email'] ?? '')->exists()) {
+        if (!$this->isAdminRegistration() || !\App\Models\User::where('email', $data['email'] ?? '')->exists()) {
             $rules['password'][] = 'confirmed';
         }
 
@@ -203,7 +203,7 @@ class RegisterController extends Controller
      * Create a new user instance after a valid registration, or login existing user.
      *
      * @param  array  $data
-     * @return \App\User
+    * @return \App\Models\User
      */
     protected function createOrLogin(array $data)
     {

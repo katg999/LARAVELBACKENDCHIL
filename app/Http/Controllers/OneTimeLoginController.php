@@ -46,7 +46,7 @@ class OneTimeLoginController extends Controller
 
         switch ($record->user_type) {
             case 'school':
-                $entityUser = \App\User::find($record->user_id);
+                $entityUser = \App\Models\User::find($record->user_id);
                 $redirectUrl = url("/school-dashboard");
                 break;
             case 'doctor':
@@ -54,7 +54,7 @@ class OneTimeLoginController extends Controller
                 $redirectUrl = url('/doctor/dashboard');
                 break;
             case 'health_facility':
-                $entityUser = \App\User::find($record->user_id);
+                $entityUser = \App\Models\User::find($record->user_id);
                 $redirectUrl = url("/health-facility/dashboard");
                 break;
             default:

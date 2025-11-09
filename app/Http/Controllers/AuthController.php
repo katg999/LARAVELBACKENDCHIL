@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\SchoolInvitation;
 use App\Models\HealthFacilityInvitation;
-use App\User;
+use App\Models\User;
 use App\Models\School;
 use App\Models\HealthFacility;
 
@@ -23,7 +23,7 @@ class AuthController extends Controller
             $invitation = $this->getInvitation($invitationType, $invitationToken);
             
             // If invitation exists and user doesn't exist, redirect to register
-            if ($invitation && !\App\User::where('email', $invitation->email)->exists()) {
+            if ($invitation && !\App\Models\User::where('email', $invitation->email)->exists()) {
                 return redirect()->route('register', [
                     'invitation_token' => $invitationToken,
                     'invitation_type' => $invitationType
@@ -238,7 +238,7 @@ class AuthController extends Controller
         }
     }
 
-    protected function associateUserWithEntity(\App\User $user, $invitation, string $type)
+    protected function associateUserWithEntity(\App\Models\User $user, $invitation, string $type)
     {
         switch ($type) {
             case 'school':

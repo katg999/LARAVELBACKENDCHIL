@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use App\Models\Role;
 use App\Models\Permission;
-use App\User;
+use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
