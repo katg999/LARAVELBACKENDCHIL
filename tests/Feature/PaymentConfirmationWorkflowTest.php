@@ -9,13 +9,13 @@ use App\Models\School;
 use App\Models\HealthFacility;
 use App\Models\Duration;
 use App\Mail\AppointmentConfirmationMail;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class PaymentConfirmationWorkflowTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     private $school;
     private $healthFacility;

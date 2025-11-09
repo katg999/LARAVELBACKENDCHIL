@@ -31,4 +31,50 @@ class School extends Model
     {
         return $this->hasMany(Doctor::class);
     }
+
+    /**
+     * Get all users associated with this school
+     */
+    public function users()
+    {
+        return $this->hasMany(\App\Models\User::class);
+    }
+
+    /**
+     * Get all invitations for this school
+     */
+    public function invitations()
+    {
+        return $this->hasMany(SchoolInvitation::class);
+    }
+
+    /**
+     * Get pending invitations
+     */
+    public function pendingInvitations()
+    {
+        return $this->invitations()
+            ->where('accepted', false)
+            ->where('expires_at', '>', now());
+    }
+
+    /**
+     * Get admin users for this school
+     */
+    public function admins()
+    {
+        return $this->users()->whereHas('roles', function ($query) {
+            $query->where('slug', 'school-admin');
+        });
+    }
+
+    /**
+     * Get staff users for this school
+     */
+    public function staff()
+    {
+        return $this->users()->whereHas('roles', function ($query) {
+            $query->where('slug', 'school-staff');
+        });
+    }
 }

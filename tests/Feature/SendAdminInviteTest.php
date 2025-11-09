@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\AdminInviteMail;
@@ -11,7 +11,7 @@ use Tests\TestCase;
 
 class SendAdminInviteTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
     public function setUp(): void
     {
         parent::setUp();
@@ -160,7 +160,7 @@ class SendAdminInviteTest extends TestCase
         $email = 'admin@example.com';
 
         // Create an admin user with this email
-        \App\User::create([
+        \App\Models\User::create([
             'name' => 'Test Admin',
             'email' => $email,
             'password' => bcrypt('password'),

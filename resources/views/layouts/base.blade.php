@@ -6,15 +6,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>
-        @if(isset($school))
-            {{ $school->name }} - Dashboard
-        @elseif(isset($doctor))
-            Dr. {{ $doctor->name }} - Dashboard
-        @elseif(isset($healthFacility))
-            {{ $healthFacility->name }} - Dashboard
+        <title>
+        @if(isset($school) && $school && !is_null($school))
+            {{ $school->name ?? 'School' }} - Dashboard
+        @elseif(isset($doctor) && $doctor && !is_null($doctor))
+            Dr. {{ $doctor->name ?? 'Doctor' }} - Dashboard
+        @elseif(isset($healthFacility) && $healthFacility && !is_null($healthFacility))
+            {{ $healthFacility->name ?? 'Health Facility' }} - Dashboard
         @else
-            Dashboard
+            {{ config('app.name', 'Keti AI') }} - Dashboard
         @endif
     </title>
     <!-- Favicon icon -->
@@ -53,10 +53,14 @@
             <a class="nav-link" href="#" data-toggle="dropdown" id="profileDropdown">
               <img src="{{ asset('images/profile.png') }}" alt="profile"/>
               <span class="nav-profile-name">
-                @if(auth()->user() && auth()->user()->is_admin)
-                  Admin - {{ auth()->user()->name }}
-                @elseif(isset($doctor))
-                  Dr. {{ $doctor->name }}
+                @if(isset($school) && $school && !is_null($school))
+                  School Admin - {{ auth()->user()->name ?? 'User' }}
+                @elseif(isset($healthFacility) && $healthFacility && !is_null($healthFacility))
+                  Health Facility Admin - {{ auth()->user()->name ?? 'User' }}
+                @elseif(isset($doctor) && $doctor && !is_null($doctor))
+                  Dr. {{ $doctor->name ?? 'Doctor' }}
+                @elseif(auth()->user() && auth()->user()->is_admin)
+                  Admin - {{ auth()->user()->name ?? 'User' }}
                 @else
                   {{ auth()->user()->name ?? 'User' }}
                 @endif
@@ -78,13 +82,17 @@
             </div>
           </li>
           <li class="nav-item nav-user-status dropdown">
-              <p class="mb-0">Last login: 
-                @if(isset($doctor))
-                  {{ $doctor->last_login_at ? $doctor->last_login_at->diffForHumans() : 'N/A' }}
-                @else
-                  {{ auth()->user() && auth()->user()->last_login_at ? auth()->user()->last_login_at->diffForHumans() : 'N/A' }}
-                @endif
-              </p>
+              @if(isset($school) && $school && !is_null($school))
+                School: {{ $school->name ?? 'N/A' }}
+              @elseif(isset($healthFacility) && $healthFacility && !is_null($healthFacility))
+                Health Facility: {{ $healthFacility->name ?? 'N/A' }}
+              @elseif(isset($doctor) && $doctor && !is_null($doctor))
+                Doctor Account
+              @elseif(auth()->check() && auth()->user()->is_admin)
+                Administrator Account
+              @else
+                User Account
+              @endif
           </li>
         </ul>
         <ul class="navbar-nav navbar-nav-right">

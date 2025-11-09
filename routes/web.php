@@ -19,6 +19,7 @@ use App\Http\Controllers\OtpController;
 use Illuminate\Http\Request;
 use App\Models\Doctor;
 use App\Http\Controllers\PaymentController;
+use Illuminate\Support\Facades\Auth;
 
 
 
@@ -34,6 +35,9 @@ use App\Http\Controllers\PaymentController;
 */
 
 Route::get('/', function () {
+    if (Auth::check()) {
+        return redirect('/admin');
+    }
     return redirect('https://ketiai.com');
 });
 
@@ -75,53 +79,13 @@ Route::post('/send-otp', [App\Http\Controllers\OtpController::class, 'sendOtp'])
 
 use App\Http\Controllers\SchoolController;
 
-Route::middleware('session.auth:school')->group(function () {
-    Route::get('/school-dashboard', function (Request $request) {
-        $authenticatedUser = $request->current_user;
-        $school = \App\Models\School::findOrFail($authenticatedUser['id']);
-
-        // Get current week data (Monday to Sunday)
-        $startOfWeek = now()->startOfWeek(); // Monday
-        $endOfWeek = now()->endOfWeek(); // Sunday
-
-        // Weekly appointments data
-        $weeklyAppointments = [];
-        for ($i = 0; $i < 7; $i++) {
-            $date = $startOfWeek->copy()->addDays($i);
-            $count = $school->appointments()
-                ->whereDate('appointment_time', $date)
-                ->count();
-            $weeklyAppointments[] = $count;
-        }
-
-        // Weekly lab tests data
-        $weeklyLabTests = [];
-        for ($i = 0; $i < 7; $i++) {
-            $date = $startOfWeek->copy()->addDays($i);
-            $count = $school->labTests()
-                ->whereDate('created_at', $date)
-                ->count();
-            $weeklyLabTests[] = $count;
-        }
-
-        return view('school.school-dashboard', [
-            'school' => $school,
-            'studentsCount' => $school->students()->count(),
-            'appointmentsCount' => $school->appointments()->count(),
-            'labTestsCount' => $school->labTests()->count(),
-            'doctorsCount' => $school->doctors()->count(),
-            'students' => $school->students()->latest()->get(),
-            'appointments' => $school->appointments()->with(['patient', 'doctor', 'duration'])->latest()->get(),
-            'labTests' => $school->labTests()->with('patient')->latest()->get(),
-            'doctors' => Doctor::latest()->get(),
-            'weeklyAppointments' => $weeklyAppointments,
-            'weeklyLabTests' => $weeklyLabTests
-        ]);
-    })->name('school.dashboard');
+Route::middleware(['auth', 'role:school-admin,school-staff,admin'])->group(function () {
+    Route::get('/school-dashboard', [SchoolController::class, 'showDashboard'])
+    ->name('school.dashboard');
 
     Route::get('/students', function (Request $request) {
-        $authenticatedUser = $request->current_user;
-        $school = \App\Models\School::findOrFail($authenticatedUser['id']);
+        $user = Auth::user();
+        $school = \App\Models\School::findOrFail($user->school_id);
 
         $query = $school->students();
 
@@ -157,8 +121,8 @@ Route::middleware('session.auth:school')->group(function () {
     })->name('students');
 
     Route::delete('/students/{student}/delete', function (Request $request, $studentId) {
-        $authenticatedUser = $request->current_user;
-        $school = \App\Models\School::findOrFail($authenticatedUser['id']);
+        $user = Auth::user();
+        $school = \App\Models\School::findOrFail($user->school_id);
         $student = App\Models\Patient::findOrFail($studentId);
 
         // Verify the student belongs to the school
@@ -179,8 +143,8 @@ Route::middleware('session.auth:school')->group(function () {
     })->name('students.delete');
 
     Route::post('/students/create', function (Request $request) {
-        $authenticatedUser = $request->current_user;
-        $school = \App\Models\School::findOrFail($authenticatedUser['id']);
+        $user = Auth::user();
+        $school = \App\Models\School::findOrFail($user->school_id);
 
         try {
             $validated = $request->validate([
@@ -241,8 +205,8 @@ Route::middleware('session.auth:school')->group(function () {
     })->name('students.create');
 
     Route::get('/lab-tests', function (Request $request) {
-        $authenticatedUser = $request->current_user;
-        $school = \App\Models\School::findOrFail($authenticatedUser['id']);
+        $user = Auth::user();
+        $school = \App\Models\School::findOrFail($user->school_id);
 
         // Paginate lab tests for the school (15 per page)
         $labTests = $school->labTests()->with('patient')->latest()->paginate(15);
@@ -256,8 +220,8 @@ Route::middleware('session.auth:school')->group(function () {
 
     // Handle lab test form submissions from web forms (redirect back to lab-tests page)
     Route::post('/lab-tests', function (Illuminate\Http\Request $request) {
-        $authenticatedUser = $request->current_user;
-        $school = \App\Models\School::findOrFail($authenticatedUser['id']);
+        $user = Auth::user();
+        $school = \App\Models\School::findOrFail($user->school_id);
 
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
@@ -275,8 +239,8 @@ Route::middleware('session.auth:school')->group(function () {
 
     // Delete a lab test (web)
     Route::delete('/lab-tests/{labTest}', function (Request $request, App\Models\LabTest $labTest) {
-        $authenticatedUser = $request->current_user;
-        $school = \App\Models\School::findOrFail($authenticatedUser['id']);
+        $user = Auth::user();
+        $school = \App\Models\School::findOrFail($user->school_id);
 
         // Verify the lab test belongs to the authenticated school
         if ($labTest->school_id !== $school->id) {
@@ -289,8 +253,8 @@ Route::middleware('session.auth:school')->group(function () {
 
     // Mark a lab test as completed (web)
     Route::post('/lab-tests/{labTest}/complete', function (Request $request, App\Models\LabTest $labTest) {
-        $authenticatedUser = $request->current_user;
-        $school = \App\Models\School::findOrFail($authenticatedUser['id']);
+        $user = Auth::user();
+        $school = \App\Models\School::findOrFail($user->school_id);
 
         // Verify the lab test belongs to the authenticated school
         if ($labTest->school_id !== $school->id) {
@@ -302,8 +266,8 @@ Route::middleware('session.auth:school')->group(function () {
     })->name('lab-tests.complete');
 
     Route::get('/book-doctor', function (Request $request) {
-        $authenticatedUser = $request->current_user;
-        $school = \App\Models\School::findOrFail($authenticatedUser['id']);
+        $user = Auth::user();
+        $school = \App\Models\School::findOrFail($user->school_id);
 
         return view('booking.book-doctor', [
             'school' => $school,
@@ -314,14 +278,20 @@ Route::middleware('session.auth:school')->group(function () {
     })->name('book-doctor');
 
     Route::get('/transactions', function (Request $request) {
-        $authenticatedUser = $request->current_user;
-        $school = \App\Models\School::findOrFail($authenticatedUser['id']);
+        $user = Auth::user();
+        $school = \App\Models\School::findOrFail($user->school_id);
 
         // Get transactions/payments related to this school
         // For now, we'll show appointments with payment status
         $appointments = $school->appointments()->with(['patient', 'doctor', 'duration'])->latest()->paginate(15);
         return view('school.school-transactions', compact('school', 'appointments'));
     })->name('school.transactions');
+
+    Route::get('/staff', [App\Http\Controllers\SchoolInvitationController::class, 'index'])->name('school.staff.index');
+    Route::get('/staff/invitations', [App\Http\Controllers\SchoolInvitationController::class, 'invitations'])->name('school.staff.invitations');
+    Route::post('/staff/invite', [App\Http\Controllers\SchoolInvitationController::class, 'sendInvitation'])->name('school.staff.invite');
+    Route::get('/staff/remove/{user}', [App\Http\Controllers\SchoolInvitationController::class, 'removeStaffMember'])->name('school.staff.remove');
+    Route::delete('/staff/invitations/{invitation}/revoke', [App\Http\Controllers\SchoolInvitationController::class, 'revokeInvitation'])->name('school.staff.invitation.revoke');
 });
 
 
@@ -358,7 +328,7 @@ Route::get('/students/{school}', function (Request $request, App\Models\School $
         'school' => $school,
         'students' => $students
     ]);
-})->name('students');
+})->name('school.students');
 
 
 Route::delete('/students/{school}/{student}/delete', function ($schoolId, $studentId) {
@@ -380,7 +350,7 @@ Route::delete('/students/{school}/{student}/delete', function ($schoolId, $stude
     $student->delete();
 
     return redirect()->route('students', ['school' => $school->id])->with('success', 'Student deleted successfully.');
-})->name('students.delete');
+})->name('school.students.delete');
 
 Route::post('/students/create', function (Request $request) {
     // Get school from form data instead of session
@@ -454,7 +424,7 @@ Route::get('/lab-tests/{school}', function (App\Models\School $school) {
         'labTests' => $labTests,
         'students' => $school->students()->latest()->get()
     ]);
-})->name('lab-tests');
+})->name('school.lab-tests');
 
 // Handle lab test form submissions from web forms (redirect back to lab-tests page)
 Route::post('/lab-tests', function (Illuminate\Http\Request $request) {
@@ -484,7 +454,7 @@ Route::delete('/lab-tests/{school}/{labTest}', function (App\Models\School $scho
 
     $labTest->delete();
     return redirect()->route('lab-tests', ['school' => $school->id])->with('success', 'Lab test deleted');
-})->name('lab-tests.destroy');
+})->name('school.lab-tests.destroy');
 
 // Mark a lab test as completed (web)
 Route::post('/lab-tests/{school}/{labTest}/complete', function (App\Models\School $school, App\Models\LabTest $labTest) {
@@ -495,7 +465,7 @@ Route::post('/lab-tests/{school}/{labTest}/complete', function (App\Models\Schoo
 
     $labTest->update(['status' => 'completed']);
     return redirect()->route('lab-tests', ['school' => $school->id])->with('success', 'Lab test marked completed');
-})->name('lab-tests.complete');
+})->name('school.lab-tests.complete');
 
 
 Route::get('/book-doctor/{school}', function (App\Models\School $school) {
@@ -505,14 +475,14 @@ Route::get('/book-doctor/{school}', function (App\Models\School $school) {
         'patients' => $school->students()->latest()->get(),
         'doctors' => Doctor::latest()->get()
     ]);
-})->name('book-doctor');
+})->name('school.book-doctor');
 
 Route::get('/transactions/{school}', function (App\Models\School $school) {
     // Get transactions/payments related to this school
     // For now, we'll show appointments with payment status
     $appointments = $school->appointments()->with(['patient', 'doctor', 'duration'])->latest()->paginate(15);
     return view('school.school-transactions', compact('school', 'appointments'));
-})->name('school.transactions');
+})->name('school.transactions.view');
 
 
 // Appointment actions
@@ -525,7 +495,7 @@ Route::delete('/appointments/{appointment}', [\App\Http\Controllers\AppointmentC
 // Authentication routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Registration routes
 Route::get('register', [App\Http\Controllers\Auth\RegisterController::class, 'showRegistrationForm'])->name('register');
@@ -543,7 +513,7 @@ Route::post('password/reset', 'App\Http\Controllers\Auth\ResetPasswordController
 // Simple admin area (protected)
 // Ensure the 'web' middleware is applied so session/cookie middleware run
 // (EncryptCookies, StartSession, ShareErrorsFromSession, VerifyCsrfToken)
-Route::prefix('admin')->middleware(['web', 'admin'])->group(function(){
+Route::prefix('admin')->middleware(['web', 'auth', 'role:admin'])->group(function(){
     Route::get('/', [AdminController::class, 'index'])->name('admin.index');
 
     // Individual model routes
@@ -604,6 +574,16 @@ Route::prefix('admin')->middleware(['web', 'admin'])->group(function(){
     Route::get('/health-facilities/{id}/edit', [AdminModelController::class, 'edit'])->name('admin.health-facilities.edit');
     Route::put('/health-facilities/{id}', [AdminModelController::class, 'update'])->name('admin.health-facilities.update');
     Route::delete('/health-facilities/{id}', [AdminModelController::class, 'destroy'])->name('admin.health-facilities.destroy');
+
+    // Invitation Management Routes
+    Route::get('/invitations', [AdminController::class, 'invitations'])->name('admin.invitations.index');
+    Route::post('/invitations/{type}/{id}/resend', [AdminController::class, 'resendInvitation'])->name('admin.invitations.resend');
+    Route::delete('/invitations/{type}/{id}', [AdminController::class, 'revokeInvitation'])->name('admin.invitations.revoke');
+
+    // School Invitation Routes for Admin
+    Route::get('/schools/{school}/invitations', [App\Http\Controllers\SchoolInvitationController::class, 'invitations'])->name('admin.schools.invitations');
+    Route::post('/schools/{school}/invitations/send', [App\Http\Controllers\SchoolInvitationController::class, 'sendInvitation'])->name('admin.schools.invitations.send');
+    Route::delete('/schools/{school}/invitations/{invitation}/revoke', [App\Http\Controllers\SchoolInvitationController::class, 'revokeInvitation'])->name('admin.schools.invitations.revoke');
 
     Route::get('/doctor-availabilities', [AdminModelController::class, 'index'])->name('admin.doctor-availabilities.index');
 
@@ -704,53 +684,80 @@ Route::get('/health-facilities-dashboard', function () {
 });
 
 
-Route::middleware('session.auth:health_facility')->group(function () {
+Route::middleware(['auth', 'role:health-facility-staff,health-facility-admin,health-facility-medical-personnel'])->group(function () {
     Route::get('/health-facility/dashboard', function (Request $request) {
-        $authenticatedUser = $request->current_user;
-        return app(HealthFacilityController::class)->showDashboard($request, $authenticatedUser['id']);
+        $user = Auth::user();
+        return app(HealthFacilityController::class)->showDashboard($request, $user->health_facility_id);
     })->name('health-facility.dashboard');
 
     // Health Facility section routes
     Route::get('/health-facility/patients', function (Request $request) {
-        $authenticatedUser = $request->current_user;
-        return app(HealthFacilityController::class)->patients($request, $authenticatedUser['id']);
+        $user = Auth::user();
+        return app(HealthFacilityController::class)->patients($request, $user->health_facility_id);
     })->name('health-facility.patients');
 
     Route::match(['post', 'delete'], '/health-facility/patients', function (Request $request) {
-        $authenticatedUser = $request->current_user;
-        return app(HealthFacilityController::class)->destroyAllPatients($request, $authenticatedUser['id']);
+        $user = Auth::user();
+        return app(HealthFacilityController::class)->destroyAllPatients($request, $user->health_facility_id);
     })->name('health-facility.patients.destroy-all');
 
     Route::get('/health-facility/patients/create', function (Request $request) {
-        $authenticatedUser = $request->current_user;
-        return app(HealthFacilityController::class)->createPatient($request, $authenticatedUser['id']);
+        $user = Auth::user();
+        return app(HealthFacilityController::class)->createPatient($request, $user->health_facility_id);
     })->name('health-facility.patients.create');
 
     Route::delete('/health-facility/patients/{patientId}', function (Request $request, $patientId) {
-        $authenticatedUser = $request->current_user;
-        return app(HealthFacilityController::class)->destroyPatient($request, $authenticatedUser['id'], $patientId);
+        $user = Auth::user();
+        return app(HealthFacilityController::class)->destroyPatient($request, $user->health_facility_id, $patientId);
     })->name('health-facility.patients.destroy');
 
     Route::get('/health-facility/book-doctor', function (Request $request) {
-        $authenticatedUser = $request->current_user;
-        return app(HealthFacilityController::class)->bookDoctor($request, $authenticatedUser['id']);
+        $user = Auth::user();
+        return app(HealthFacilityController::class)->bookDoctor($request, $user->health_facility_id);
     })->name('health-facility.book-doctor');
 
     Route::get('/health-facility/lab-tests', function (Request $request) {
-        $authenticatedUser = $request->current_user;
-        return app(HealthFacilityController::class)->labTests($request, $authenticatedUser['id']);
+        $user = Auth::user();
+        return app(HealthFacilityController::class)->labTests($request, $user->health_facility_id);
     })->name('health-facility.lab-tests');
 
     Route::get('/health-facility/transactions', function (Request $request) {
-        $authenticatedUser = $request->current_user;
-        return app(HealthFacilityController::class)->transactions($request, $authenticatedUser['id']);
+        $user = Auth::user();
+        return app(HealthFacilityController::class)->transactions($request, $user->health_facility_id);
     })->name('health-facility.transactions');
 
     Route::get('/health-facility/staff', function (Request $request) {
-        $authenticatedUser = $request->current_user;
-        return app(HealthFacilityController::class)->staff($request, $authenticatedUser['id']);
+        $user = Auth::user();
+        return app(HealthFacilityController::class)->staff($request, $user->health_facility_id);
     })->name('health-facility.staff');
+    
+    // Health facility staff invitation management
+    Route::post('/health-facility/staff/invite', [App\Http\Controllers\HealthFacilityInvitationController::class, 'sendInvitation'])->name('health-facility.staff.invite');
+    Route::delete('/health-facility/staff/invitations/{invitation}/revoke', [App\Http\Controllers\HealthFacilityInvitationController::class, 'revokeInvitation'])->name('health-facility.staff.invitation.revoke');
+    Route::get('/health-facility/staff/remove/{user}', [App\Http\Controllers\HealthFacilityInvitationController::class, 'removeStaffMember'])->name('health-facility.staff.remove');
 });
+
+// Initial Admin Setup Routes (Public - accessed after VoiceFlow verification)
+Route::get('/initial-admin-setup/health-facility/{facilityId}', [\App\Http\Controllers\InitialAdminSetupController::class, 'showHealthFacilityForm'])->name('initial-admin-setup.health-facility');
+Route::post('/initial-admin-setup/health-facility/{facilityId}', [\App\Http\Controllers\InitialAdminSetupController::class, 'createHealthFacilityAdmin'])->name('initial-admin-setup.health-facility.store');
+Route::get('/initial-admin-setup/school/{schoolId}', [\App\Http\Controllers\InitialAdminSetupController::class, 'showSchoolForm'])->name('initial-admin-setup.school');
+Route::post('/initial-admin-setup/school/{schoolId}', [\App\Http\Controllers\InitialAdminSetupController::class, 'createSchoolAdmin'])->name('initial-admin-setup.school.store');
+
+// School Invitation Routes (Public) - Redirect to Auth
+Route::get('/school/invitation/accept/{token}', function ($token) {
+    return redirect()->route('login', [
+        'invitation_token' => $token,
+        'invitation_type' => 'school'
+    ]);
+})->name('school.invitation.accept');
+
+// Health Facility Invitation Routes (Public) - Redirect to Auth
+Route::get('/health-facility/invitation/accept/{token}', function ($token) {
+    return redirect()->route('login', [
+        'invitation_token' => $token,
+        'invitation_type' => 'health-facility'
+    ]);
+})->name('health-facility.invitation.accept');
 
 Route::put('/health-facilities/{id}', [HealthFacilityController::class, 'updateHealthFacility'])->name('health-facilities.update');
 Route::post('/health-facilities/{id}/change-password', [HealthFacilityController::class, 'changePassword'])->name('health-facilities.change-password');

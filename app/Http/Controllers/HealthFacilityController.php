@@ -108,10 +108,19 @@ class HealthFacilityController extends Controller
         ]);
     }
 
-    public function showDashboard(Request $request)
+    public function showDashboard(Request $request, $healthFacilityId = null)
     {
-        $authenticatedUser = $request->current_user;
-        $healthFacility = HealthFacility::findOrFail($authenticatedUser['id']);
+        // Get health facility ID from parameter or authenticated user
+        if ($healthFacilityId === null) {
+            $authenticatedUser = $request->current_user;
+            $healthFacilityId = $authenticatedUser['id'] ?? null;
+        }
+        
+        if ($healthFacilityId === null) {
+            abort(403, 'No health facility associated with user');
+        }
+        
+        $healthFacility = HealthFacility::findOrFail($healthFacilityId);
     
         $notifications = collect(); 
     

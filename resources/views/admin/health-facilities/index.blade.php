@@ -13,7 +13,7 @@
                             <p class="mb-0 opacity-85">Manage healthcare facilities and their information</p>
                         </div>
                         <div class="btn-group">
-                            <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#createHealthFacilityModal">
+                            <button type="button" class="btn btn-light btn-sm" data-toggle="modal" data-target="#createHealthFacilityModal">
                                 <i class="mdi mdi-plus me-2"></i>Add Facility
                             </button>
                         </div>
@@ -93,7 +93,35 @@
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="mdi mdi-check-circle me-2"></i>{{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true"><i class="mdi mdi-close"></i></span>
+            </button>
+        </div>
+    @endif
+
+    <!-- Error Message -->
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-alert-circle me-2"></i>{{ session('error') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true"><i class="mdi mdi-close"></i></span>
+            </button>
+        </div>
+    @endif
+
+    <!-- Validation Errors -->
+    @if($errors->any())
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-alert me-2"></i>
+            <strong>Validation Error:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true"><i class="mdi mdi-close"></i></span>
+            </button>
         </div>
     @endif
 
@@ -203,6 +231,11 @@
                                                     <i class="mdi mdi-open-in-new me-2 text-info"></i>View Full Details
                                                 </a>
                                             </li>
+                                            <li>
+                                                <a href="#" class="dropdown-item" data-toggle="modal" data-target="#inviteAdminModal{{ $facility->id }}">
+                                                    <i class="mdi mdi-email-send me-2 text-success"></i>Send Admin Invitation
+                                                </a>
+                                            </li>
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
                                                 <form action="{{ route('admin.health-facilities.destroy', $facility->id) }}" method="POST" class="d-inline">
@@ -287,13 +320,76 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
                     <button class="btn btn-primary btn-sm">Create</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Invitation Modals (one per facility) -->
+@foreach($items as $facility)
+<div class="modal fade" id="inviteAdminModal{{ $facility->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="mdi mdi-email-send me-2"></i>Invite Admin for {{ $facility->name }}
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ route('health-facility.staff.invite') }}">
+                @csrf
+                <input type="hidden" name="health_facility_id" value="{{ $facility->id }}">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="mdi mdi-information me-2"></i>
+                        <strong>Important:</strong> The invitation will be sent to the person's <strong>personal email</strong>, not the facility email ({{ $facility->email }}).
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email{{ $facility->id }}" class="form-label">
+                            Personal Email <span class="text-danger">*</span>
+                        </label>
+                        <input type="email" 
+                               class="form-control" 
+                               id="email{{ $facility->id }}" 
+                               name="email" 
+                               required 
+                               placeholder="john.doe@gmail.com">
+                        <small class="text-muted">
+                            The admin will register using this personal email address.
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="role{{ $facility->id }}" class="form-label">
+                            Role <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-control" id="role{{ $facility->id }}" name="role" required>
+                            <option value="health-facility-admin">Health Facility Admin</option>
+                            <option value="health-facility-medical-personnel">Medical Personnel</option>
+                        </select>
+                        <small class="text-muted">
+                            Admins can manage staff and send invitations. Medical personnel have limited access.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="mdi mdi-send me-2"></i>Send Invitation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endforeach
+
 @endsection
 
 @push('scripts')
