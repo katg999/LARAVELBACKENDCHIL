@@ -47,6 +47,11 @@ class Appointment extends Model {
         'payment_reference',
         'payment_status',
         'meeting_room',
+        'coverage_type',
+        'member_policy_id',
+        'visit_code',
+        'insurance_status',
+        'insurance_note',
         // 'amount', // Removed - amount now comes from duration relationship
     ];
     
@@ -73,6 +78,11 @@ class Appointment extends Model {
     public function doctor(): BelongsTo
     {
         return $this->belongsTo(Doctor::class);
+    }
+
+    public function memberPolicy(): BelongsTo
+    {
+        return $this->belongsTo(MemberPolicy::class);
     }
 
     public function duration(): BelongsTo

@@ -421,27 +421,7 @@ class PaymentController extends Controller
     // Text the patient their visit page link once payment is confirmed
     protected function sendPatientJoinLink(Appointment $appointment): void
     {
-        $patient = $appointment->patient;
-        $doctor = $appointment->doctor;
-        $number = $patient->contact_number ?? $patient->parent_contact ?? null;
-
-        if (!$patient || !$doctor || !$number) {
-            return;
-        }
-
-        // Signed link to the visit page, which only reveals the video room when it is time to join
-        $link = \Illuminate\Support\Facades\URL::temporarySignedRoute(
-            'visit.show',
-            $appointment->appointment_time->copy()->addDay(),
-            ['appointment' => $appointment->id]
-        );
-
-        app(\App\Services\SmsService::class)->send(
-            $number,
-            "Your appointment with Dr. {$doctor->name} is confirmed for "
-            . $appointment->appointment_time->format('D j M, g:i A')
-            . ". Join here when it is time: " . $link
-        );
+        app(\App\Services\PatientNotifier::class)->sendJoinLink($appointment);
     }
 
     // Send appointment confirmation email to doctor

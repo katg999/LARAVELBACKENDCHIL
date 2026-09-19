@@ -163,6 +163,11 @@ class Patient extends Model
         return $this->belongsToMany(HealthFacility::class)->withTimestamps();
     }
 
+    public function policies(): HasMany
+    {
+        return $this->hasMany(MemberPolicy::class);
+    }
+
     public function appointments(): HasMany
     {
         return $this->hasMany(Appointment::class, 'patient_id');

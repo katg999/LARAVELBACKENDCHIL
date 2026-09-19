@@ -10,9 +10,9 @@
     <div class="card">
         <h2>Dr. {{ $a->doctor->name ?? '' }}</h2>
         <div class="row">{{ $a->appointment_time->format('D j M Y, g:i A') }} &middot; {{ $a->duration->minutes ?? 30 }} min</div>
-        @php($label = ['open' => ['Ready to join','ok'], 'early' => ['Upcoming','wait'], 'awaiting_payment' => ['Waiting for payment','wait'], 'ended' => ['Ended','no'], 'cancelled' => ['Cancelled','no']][$item['state']])
+        @php($label = ['open' => ['Ready to join','ok'], 'early' => ['Upcoming','wait'], 'awaiting_payment' => ['Waiting for payment','wait'], 'awaiting_verification' => ['Checking insurance','wait'], 'ended' => ['Ended','no'], 'cancelled' => ['Cancelled','no']][$item['state']])
         <span class="pill {{ $label[1] }}">{{ $label[0] }}</span>
-        @if(in_array($item['state'], ['open','early','awaiting_payment']))
+        @if(in_array($item['state'], ['open','early','awaiting_payment','awaiting_verification']))
             <a class="btn" href="{{ $item['link'] }}">Open visit</a>
         @endif
     </div>

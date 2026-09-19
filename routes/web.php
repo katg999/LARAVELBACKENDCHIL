@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use App\Models\Doctor;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PatientVisitController;
+use App\Http\Controllers\InsuranceController;
 
 
 
@@ -863,3 +864,12 @@ Route::prefix('test/payments')->group(function () {
 // Patient pages reached by signed links sent over SMS (no password needed)
 Route::get('/visit/{appointment}', [PatientVisitController::class, 'show'])->middleware('signed')->name('visit.show');
 Route::get('/my-visits/{patient}', [PatientVisitController::class, 'visits'])->middleware('signed')->name('patient.visits');
+
+// Insurance handling for clinic and doctor staff
+Route::middleware('session.auth')->prefix('insurance')->group(function () {
+    Route::get('/insurers', [InsuranceController::class, 'insurers'])->name('insurance.insurers');
+    Route::post('/patients/{patient}/policies', [InsuranceController::class, 'addPolicy'])->name('insurance.policies.store');
+    Route::post('/appointments/{appointment}/verify', [InsuranceController::class, 'verify'])->name('insurance.verify');
+    Route::get('/visit-records.csv', [InsuranceController::class, 'exportCsv'])->name('insurance.export');
+    Route::post('/visit-records/submitted', [InsuranceController::class, 'markSubmitted'])->name('insurance.submitted');
+});

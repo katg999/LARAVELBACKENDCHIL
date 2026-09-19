@@ -15,6 +15,9 @@
     @elseif($state === 'early')
         <span class="pill wait">Not open yet</span>
         <p class="muted">You can join from {{ $opensAt->format('g:i A') }}. Open this page again then.</p>
+    @elseif($state === 'awaiting_verification')
+        <span class="pill wait">Checking your insurance</span>
+        <p class="muted">Your clinic is confirming your insurance cover. You will get a text when your visit is confirmed.</p>
     @elseif($state === 'awaiting_payment')
         <span class="pill wait">Waiting for payment</span>
         <p class="muted">Your visit is confirmed once payment is received. This page will show the join button after that.</p>

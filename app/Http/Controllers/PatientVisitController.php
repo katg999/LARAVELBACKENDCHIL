@@ -51,6 +51,8 @@ class PatientVisitController extends Controller
 
         if ($appointment->status === 'cancelled') {
             $state = 'cancelled';
+        } elseif ($appointment->status === 'awaiting_verification') {
+            $state = 'awaiting_verification';
         } elseif ($appointment->status !== 'confirmed' || $appointment->payment_status === 'failed') {
             $state = 'awaiting_payment';
         } elseif (now()->lt($opensAt)) {

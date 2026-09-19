@@ -26,8 +26,20 @@ class AppointmentController extends Controller
             'reason' => 'required|string|max:500',
             'patient_id' => 'required|exists:patients,id',
             'school_id' => 'nullable|exists:schools,id',
-            'health_facility_id' => 'nullable|exists:health_facilities,id'
+            'health_facility_id' => 'nullable|exists:health_facilities,id',
+            'member_policy_id' => 'nullable|exists:member_policies,id',
+            'visit_code' => 'nullable|string|max:64',
         ]);
+
+        // An insured booking must use an active policy that belongs to this patient
+        $validator->after(function ($validator) use ($request) {
+            if ($request->filled('member_policy_id')) {
+                $policy = \App\Models\MemberPolicy::find($request->member_policy_id);
+                if (!$policy || (int) $policy->patient_id !== (int) $request->patient_id || $policy->status !== 'active') {
+                    $validator->errors()->add('member_policy_id', 'That insurance policy is not active for this patient.');
+                }
+            }
+        });
 
         // Additional validation
         $validator->after(function ($validator) use ($request) {
@@ -131,11 +143,17 @@ class AppointmentController extends Controller
                 'appointment_time' => $appointmentDateTime,
                 'duration_id' => $request->duration_id,
                 'reason' => $request->reason,
-                'status' => 'awaiting_payment',
+                'status' => $request->filled('member_policy_id') ? 'awaiting_verification' : 'awaiting_payment',
                 'health_facility_id' => $request->health_facility_id,
                 'patient_id' => $request->patient_id,
                 'school_id' => $request->school_id
-            ]);
+            ] + ($request->filled('member_policy_id') ? [
+                // Insured booking: staff confirm cover before it becomes a confirmed visit
+                'coverage_type' => 'insurance',
+                'member_policy_id' => $request->member_policy_id,
+                'visit_code' => $request->visit_code,
+                'insurance_status' => 'pending',
+            ] : []));
 
             \Log::info('Appointment created successfully', [
                 'appointment_id' => $appointment->id,
