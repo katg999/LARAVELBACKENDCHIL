@@ -165,7 +165,9 @@ class HealthFacilityController extends Controller
         $maleCount = Patient::forHealthFacility($healthFacility->id)->where('gender', 'male')->count();
         $femaleCount = Patient::forHealthFacility($healthFacility->id)->where('gender', 'female')->count();
         $otherCount = Patient::forHealthFacility($healthFacility->id)->where('gender', 'other')->count();
-        $unknownCount = Patient::forHealthFacility($healthFacility->id)->whereNull('gender')->orWhere('gender','')->count();
+        $unknownCount = Patient::forHealthFacility($healthFacility->id)
+            ->where(function ($q) { $q->whereNull('gender')->orWhere('gender', ''); })
+            ->count();
         $genderLabels = ['Male', 'Female', 'Other', 'Unspecified'];
         $genderData = [$maleCount, $femaleCount, $otherCount, $unknownCount];
     
