@@ -54,6 +54,7 @@ class Appointment extends Model {
         'visit_code',
         'insurance_status',
         'insurance_note',
+        'claim_status', 'claim_reference', 'claim_note', 'claim_paid_amount', 'claim_submitted_at', 'claim_updated_at',
         // 'amount', // Removed - amount now comes from duration relationship
     ];
     
@@ -64,6 +65,9 @@ class Appointment extends Model {
      * @var array
      */
     protected $casts = [
+        'claim_submitted_at' => 'datetime',
+        'claim_updated_at' => 'datetime',
+        'claim_paid_amount' => 'decimal:2',
         'appointment_time' => 'datetime',
     ];
     
@@ -80,6 +84,22 @@ class Appointment extends Model {
     public function doctor(): BelongsTo
     {
         return $this->belongsTo(Doctor::class);
+    }
+
+    public function consents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Consent::class);
+    }
+
+    /**
+     * Visits an insurer can be asked to pay for: not cancelled, and the patient actually attended
+     * (joined the video room, or the doctor completed it).
+     */
+    public function scopeAttended($query)
+    {
+        return $query->where('status', '!=', 'cancelled')->where(function ($q) {
+            $q->whereIn('status', ['completed', 'awaiting_approval'])->orWhereHas('consents');
+        });
     }
 
     public function employer(): BelongsTo
