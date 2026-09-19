@@ -21,6 +21,8 @@ use App\Models\Doctor;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PatientVisitController;
 use App\Http\Controllers\InsuranceController;
+use App\Http\Controllers\PrescriptionController;
+use App\Http\Controllers\PatientPrescriptionController;
 
 
 
@@ -872,4 +874,15 @@ Route::middleware('session.auth')->prefix('insurance')->group(function () {
     Route::post('/appointments/{appointment}/verify', [InsuranceController::class, 'verify'])->name('insurance.verify');
     Route::get('/visit-records.csv', [InsuranceController::class, 'exportCsv'])->name('insurance.export');
     Route::post('/visit-records/submitted', [InsuranceController::class, 'markSubmitted'])->name('insurance.submitted');
+});
+
+// Prescriptions and medicine delivery
+Route::post('/my-visits/{patient}/prescriptions', [PatientPrescriptionController::class, 'upload'])->middleware('signed')->name('patient.prescriptions.upload');
+Route::post('/my-visits/{patient}/prescriptions/{prescription}/delivery', [PatientPrescriptionController::class, 'requestDelivery'])->middleware('signed')->name('patient.prescriptions.delivery');
+Route::middleware('session.auth')->prefix('care')->group(function () {
+    Route::post('/appointments/{appointment}/prescriptions', [PrescriptionController::class, 'issue'])->name('care.prescriptions.issue');
+    Route::get('/prescriptions', [PrescriptionController::class, 'queue'])->name('care.prescriptions.queue');
+    Route::post('/prescriptions/{prescription}/review', [PrescriptionController::class, 'review'])->name('care.prescriptions.review');
+    Route::post('/prescriptions/{prescription}/delivery', [PrescriptionController::class, 'updateDelivery'])->name('care.prescriptions.delivery');
+    Route::get('/prescriptions/{prescription}/image', [PrescriptionController::class, 'image'])->name('care.prescriptions.image');
 });

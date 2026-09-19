@@ -53,4 +53,33 @@ class PatientNotifier
             . ". You can still pay by mobile money to keep the booking."
         );
     }
+
+    public function sendPrescriptionReviewed(\App\Models\Prescription $prescription): bool
+    {
+        $text = $prescription->status === 'approved'
+            ? 'Your prescription was approved. You can now request delivery from your visits page.'
+            : 'We could not accept your prescription photo.' . ($prescription->review_note ? ' Reason: ' . $prescription->review_note : '');
+
+        return $this->toPatient($prescription->patient, $text);
+    }
+
+    public function sendDeliveryUpdate(\App\Models\Prescription $prescription): bool
+    {
+        $text = match ($prescription->delivery_status) {
+            'preparing' => 'Your medicine order is being prepared.',
+            'out_for_delivery' => 'Your medicine is on its way.',
+            'delivered' => 'Your medicine was delivered. Get well soon.',
+            'cancelled' => 'Your medicine delivery was cancelled. Contact the clinic if this is a surprise.',
+            default => null,
+        };
+
+        return $text ? $this->toPatient($prescription->patient, $text) : false;
+    }
+
+    private function toPatient(?\App\Models\Patient $patient, string $message): bool
+    {
+        $number = $patient->contact_number ?? $patient->parent_contact ?? null;
+
+        return $number ? $this->sms->send($number, $message) : false;
+    }
 }

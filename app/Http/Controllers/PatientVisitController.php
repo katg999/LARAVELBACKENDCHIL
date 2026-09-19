@@ -39,7 +39,19 @@ class PatientVisitController extends Controller
                 'link' => URL::temporarySignedRoute('visit.show', now()->addDay(), ['appointment' => $a->id]),
             ]);
 
-        return view('visit.list', ['patient' => $patient, 'items' => $appointments]);
+        $prescriptions = $patient->prescriptions()->with('items')->latest()->limit(20)->get()->map(fn ($p) => [
+            'prescription' => $p,
+            'deliveryUrl' => $p->canRequestDelivery()
+                ? URL::temporarySignedRoute('patient.prescriptions.delivery', now()->addHours(4), ['patient' => $patient->id, 'prescription' => $p->id])
+                : null,
+        ]);
+
+        return view('visit.list', [
+            'patient' => $patient,
+            'items' => $appointments,
+            'prescriptions' => $prescriptions,
+            'uploadUrl' => URL::temporarySignedRoute('patient.prescriptions.upload', now()->addHours(4), ['patient' => $patient->id]),
+        ]);
     }
 
     /** @return array{appointment: Appointment, state: string, joinUrl: ?string, opensAt: \Illuminate\Support\Carbon, closesAt: \Illuminate\Support\Carbon} */

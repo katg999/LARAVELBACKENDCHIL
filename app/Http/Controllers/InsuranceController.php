@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ChecksStaffAccess;
 use App\Models\Appointment;
 use App\Models\Insurer;
 use App\Models\MemberPolicy;
 use App\Models\Patient;
 use App\Services\PatientNotifier;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 /**
@@ -17,6 +17,8 @@ use Illuminate\Http\Request;
  */
 class InsuranceController extends Controller
 {
+    use ChecksStaffAccess;
+
     public function __construct(private PatientNotifier $notifier)
     {
     }
@@ -143,33 +145,5 @@ class InsuranceController extends Controller
             ->update(['insurance_status' => 'submitted']);
 
         return response()->json(['success' => true, 'submitted' => $count]);
-    }
-
-    /** @return array{type: string, id: int} */
-    private function staff(Request $request): array
-    {
-        $user = $request->current_user ?? null;
-        if (!$user || !in_array($user['type'], ['doctor', 'health_facility'], true)) {
-            abort(403);
-        }
-
-        return $user;
-    }
-
-    private function scopeTo(array $user, Builder $query): Builder
-    {
-        return $user['type'] === 'doctor'
-            ? $query->where('doctor_id', $user['id'])
-            : $query->where('health_facility_id', $user['id']);
-    }
-
-    private function canSeePatient(array $user, Patient $patient): bool
-    {
-        if ($user['type'] === 'health_facility') {
-            return (int) $patient->health_facility_id === (int) $user['id']
-                || $patient->healthFacilities()->whereKey($user['id'])->exists();
-        }
-
-        return $patient->appointments()->where('doctor_id', $user['id'])->exists();
     }
 }
