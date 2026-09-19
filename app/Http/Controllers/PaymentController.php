@@ -84,7 +84,7 @@ class PaymentController extends Controller
                 'country' => 'UG',
                 'reference' => (string) Str::uuid(),
                 'description' => 'Payment request',
-                'callback_url' => route('marzpay.webhook'),
+                'callback_url' => app(\App\Services\AppointmentPayments::class)->callbackUrl(),
             ];
 
             $result = $this->gateway->collect($data);
@@ -130,7 +130,7 @@ class PaymentController extends Controller
                 'country' => 'UG',
                 'reference' => (string) Str::uuid(),
                 'description' => $request->description ?? 'Payment disbursement',
-                'callback_url' => route('marzpay.webhook'),
+                'callback_url' => app(\App\Services\AppointmentPayments::class)->callbackUrl(),
             ];
 
             $response = $this->marzPayService->sendMoney($data);
@@ -793,6 +793,13 @@ class PaymentController extends Controller
         $allowedIps = config('services.marzpay.allowed_ips', []);
         if (!empty($allowedIps) && !in_array($request->ip(), $allowedIps)) {
             Log::warning('Webhook request from unauthorized IP: ' . $request->ip());
+            return false;
+        }
+
+        // Shared secret in the callback URL (see MARZPAY_WEBHOOK_TOKEN)
+        $token = config('services.marzpay.webhook_token');
+        if ($token && !hash_equals((string) $token, (string) $request->query('token'))) {
+            Log::warning('Webhook request without the correct token from: ' . $request->ip());
             return false;
         }
 

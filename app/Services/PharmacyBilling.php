@@ -111,7 +111,7 @@ class PharmacyBilling
                 'country' => 'UG',
                 'reference' => (string) Str::uuid(),
                 'description' => 'Medicine - prescription ' . $rx->id,
-                'callback_url' => route('marzpay.webhook'),
+                'callback_url' => $this->phones->callbackUrl(),
             ]);
         } catch (\Throwable $e) {
             return ['success' => false, 'message' => 'An error occurred while processing payment'];
