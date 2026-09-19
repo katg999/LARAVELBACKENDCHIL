@@ -7,6 +7,7 @@ use App\Models\Appointment;
 use App\Models\AuditLog;
 use App\Models\Insurer;
 use App\Models\MemberPolicy;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Patient;
 use App\Services\PatientNotifier;
 use Illuminate\Http\Request;
@@ -54,6 +55,67 @@ class InsuranceController extends Controller
         AuditLog::record($user, 'insurance.policy.added', $policy);
 
         return response()->json(['success' => true, 'policy' => $policy->load('insurer')], 201);
+    }
+
+    /** Policies patients sent themselves that are waiting for staff to confirm. */
+    public function pendingPolicies(Request $request)
+    {
+        $user = $this->staff($request);
+
+        $rows = MemberPolicy::where('status', 'pending_review')
+            ->whereHas('patient', fn ($q) => $this->visiblePatients($q, $user))
+            ->with(['patient:id,name,patient_id', 'insurer:id,name'])
+            ->latest()->limit(100)->get()
+            ->map(fn ($p) => $p->only(['id', 'member_number', 'scheme_name', 'created_at']) + [
+                'patient' => $p->patient, 'insurer' => $p->insurer, 'has_card' => (bool) $p->card_image_path,
+            ]);
+
+        return response()->json($rows);
+    }
+
+    public function reviewPolicy(Request $request, MemberPolicy $policy)
+    {
+        $user = $this->staff($request);
+        abort_unless($this->canSeePatient($user, $policy->patient), 404);
+
+        $data = $request->validate(['result' => 'required|in:approved,rejected', 'note' => 'nullable|string|max:500']);
+
+        if ($policy->status !== 'pending_review') {
+            return response()->json(['success' => false, 'message' => 'This policy is not waiting for review.'], 409);
+        }
+
+        $approved = $data['result'] === 'approved';
+        $policy->update([
+            'status' => $approved ? 'active' : 'rejected',
+            'review_note' => $data['note'] ?? null,
+            'reviewed_at' => now(),
+            'verified_at' => $approved ? now() : null,
+        ]);
+        AuditLog::record($user, 'insurance.policy.' . $data['result'], $policy);
+        $this->notifier->sendPolicyReviewed($policy->fresh(['patient', 'insurer']));
+
+        return response()->json(['success' => true, 'status' => $policy->status]);
+    }
+
+    /** The card photo the patient sent, for staff who can see that patient. */
+    public function policyCard(Request $request, MemberPolicy $policy)
+    {
+        $user = $this->staff($request);
+        abort_unless($this->canSeePatient($user, $policy->patient), 404);
+        abort_unless($policy->card_image_path && Storage::disk('local')->exists($policy->card_image_path), 404);
+
+        AuditLog::record($user, 'insurance.card.viewed', $policy);
+
+        return Storage::disk('local')->response($policy->card_image_path);
+    }
+
+    private function visiblePatients($q, array $user)
+    {
+        if ($user['type'] === 'health_facility') {
+            return $q->where(fn ($q) => $q->where('health_facility_id', $user['id'])->orWhereHas('healthFacilities', fn ($h) => $h->whereKey($user['id'])));
+        }
+
+        return $q->whereHas('appointments', fn ($a) => $a->where('doctor_id', $user['id']));
     }
 
     public function verify(Request $request, Appointment $appointment)

@@ -112,13 +112,14 @@ class PatientAuthController extends Controller
                 'prescriptions.items',
                 'labTests',
                 'appointments' => fn ($q) => $q->with('doctor')->orderByDesc('appointment_time')->limit(20),
+                'policies.insurer',
             ])->get();
 
         foreach ($patients as $p) {
             AuditLog::record(['type' => 'patient', 'id' => $p->id], 'patient.records.viewed', $p);
         }
 
-        return view('patient.records', ['patients' => $patients]);
+        return view('patient.records', ['patients' => $patients, 'insurers' => \App\Models\Insurer::where('active', true)->orderBy('name')->get(['id', 'name'])]);
     }
 
     public function logout(Request $request)

@@ -82,4 +82,41 @@ class PatientNotifier
 
         return $number ? $this->messenger->send($number, $message) : false;
     }
+
+    /** Tell the patient what their medicine costs and how much of it is theirs to pay. */
+    public function sendMedicineQuote(\App\Models\Prescription $rx): bool
+    {
+        if ($rx->patient_amount === null) {
+            return false;
+        }
+
+        $link = URL::temporarySignedRoute('patient.visits', now()->addDays(2), ['patient' => $rx->patient_id]);
+        $insurer = (float) $rx->insurer_amount;
+        $mine = (float) $rx->patient_amount;
+
+        $text = $rx->insurance_status === 'declined'
+            ? 'Your insurer did not cover your medicine. You pay UGX ' . number_format($mine) . '.'
+            : ($insurer > 0
+                ? 'Your medicine is UGX ' . number_format((float) $rx->total_amount) . '. Your insurer covers UGX ' . number_format($insurer) . ($mine > 0 ? ' and you pay UGX ' . number_format($mine) . '.' : '. You pay nothing.')
+                : 'Your medicine costs UGX ' . number_format($mine) . '.');
+
+        return $this->toPatient($rx->patient, $text . ($mine > 0 ? ' Pay here: ' : ' Request delivery here: ') . $link);
+    }
+
+    public function sendPolicyReviewed(\App\Models\MemberPolicy $policy): bool
+    {
+        $insurer = $policy->insurer?->name ?? 'insurance';
+        $text = $policy->status === 'active'
+            ? "Your {$insurer} cover is confirmed. You can now use it when you book."
+            : "We could not confirm your {$insurer} details." . ($policy->review_note ? ' Reason: ' . $policy->review_note : ' Please check the member number or ask your clinic.');
+
+        return $this->toPatient($policy->patient, $text);
+    }
+
+    public function sendMedicinePaid(\App\Models\Prescription $rx): bool
+    {
+        $link = URL::temporarySignedRoute('patient.visits', now()->addDays(2), ['patient' => $rx->patient_id]);
+
+        return $this->toPatient($rx->patient, 'Payment received for your medicine. Request delivery here: ' . $link);
+    }
 }

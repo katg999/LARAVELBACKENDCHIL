@@ -400,6 +400,35 @@ class PaymentController extends Controller
         ]);
     }
 
+    /** Settle a medicine payment if the provider reference belongs to a prescription. Returns true when it did. */
+    private function settlePrescriptionPayment(?string $uuid, ?string $reference, bool $success): bool
+    {
+        $rx = \App\Models\Prescription::query()
+            ->where(function ($q) use ($uuid, $reference) {
+                $q->whereRaw('1 = 0');
+                if ($uuid) {
+                    $q->orWhere('payment_reference', $uuid);
+                }
+                if ($reference) {
+                    $q->orWhere('payment_reference', $reference);
+                }
+            })->first();
+
+        if (!$rx) {
+            return false;
+        }
+
+        $billing = app(\App\Services\PharmacyBilling::class);
+        if ($success) {
+            $billing->markPaid($rx);
+            app(\App\Services\PatientNotifier::class)->sendMedicinePaid($rx->fresh('patient'));
+        } else {
+            $billing->markPaymentFailed($rx);
+        }
+
+        return true;
+    }
+
     /**
      * Handle successful collection webhook
      */
@@ -408,6 +437,11 @@ class PaymentController extends Controller
         try {
             $reference = $transaction['reference'] ?? null;
             $uuid = $transaction['uuid'] ?? null;
+
+            // A medicine payment carries the prescription's payment reference
+            if ($this->settlePrescriptionPayment($uuid, $reference, true)) {
+                return;
+            }
 
             // Find appointment by payment_reference (could be uuid or reference)
             $appointment = null;
@@ -515,6 +549,10 @@ class PaymentController extends Controller
         try {
             $reference = $transaction['reference'] ?? null;
             $uuid = $transaction['uuid'] ?? null;
+
+            if ($this->settlePrescriptionPayment($uuid, $reference, false)) {
+                return;
+            }
 
             // Find appointment by payment_reference (could be uuid or reference)
             $appointment = null;

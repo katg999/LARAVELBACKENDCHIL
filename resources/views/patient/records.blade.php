@@ -40,6 +40,30 @@
     </div>
 
     <div class="card">
+        <h2>Insurance</h2>
+        @if(session('insurance_status'))<p class="pill ok">{{ session('insurance_status') }}</p>@endif
+        @forelse($p->policies as $pol)
+            <div class="row" style="border-top:1px solid #eee;padding-top:8px">
+                <strong>{{ $pol->insurer->name ?? 'Insurance' }}</strong> &middot; {{ $pol->member_number }}
+                <span class="pill {{ $pol->status === 'active' ? 'ok' : ($pol->status === 'rejected' ? 'no' : 'wait') }}">{{ $pol->status === 'active' ? 'Confirmed' : ($pol->status === 'rejected' ? 'Not confirmed' : 'Being checked') }}</span>
+            </div>
+        @empty
+            <p class="muted">No insurance on file.</p>
+        @endforelse
+        <form method="POST" action="{{ route('patient.portal.policies.store', $p) }}" enctype="multipart/form-data">
+            @csrf
+            <select name="insurer_id" required style="width:100%;padding:12px;box-sizing:border-box;font-size:16px;margin-top:8px">
+                <option value="">Add insurance: choose your insurer</option>
+                @foreach($insurers as $ins)<option value="{{ $ins->id }}">{{ $ins->name }}</option>@endforeach
+            </select>
+            <input name="member_number" required maxlength="64" placeholder="Member number" style="width:100%;padding:12px;box-sizing:border-box;font-size:16px;margin-top:8px">
+            <input type="file" name="card" accept="image/*,.pdf" style="margin-top:8px">
+            <button class="btn" style="width:100%;border:0;cursor:pointer">Send insurance details</button>
+        </form>
+        @if($errors->any())<p class="pill no">{{ $errors->first() }}</p>@endif
+    </div>
+
+    <div class="card">
         <h2>Lab tests</h2>
         @forelse($p->labTests as $lab)
             <div class="row" style="border-top:1px solid #eee;padding-top:8px">

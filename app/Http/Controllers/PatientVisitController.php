@@ -81,18 +81,33 @@ class PatientVisitController extends Controller
                 'link' => URL::temporarySignedRoute('visit.show', now()->addDay(), ['appointment' => $a->id]),
             ]);
 
-        $prescriptions = $patient->prescriptions()->with('items')->latest()->limit(20)->get()->map(fn ($p) => [
-            'prescription' => $p,
-            'deliveryUrl' => $p->canRequestDelivery()
-                ? URL::temporarySignedRoute('patient.prescriptions.delivery', now()->addHours(4), ['patient' => $patient->id, 'prescription' => $p->id])
-                : null,
-        ]);
+        $wallet = \App\Models\Wallet::forPatient($patient);
+        $signed = fn (string $route, array $params) => URL::temporarySignedRoute($route, now()->addHours(4), $params);
+        $prescriptions = $patient->prescriptions()->with(['items', 'memberPolicy.insurer'])->latest()->limit(20)->get()->map(function ($p) use ($patient, $wallet, $signed) {
+            $due = $p->amountDue();
+            $ids = ['patient' => $patient->id, 'prescription' => $p->id];
+
+            return [
+                'prescription' => $p,
+                'due' => $due,
+                'momoUrl' => $due !== null && $p->payment_status === 'unpaid' ? $signed('patient.prescriptions.pay.momo', $ids) : null,
+                'walletUrl' => $due !== null && $p->payment_status === 'unpaid' && (float) $wallet->balance >= $due ? $signed('patient.prescriptions.pay.wallet', $ids) : null,
+                'deliveryUrl' => $p->canRequestDelivery() ? $signed('patient.prescriptions.delivery', $ids) : null,
+            ];
+        });
+
+        $policies = $patient->policies()->with('insurer')->latest()->get();
+        $insurers = \App\Models\Insurer::where('active', true)->orderBy('name')->get(['id', 'name']);
 
         return view('visit.list', [
             'patient' => $patient,
             'items' => $appointments,
             'prescriptions' => $prescriptions,
             'uploadUrl' => URL::temporarySignedRoute('patient.prescriptions.upload', now()->addHours(4), ['patient' => $patient->id]),
+            'policies' => $policies,
+            'insurers' => $insurers,
+            'policyUrl' => URL::temporarySignedRoute('patient.policies.store', now()->addHours(4), ['patient' => $patient->id]),
+            'walletBalance' => (float) $wallet->balance,
         ]);
     }
 

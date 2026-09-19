@@ -8,9 +8,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MemberPolicy extends Model
 {
-    protected $fillable = ['patient_id', 'insurer_id', 'member_number', 'scheme_name', 'status', 'verified_at'];
+    protected $fillable = [
+        'patient_id', 'insurer_id', 'member_number', 'scheme_name', 'status', 'verified_at',
+        'submitted_by', 'card_image_path', 'review_note', 'reviewed_at',
+    ];
 
-    protected $casts = ['verified_at' => 'datetime'];
+    protected $casts = ['verified_at' => 'datetime', 'reviewed_at' => 'datetime'];
 
     public function patient(): BelongsTo
     {

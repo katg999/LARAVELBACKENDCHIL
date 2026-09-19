@@ -17,9 +17,18 @@ class Prescription extends Model
     protected $fillable = [
         'patient_id', 'appointment_id', 'doctor_id', 'source', 'status', 'notes', 'review_note',
         'image_path', 'delivery_status', 'delivery_address', 'delivery_phone', 'delivery_requested_at',
+        'coverage_type', 'member_policy_id', 'total_amount', 'insurer_amount', 'patient_amount',
+        'insurance_status', 'insurer_reference', 'insurance_note',
+        'payment_status', 'payment_method', 'payment_reference', 'priced_at',
     ];
 
-    protected $casts = ['delivery_requested_at' => 'datetime'];
+    protected $casts = [
+        'delivery_requested_at' => 'datetime',
+        'priced_at' => 'datetime',
+        'total_amount' => 'decimal:2',
+        'insurer_amount' => 'decimal:2',
+        'patient_amount' => 'decimal:2',
+    ];
 
     public function patient(): BelongsTo
     {
@@ -41,9 +50,22 @@ class Prescription extends Model
         return $this->hasMany(PrescriptionItem::class);
     }
 
-    /** A prescription can be delivered once a doctor wrote it or approved an uploaded one. */
+    public function memberPolicy(): BelongsTo
+    {
+        return $this->belongsTo(MemberPolicy::class);
+    }
+
+    /** Written by a doctor or approved by a clinician, priced by the pharmacy, and the patient's share settled. */
     public function canRequestDelivery(): bool
     {
-        return in_array($this->status, ['issued', 'approved'], true) && $this->delivery_status === null;
+        return in_array($this->status, ['issued', 'approved'], true)
+            && $this->delivery_status === null
+            && $this->payment_status === 'paid';
+    }
+
+    /** Amount the patient still has to pay, or null before pricing. */
+    public function amountDue(): ?float
+    {
+        return $this->payment_status === 'paid' || $this->patient_amount === null ? null : (float) $this->patient_amount;
     }
 }
