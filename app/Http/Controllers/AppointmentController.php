@@ -29,7 +29,34 @@ class AppointmentController extends Controller
             'health_facility_id' => 'nullable|exists:health_facilities,id',
             'member_policy_id' => 'nullable|exists:member_policies,id',
             'visit_code' => 'nullable|string|max:64',
+            'employer_id' => 'nullable|exists:employers,id',
         ]);
+
+        // An employer-paid booking: one coverage only, the patient must be a member, and the monthly limit must hold
+        $validator->after(function ($validator) use ($request) {
+            if (!$request->filled('employer_id')) {
+                return;
+            }
+            if ($request->filled('member_policy_id')) {
+                $validator->errors()->add('employer_id', 'Choose insurance or an employer, not both.');
+                return;
+            }
+            $employer = \App\Models\Employer::find($request->employer_id);
+            if (!$employer || !$employer->active || !$employer->members()->whereKey($request->patient_id)->exists()) {
+                $validator->errors()->add('employer_id', 'This patient is not covered by that employer.');
+                return;
+            }
+            if ($employer->monthly_cap !== null && $request->filled('duration_id') && $request->filled('appointment_time')) {
+                $payments = app(\App\Services\AppointmentPayments::class);
+                $duration = \App\Models\Duration::find($request->duration_id);
+                $doctor = \App\Models\Doctor::find($request->doctor_id);
+                $price = $duration ? (float) $duration->getPriceForDoctor($doctor) : 0.0;
+                $spent = \App\Http\Controllers\EmployerController::spentInMonth($employer, \Carbon\Carbon::parse($request->appointment_time), $payments);
+                if ($spent + $price > (float) $employer->monthly_cap) {
+                    $validator->errors()->add('employer_id', 'The employer monthly limit has been reached.');
+                }
+            }
+        });
 
         // An insured booking must use an active policy that belongs to this patient
         $validator->after(function ($validator) use ($request) {
@@ -143,7 +170,7 @@ class AppointmentController extends Controller
                 'appointment_time' => $appointmentDateTime,
                 'duration_id' => $request->duration_id,
                 'reason' => $request->reason,
-                'status' => $request->filled('member_policy_id') ? 'awaiting_verification' : 'awaiting_payment',
+                'status' => $request->filled('member_policy_id') ? 'awaiting_verification' : ($request->filled('employer_id') ? 'confirmed' : 'awaiting_payment'),
                 'health_facility_id' => $request->health_facility_id,
                 'patient_id' => $request->patient_id,
                 'school_id' => $request->school_id
@@ -153,7 +180,18 @@ class AppointmentController extends Controller
                 'member_policy_id' => $request->member_policy_id,
                 'visit_code' => $request->visit_code,
                 'insurance_status' => 'pending',
+            ] : []) + ($request->filled('employer_id') ? [
+                // Employer pays: confirmed straight away
+                'coverage_type' => 'employer',
+                'employer_id' => $request->employer_id,
+                'payment_status' => 'employer',
+                'payment_method' => 'employer',
             ] : []));
+
+            if ($appointment->status === 'confirmed' && $appointment->coverage_type === 'employer') {
+                app(\App\Services\PatientNotifier::class)->sendJoinLink($appointment->fresh(['patient', 'doctor']));
+                app(\App\Services\DoctorNotifier::class)->appointmentConfirmed($appointment->fresh(['patient', 'doctor']));
+            }
 
             \Log::info('Appointment created successfully', [
                 'appointment_id' => $appointment->id,

@@ -26,7 +26,22 @@ class PatientVisitController extends Controller
     {
         $appointment->loadMissing(['patient', 'doctor', 'duration']);
 
-        return view('visit.show', $this->visitState($appointment));
+        $data = $this->visitState($appointment);
+
+        if ($data['state'] === 'awaiting_payment' && $appointment->coverage_type === 'self_pay') {
+            $amount = app(\App\Services\AppointmentPayments::class)->amountFor($appointment);
+            $balance = (float) (\App\Models\Wallet::forPatient($appointment->patient)->balance);
+            $data += [
+                'amount' => $amount,
+                'walletBalance' => $balance,
+                'momoUrl' => URL::temporarySignedRoute('visit.pay.momo', now()->addHours(2), ['appointment' => $appointment->id]),
+                'walletUrl' => $balance >= $amount
+                    ? URL::temporarySignedRoute('visit.pay.wallet', now()->addHours(2), ['appointment' => $appointment->id])
+                    : null,
+            ];
+        }
+
+        return view('visit.show', $data);
     }
 
     /** Record the patient's consent, then send them into the private room (audio only if asked). */

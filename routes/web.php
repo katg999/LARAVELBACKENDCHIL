@@ -23,6 +23,9 @@ use App\Http\Controllers\PatientVisitController;
 use App\Http\Controllers\InsuranceController;
 use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\PatientAuthController;
+use App\Http\Controllers\VisitPaymentController;
+use App\Http\Controllers\WalletController;
+use App\Http\Controllers\EmployerController;
 use App\Http\Controllers\PatientPrescriptionController;
 
 
@@ -895,3 +898,20 @@ Route::post('/patient/login/code', [PatientAuthController::class, 'requestCode']
 Route::post('/patient/login/verify', [PatientAuthController::class, 'verify'])->middleware('throttle:10,1')->name('patient.login.verify');
 Route::get('/patient/records', [PatientAuthController::class, 'records'])->name('patient.records');
 Route::post('/patient/logout', [PatientAuthController::class, 'logout'])->name('patient.logout');
+
+// Paying from the patient's visit link, and wallet / pay-link tools for staff
+Route::post('/visit/{appointment}/pay/mobile-money', [VisitPaymentController::class, 'mobileMoney'])->middleware(['signed', 'throttle:10,1'])->name('visit.pay.momo');
+Route::post('/visit/{appointment}/pay/wallet', [VisitPaymentController::class, 'wallet'])->middleware('signed')->name('visit.pay.wallet');
+Route::middleware('session.auth')->prefix('care')->group(function () {
+    Route::get('/patients/{patient}/wallet', [WalletController::class, 'show'])->name('care.wallet.show');
+    Route::post('/patients/{patient}/wallet/credit', [WalletController::class, 'credit'])->name('care.wallet.credit');
+    Route::post('/appointments/{appointment}/pay-link', [WalletController::class, 'sendPayLink'])->name('care.paylink');
+});
+
+// Employer accounts (admin only)
+// (not under /admin/ because /admin/{modelKey} is a catch-all registered earlier)
+Route::middleware(['auth', 'admin'])->prefix('manage/employers')->group(function () {
+    Route::post('/', [EmployerController::class, 'store'])->name('admin.employers.store');
+    Route::post('/{employer}/members', [EmployerController::class, 'addMember'])->name('admin.employers.members');
+    Route::get('/{employer}/invoice.csv', [EmployerController::class, 'invoice'])->name('admin.employers.invoice');
+});

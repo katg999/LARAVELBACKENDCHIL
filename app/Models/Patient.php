@@ -163,6 +163,16 @@ class Patient extends Model
         return $this->belongsToMany(HealthFacility::class)->withTimestamps();
     }
 
+    public function wallet(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    public function employers(): BelongsToMany
+    {
+        return $this->belongsToMany(Employer::class, 'employer_members')->withTimestamps();
+    }
+
     public function prescriptions(): HasMany
     {
         return $this->hasMany(Prescription::class);

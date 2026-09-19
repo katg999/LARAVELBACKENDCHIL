@@ -49,6 +49,8 @@ class Appointment extends Model {
         'meeting_room',
         'coverage_type',
         'member_policy_id',
+        'employer_id',
+        'payment_method',
         'visit_code',
         'insurance_status',
         'insurance_note',
@@ -78,6 +80,11 @@ class Appointment extends Model {
     public function doctor(): BelongsTo
     {
         return $this->belongsTo(Doctor::class);
+    }
+
+    public function employer(): BelongsTo
+    {
+        return $this->belongsTo(Employer::class);
     }
 
     public function memberPolicy(): BelongsTo

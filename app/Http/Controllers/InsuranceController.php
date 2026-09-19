@@ -74,11 +74,13 @@ class InsuranceController extends Controller
             $appointment->update([
                 'status' => 'confirmed',
                 'payment_status' => 'insurance',
+                'payment_method' => 'insurance',
                 'insurance_status' => 'verified',
                 'insurance_note' => $data['note'] ?? null,
             ]);
             $appointment->memberPolicy?->update(['verified_at' => now()]);
             $this->notifier->sendJoinLink($appointment->fresh(['patient', 'doctor']));
+            app(\App\Services\DoctorNotifier::class)->appointmentConfirmed($appointment->fresh(['patient', 'doctor']));
         } else {
             // Declined: fall back to normal self-pay so the patient can still keep the booking.
             $appointment->update([
