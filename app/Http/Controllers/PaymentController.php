@@ -278,104 +278,17 @@ class PaymentController extends Controller
             return redirect()->route('payment.appointment.pay', $appointment->id)->with('error', $message);
         }
 
-        // Normalize phone to international format (+256xxxxxxxxx)
-        $digits = preg_replace('/\D+/', '', $phone);
-        if (str_starts_with($digits, '07')) {
-            // 07XXXXXXXX -> +2567XXXXXXXX
-            $phone = '+256' . substr($digits, 1);
-        } elseif (str_starts_with($digits, '2560')) {
-            // 2560XXXXXXXX -> +2567XXXXXXXX (drop the 0)
-            $phone = '+256' . substr($digits, 3);
-        } elseif (str_starts_with($digits, '0') && strlen($digits) >= 9) {
-            // 0XXXXXXXXX -> +256XXXXXXXXX (general fallback)
-            $phone = '+256' . substr($digits, 1);
-        } elseif (str_starts_with($digits, '256')) {
-            $phone = '+' . $digits;
-        } else {
-            // Last resort: assume already in international without country code is 9 digits starting with 7
-            if (strlen($digits) === 9 && $digits[0] === '7') {
-                $phone = '+256' . $digits;
-            } else {
-                $phone = '+' . $digits; // pass as-is with plus
-            }
+        $override = isset($validated['amount']) ? (float) $validated['amount'] : null; // allow override on pay page
+        $outcome = app(\App\Services\AppointmentPayments::class)->requestMobileMoney($appointment, $phone, $override);
+
+        if ($request->expectsJson()) {
+            return response()->json($outcome['success']
+                ? ['success' => true, 'message' => $outcome['message'], 'status' => 'pending', 'reference_id' => $outcome['reference_id']]
+                : ['success' => false, 'message' => $outcome['message']]);
         }
 
-        $amount = $validated['amount'] ?? ($appointment->duration ? $appointment->duration->getPriceForDoctor($appointment->doctor) : 1.00); // allow override on pay page
-
-        try {
-            $data = [
-                'amount' => $amount,
-                'phone_number' => $phone,
-                'country' => 'UG',
-                'reference' => (string) Str::uuid(),
-                'description' => 'Appointment payment - ' . $appointment->id,
-                'callback_url' => route('marzpay.webhook'),
-            ];
-
-            $result = $this->gateway->collect($data);
-
-            if (($result['status'] ?? null) === 'success') {
-                // Create Payment record
-                $payment = \App\Models\Payment::create([
-                    'appointment_id' => $appointment->id,
-                    'amount' => $amount,
-                    'phone_number' => $phone,
-                    'reference_id' => $result['data']['transaction']['uuid'] ?? (string) Str::uuid(),
-                    'status' => 'pending',
-                    'metadata' => [
-                        'marzpay_response' => $result,
-                        'requested_at' => now(),
-                    ]
-                ]);
-
-                // Store payment reference on appointment for tracking
-                $appointment->payment_reference = $payment->reference_id;
-                $appointment->payment_status = 'pending';
-                $appointment->save();
-
-                // Create initial Transaction record
-                \App\Models\Transaction::create([
-                    'payment_id' => $payment->id,
-                    'reference_id' => $payment->reference_id,
-                    'amount' => $amount,
-                    'status' => 'pending',
-                    'transaction_id' => $result['data']['transaction']['uuid'] ?? null,
-                    'provider' => $this->gateway->name(),
-                    'provider_reference' => $result['data']['transaction']['uuid'] ?? null,
-                    'marzpay_uuid' => $result['data']['transaction']['uuid'] ?? null,
-                    'country' => 'UG',
-                    'description' => 'Appointment payment - ' . $appointment->id,
-                    'transaction_type' => 'collection',
-                    'webhook_event_type' => 'collection.pending',
-                    'collection_data' => $result,
-                ]);
-
-                $message = 'Payment request sent. Please approve on your phone.';
-                if ($request->expectsJson()) {
-                    return response()->json([
-                        'success' => true,
-                        'message' => $message,
-                        'status' => 'pending',
-                        'reference_id' => $appointment->payment_reference
-                    ]);
-                }
-                return redirect()->route('payment.appointment.pay', $appointment->id)->with('success', $message);
-            }
-
-            $message = $result['message'] ?? 'Failed to initiate payment';
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => $message]);
-            }
-            return redirect()->route('payment.appointment.pay', $appointment->id)->with('error', $message);
-
-        } catch (\Exception $e) {
-            Log::error('Appointment Checkout Error: ' . $e->getMessage());
-            $message = 'An error occurred while processing payment';
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => $message]);
-            }
-            return redirect()->route('payment.appointment.pay', $appointment->id)->with('error', $message);
-        }
+        return redirect()->route('payment.appointment.pay', $appointment->id)
+            ->with($outcome['success'] ? 'success' : 'error', $outcome['message']);
     }
 
     // Check payment status for an appointment
@@ -421,27 +334,7 @@ class PaymentController extends Controller
     // Text the patient their visit page link once payment is confirmed
     protected function sendPatientJoinLink(Appointment $appointment): void
     {
-        $patient = $appointment->patient;
-        $doctor = $appointment->doctor;
-        $number = $patient->contact_number ?? $patient->parent_contact ?? null;
-
-        if (!$patient || !$doctor || !$number) {
-            return;
-        }
-
-        // Signed link to the visit page, which only reveals the video room when it is time to join
-        $link = \Illuminate\Support\Facades\URL::temporarySignedRoute(
-            'visit.show',
-            $appointment->appointment_time->copy()->addDay(),
-            ['appointment' => $appointment->id]
-        );
-
-        app(\App\Services\SmsService::class)->send(
-            $number,
-            "Your appointment with Dr. {$doctor->name} is confirmed for "
-            . $appointment->appointment_time->format('D j M, g:i A')
-            . ". Join here when it is time: " . $link
-        );
+        app(\App\Services\PatientNotifier::class)->sendJoinLink($appointment);
     }
 
     // Send appointment confirmation email to doctor
@@ -495,6 +388,7 @@ class PaymentController extends Controller
         // Change status to confirmed
         $appointment->status = 'confirmed';
         $appointment->payment_status = 'completed';
+        $appointment->payment_method = 'test';
         $appointment->save();
 
         // Send confirmation email to doctor
@@ -541,6 +435,7 @@ class PaymentController extends Controller
             if ($appointment) {
                 $appointment->status = 'confirmed';
                 $appointment->payment_status = 'completed';
+                $appointment->payment_method ??= 'mobile_money';
                 $appointment->save();
 
                 // Update Payment record

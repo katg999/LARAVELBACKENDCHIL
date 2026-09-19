@@ -20,6 +20,16 @@ use Illuminate\Http\Request;
 use App\Models\Doctor;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PatientVisitController;
+use App\Http\Controllers\InsuranceController;
+use App\Http\Controllers\PrescriptionController;
+use App\Http\Controllers\PatientAuthController;
+use App\Http\Controllers\VisitPaymentController;
+use App\Http\Controllers\WalletController;
+use App\Http\Controllers\EmployerController;
+use App\Http\Controllers\AdoptionMetricsController;
+use App\Http\Controllers\UssdController;
+use App\Http\Controllers\WhatsAppWebhookController;
+use App\Http\Controllers\PatientPrescriptionController;
 
 
 
@@ -862,4 +872,58 @@ Route::prefix('test/payments')->group(function () {
 
 // Patient pages reached by signed links sent over SMS (no password needed)
 Route::get('/visit/{appointment}', [PatientVisitController::class, 'show'])->middleware('signed')->name('visit.show');
+Route::post('/visit/{appointment}/join', [PatientVisitController::class, 'join'])->middleware('signed')->name('visit.join');
 Route::get('/my-visits/{patient}', [PatientVisitController::class, 'visits'])->middleware('signed')->name('patient.visits');
+
+// Insurance handling for clinic and doctor staff
+Route::middleware('session.auth')->prefix('insurance')->group(function () {
+    Route::get('/insurers', [InsuranceController::class, 'insurers'])->name('insurance.insurers');
+    Route::post('/patients/{patient}/policies', [InsuranceController::class, 'addPolicy'])->name('insurance.policies.store');
+    Route::post('/appointments/{appointment}/verify', [InsuranceController::class, 'verify'])->name('insurance.verify');
+    Route::get('/visit-records.csv', [InsuranceController::class, 'exportCsv'])->name('insurance.export');
+    Route::post('/visit-records/submitted', [InsuranceController::class, 'markSubmitted'])->name('insurance.submitted');
+});
+
+// Prescriptions and medicine delivery
+Route::post('/my-visits/{patient}/prescriptions', [PatientPrescriptionController::class, 'upload'])->middleware('signed')->name('patient.prescriptions.upload');
+Route::post('/my-visits/{patient}/prescriptions/{prescription}/delivery', [PatientPrescriptionController::class, 'requestDelivery'])->middleware('signed')->name('patient.prescriptions.delivery');
+Route::middleware('session.auth')->prefix('care')->group(function () {
+    Route::post('/appointments/{appointment}/prescriptions', [PrescriptionController::class, 'issue'])->name('care.prescriptions.issue');
+    Route::get('/prescriptions', [PrescriptionController::class, 'queue'])->name('care.prescriptions.queue');
+    Route::post('/prescriptions/{prescription}/review', [PrescriptionController::class, 'review'])->name('care.prescriptions.review');
+    Route::post('/prescriptions/{prescription}/delivery', [PrescriptionController::class, 'updateDelivery'])->name('care.prescriptions.delivery');
+    Route::get('/prescriptions/{prescription}/image', [PrescriptionController::class, 'image'])->name('care.prescriptions.image');
+});
+
+// Patient login by phone and one-time code, then their own records
+Route::get('/patient/login', [PatientAuthController::class, 'showLogin'])->name('patient.login');
+Route::post('/patient/login/code', [PatientAuthController::class, 'requestCode'])->middleware('throttle:10,1')->name('patient.login.code');
+Route::post('/patient/login/verify', [PatientAuthController::class, 'verify'])->middleware('throttle:10,1')->name('patient.login.verify');
+Route::get('/patient/records', [PatientAuthController::class, 'records'])->name('patient.records');
+Route::post('/patient/logout', [PatientAuthController::class, 'logout'])->name('patient.logout');
+
+// Paying from the patient's visit link, and wallet / pay-link tools for staff
+Route::post('/visit/{appointment}/pay/mobile-money', [VisitPaymentController::class, 'mobileMoney'])->middleware(['signed', 'throttle:10,1'])->name('visit.pay.momo');
+Route::post('/visit/{appointment}/pay/wallet', [VisitPaymentController::class, 'wallet'])->middleware('signed')->name('visit.pay.wallet');
+Route::middleware('session.auth')->prefix('care')->group(function () {
+    Route::get('/patients/{patient}/wallet', [WalletController::class, 'show'])->name('care.wallet.show');
+    Route::post('/patients/{patient}/wallet/credit', [WalletController::class, 'credit'])->name('care.wallet.credit');
+    Route::post('/appointments/{appointment}/pay-link', [WalletController::class, 'sendPayLink'])->name('care.paylink');
+});
+
+// Employer accounts (admin only)
+// (not under /admin/ because /admin/{modelKey} is a catch-all registered earlier)
+Route::middleware(['auth', 'admin'])->prefix('manage/employers')->group(function () {
+    Route::post('/', [EmployerController::class, 'store'])->name('admin.employers.store');
+    Route::post('/{employer}/members', [EmployerController::class, 'addMember'])->name('admin.employers.members');
+    Route::get('/{employer}/invoice.csv', [EmployerController::class, 'invoice'])->name('admin.employers.invoice');
+});
+
+// Adoption numbers for the pilot
+Route::get('/metrics/adoption', [AdoptionMetricsController::class, 'mine'])->middleware('session.auth')->name('metrics.adoption');
+Route::get('/manage/metrics/adoption', [AdoptionMetricsController::class, 'all'])->middleware(['auth', 'admin'])->name('metrics.adoption.admin');
+
+// Channels: USSD for feature phones, WhatsApp inbound
+Route::post('/ussd', [UssdController::class, 'handle'])->middleware('throttle:60,1')->name('ussd');
+Route::get('/whatsapp/webhook', [WhatsAppWebhookController::class, 'verify'])->name('whatsapp.verify');
+Route::post('/whatsapp/webhook', [WhatsAppWebhookController::class, 'receive'])->middleware('throttle:120,1')->name('whatsapp.receive');

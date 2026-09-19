@@ -458,7 +458,7 @@ public function uploadImage(Request $request, Doctor $doctor)
         ]);
 
         // Use Jitsi Meet as the meeting provider
-        $link = 'https://meet.jit.si/' . ($doctor->meeting_slug ?? 'dr-' . strtolower(str_replace(' ', '-', $doctor->name)));
+        $link = rtrim(config('services.jitsi.base_url', 'https://meet.jit.si'), '/') . '/' . ($doctor->meeting_slug ?? 'dr-' . strtolower(str_replace(' ', '-', $doctor->name)));
             $messageContent = $request->input('message') ?? "You have a meeting invitation. Click the button below to join.";
 
             // Use a Mailable with a nice HTML template

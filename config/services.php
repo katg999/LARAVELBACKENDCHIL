@@ -79,4 +79,27 @@ return [
         'default' => env('PAYMENT_GATEWAY', 'marzpay'),
     ],
 
+    'jitsi' => [
+        // Point this at a self-hosted Jitsi to get lobby/moderator controls.
+        'base_url' => env('JITSI_BASE_URL', 'https://meet.jit.si'),
+    ],
+
+    'notifications' => [
+        // sms, whatsapp (falls back to SMS) or both
+        'channel' => env('NOTIFY_CHANNEL', 'sms'),
+    ],
+
+    'whatsapp' => [
+        'token' => env('WHATSAPP_TOKEN'),
+        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+        'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),
+        'app_secret' => env('WHATSAPP_APP_SECRET'),
+        'url' => env('WHATSAPP_API_URL', 'https://graph.facebook.com/v20.0'),
+    ],
+
+    'ussd' => [
+        // Shared secret Africa's Talking is configured to send as ?token= on the callback URL.
+        'secret' => env('USSD_SHARED_SECRET'),
+    ],
+
 ];
