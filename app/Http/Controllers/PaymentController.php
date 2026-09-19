@@ -388,6 +388,7 @@ class PaymentController extends Controller
         // Change status to confirmed
         $appointment->status = 'confirmed';
         $appointment->payment_status = 'completed';
+        $appointment->payment_method = 'test';
         $appointment->save();
 
         // Send confirmation email to doctor
@@ -434,6 +435,7 @@ class PaymentController extends Controller
             if ($appointment) {
                 $appointment->status = 'confirmed';
                 $appointment->payment_status = 'completed';
+                $appointment->payment_method ??= 'mobile_money';
                 $appointment->save();
 
                 // Update Payment record
