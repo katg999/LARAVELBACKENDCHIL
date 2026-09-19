@@ -74,4 +74,9 @@ return [
         'url' => env('AFRICASTALKING_URL', 'https://api.africastalking.com/version1/messaging'),
     ],
 
+    'payments' => [
+        // Provider used by the appointment checkout. Add new gateways to AppServiceProvider.
+        'default' => env('PAYMENT_GATEWAY', 'marzpay'),
+    ],
+
 ];

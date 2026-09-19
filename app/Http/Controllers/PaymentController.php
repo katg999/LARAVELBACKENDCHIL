@@ -4,6 +4,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
+use App\Contracts\PaymentGateway;
 use App\Services\MarzPayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -13,10 +14,12 @@ use Illuminate\Support\Str;
 class PaymentController extends Controller
 {
     protected $marzPayService;
+    protected PaymentGateway $gateway;
 
-    public function __construct(MarzPayService $marzPayService)
+    public function __construct(MarzPayService $marzPayService, PaymentGateway $gateway)
     {
         $this->marzPayService = $marzPayService;
+        $this->gateway = $gateway;
     }
 
     public function index()
@@ -84,7 +87,7 @@ class PaymentController extends Controller
                 'callback_url' => route('marzpay.webhook'),
             ];
 
-            $result = $this->marzPayService->collectMoney($data);
+            $result = $this->gateway->collect($data);
 
             if (($result['status'] ?? null) === 'success') {
                 return response()->json([
@@ -159,7 +162,7 @@ class PaymentController extends Controller
     public function paymentStatus($referenceId)
     {
         try {
-            $status = $this->marzPayService->getTransaction($referenceId);
+            $status = $this->gateway->status($referenceId);
             return response()->json([
                 'success' => true,
                 'data' => $status
@@ -309,7 +312,7 @@ class PaymentController extends Controller
                 'callback_url' => route('marzpay.webhook'),
             ];
 
-            $result = $this->marzPayService->collectMoney($data);
+            $result = $this->gateway->collect($data);
 
             if (($result['status'] ?? null) === 'success') {
                 // Create Payment record
@@ -337,7 +340,7 @@ class PaymentController extends Controller
                     'amount' => $amount,
                     'status' => 'pending',
                     'transaction_id' => $result['data']['transaction']['uuid'] ?? null,
-                    'provider' => 'marzpay',
+                    'provider' => $this->gateway->name(),
                     'provider_reference' => $result['data']['transaction']['uuid'] ?? null,
                     'marzpay_uuid' => $result['data']['transaction']['uuid'] ?? null,
                     'country' => 'UG',
@@ -415,7 +418,7 @@ class PaymentController extends Controller
 
 
 
-    // Text the patient their private video link once payment is confirmed
+    // Text the patient their visit page link once payment is confirmed
     protected function sendPatientJoinLink(Appointment $appointment): void
     {
         $patient = $appointment->patient;
@@ -426,11 +429,18 @@ class PaymentController extends Controller
             return;
         }
 
+        // Signed link to the visit page, which only reveals the video room when it is time to join
+        $link = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'visit.show',
+            $appointment->appointment_time->copy()->addDay(),
+            ['appointment' => $appointment->id]
+        );
+
         app(\App\Services\SmsService::class)->send(
             $number,
             "Your appointment with Dr. {$doctor->name} is confirmed for "
             . $appointment->appointment_time->format('D j M, g:i A')
-            . ". Join your private video room: " . $appointment->meeting_url
+            . ". Join here when it is time: " . $link
         );
     }
 

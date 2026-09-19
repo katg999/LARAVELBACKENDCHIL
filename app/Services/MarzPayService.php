@@ -2,10 +2,11 @@
 
 namespace App\Services;
 
+use App\Contracts\PaymentGateway;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class MarzPayService
+class MarzPayService implements PaymentGateway
 {
     protected $baseUrl;
     protected $apiKey;
@@ -18,6 +19,21 @@ class MarzPayService
         $this->apiKey = config('services.marzpay.api_key');
         $this->apiSecret = config('services.marzpay.api_secret');
         $this->authHeader = 'Basic ' . config('services.marzpay.auth_header');
+    }
+
+    public function name(): string
+    {
+        return 'marzpay';
+    }
+
+    public function collect(array $data): array
+    {
+        return $this->collectMoney($data);
+    }
+
+    public function status(string $reference): array
+    {
+        return $this->getTransaction($reference);
     }
 
     /**
