@@ -29,6 +29,14 @@ class AppointmentPayments
             : 1.00);
     }
 
+    /** Where the payment provider reports back. Includes the secret token when one is configured. */
+    public function callbackUrl(): string
+    {
+        $token = config('services.marzpay.webhook_token');
+
+        return $token ? route('marzpay.webhook', ['token' => $token]) : route('marzpay.webhook');
+    }
+
     /** Normalise a Ugandan number to +256XXXXXXXXX. */
     public function normalizePhone(string $phone): string
     {
@@ -68,7 +76,7 @@ class AppointmentPayments
                 'country' => 'UG',
                 'reference' => (string) Str::uuid(),
                 'description' => 'Appointment payment - ' . $appointment->id,
-                'callback_url' => route('marzpay.webhook'),
+                'callback_url' => $this->callbackUrl(),
             ]);
 
             if (($result['status'] ?? null) !== 'success') {

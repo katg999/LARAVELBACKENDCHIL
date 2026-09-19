@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PrescriptionItem extends Model
 {
-    protected $fillable = ['prescription_id', 'name', 'dosage', 'quantity', 'instructions'];
+    protected $fillable = ['prescription_id', 'name', 'dosage', 'quantity', 'unit_price', 'instructions'];
+
+    protected $casts = ['unit_price' => 'decimal:2'];
 
     public function prescription(): BelongsTo
     {

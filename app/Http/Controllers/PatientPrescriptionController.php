@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Patient;
 use App\Models\Prescription;
+use App\Services\PharmacyBilling;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -44,7 +45,9 @@ class PatientPrescriptionController extends Controller
         ]);
 
         if (!$prescription->canRequestDelivery()) {
-            return $this->back($patient, 'Delivery cannot be requested for this prescription.');
+            return $this->back($patient, $prescription->payment_status === 'paid'
+                ? 'Delivery cannot be requested for this prescription.'
+                : 'Your medicine must be priced and paid for before it can be delivered.');
         }
 
         $prescription->update([
@@ -55,6 +58,29 @@ class PatientPrescriptionController extends Controller
         ]);
 
         return $this->back($patient, 'Delivery requested. We will text you as it moves.');
+    }
+
+    public function payMobileMoney(Request $request, Patient $patient, Prescription $prescription, PharmacyBilling $billing)
+    {
+        abort_unless((int) $prescription->patient_id === (int) $patient->id, 404);
+        $data = $request->validate(['phone' => 'required|string|max:20']);
+
+        return $this->back($patient, $billing->requestMobileMoney($prescription, $data['phone'])['message']);
+    }
+
+    public function payWallet(Patient $patient, Prescription $prescription, PharmacyBilling $billing)
+    {
+        abort_unless((int) $prescription->patient_id === (int) $patient->id, 404);
+
+        try {
+            $billing->payFromWallet($prescription);
+        } catch (\RuntimeException $e) {
+            return $this->back($patient, 'Your wallet balance is too low for this payment.');
+        } catch (\DomainException $e) {
+            return $this->back($patient, $e->getMessage());
+        }
+
+        return $this->back($patient, 'Paid from your wallet. You can now request delivery.');
     }
 
     private function back(Patient $patient, string $message)

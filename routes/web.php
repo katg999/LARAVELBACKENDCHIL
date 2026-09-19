@@ -28,6 +28,8 @@ use App\Http\Controllers\WalletController;
 use App\Http\Controllers\EmployerController;
 use App\Http\Controllers\AdoptionMetricsController;
 use App\Http\Controllers\UssdController;
+use App\Http\Controllers\PharmacyController;
+use App\Http\Controllers\PatientInsuranceController;
 use App\Http\Controllers\WhatsAppWebhookController;
 use App\Http\Controllers\PatientPrescriptionController;
 
@@ -927,3 +929,20 @@ Route::get('/manage/metrics/adoption', [AdoptionMetricsController::class, 'all']
 Route::post('/ussd', [UssdController::class, 'handle'])->middleware('throttle:60,1')->name('ussd');
 Route::get('/whatsapp/webhook', [WhatsAppWebhookController::class, 'verify'])->name('whatsapp.verify');
 Route::post('/whatsapp/webhook', [WhatsAppWebhookController::class, 'receive'])->middleware('throttle:120,1')->name('whatsapp.receive');
+
+// Medicine pricing and insurance (pharmacy desk), patient payment for medicine, and patient-sent insurance details
+Route::middleware('session.auth')->prefix('care')->group(function () {
+    Route::post('/prescriptions/{prescription}/price', [PharmacyController::class, 'price'])->name('care.pharmacy.price');
+    Route::post('/prescriptions/{prescription}/insurer-decision', [PharmacyController::class, 'insurerDecision'])->name('care.pharmacy.insurer');
+    Route::get('/pharmacy/claims.csv', [PharmacyController::class, 'claimsCsv'])->name('care.pharmacy.claims');
+    Route::post('/pharmacy/claims/submitted', [PharmacyController::class, 'claimsSubmitted'])->name('care.pharmacy.submitted');
+});
+Route::middleware('session.auth')->prefix('insurance')->group(function () {
+    Route::get('/policies/pending', [InsuranceController::class, 'pendingPolicies'])->name('insurance.policies.pending');
+    Route::post('/policies/{policy}/review', [InsuranceController::class, 'reviewPolicy'])->name('insurance.policies.review');
+    Route::get('/policies/{policy}/card', [InsuranceController::class, 'policyCard'])->name('insurance.policies.card');
+});
+Route::post('/my-visits/{patient}/prescriptions/{prescription}/pay/mobile-money', [PatientPrescriptionController::class, 'payMobileMoney'])->middleware(['signed', 'throttle:10,1'])->name('patient.prescriptions.pay.momo');
+Route::post('/my-visits/{patient}/prescriptions/{prescription}/pay/wallet', [PatientPrescriptionController::class, 'payWallet'])->middleware('signed')->name('patient.prescriptions.pay.wallet');
+Route::post('/my-visits/{patient}/insurance', [PatientInsuranceController::class, 'store'])->middleware(['signed', 'throttle:10,1'])->name('patient.policies.store');
+Route::post('/patient/insurance/{patient}', [PatientInsuranceController::class, 'portalStore'])->middleware('throttle:10,1')->name('patient.portal.policies.store');

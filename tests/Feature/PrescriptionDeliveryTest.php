@@ -148,11 +148,15 @@ class PrescriptionDeliveryTest extends TestCase
     public function delivery_can_only_be_requested_for_a_usable_prescription_by_its_own_patient(): void
     {
         $pending = $this->rx(['source' => 'uploaded', 'status' => 'pending_review']);
-        $ok = $this->rx();
+        $unpaid = $this->rx(['total_amount' => 20000, 'patient_amount' => 20000, 'payment_status' => 'unpaid']);
+        $ok = $this->rx(['total_amount' => 20000, 'patient_amount' => 20000, 'payment_status' => 'paid']);
         $link = fn (Prescription $p, Patient $pt) => URL::temporarySignedRoute('patient.prescriptions.delivery', now()->addHour(), ['patient' => $pt->id, 'prescription' => $p->id]);
 
         $this->post($link($pending, $this->patient), ['address' => 'Ntinda'])->assertRedirect();
         $this->assertNull($pending->fresh()->delivery_status);
+
+        $this->post($link($unpaid, $this->patient), ['address' => 'Ntinda'])->assertRedirect();      // medicine must be paid for first
+        $this->assertNull($unpaid->fresh()->delivery_status);
 
         $stranger = $this->patient($this->otherClinic);
         $this->post($link($ok, $stranger), ['address' => 'Ntinda'])->assertNotFound();
@@ -183,7 +187,7 @@ class PrescriptionDeliveryTest extends TestCase
     /** @test */
     public function my_visits_shows_prescriptions_and_the_forms(): void
     {
-        $this->rx()->items()->create(['name' => 'Paracetamol', 'dosage' => '500mg', 'quantity' => 10]);
+        $this->rx(['total_amount' => 5000, 'patient_amount' => 5000, 'payment_status' => 'paid'])->items()->create(['name' => 'Paracetamol', 'dosage' => '500mg', 'quantity' => 10]);
         $url = URL::temporarySignedRoute('patient.visits', now()->addHour(), ['patient' => $this->patient->id]);
 
         $this->get($url)->assertOk()->assertSee('Paracetamol')->assertSee('Request delivery')->assertSee('Send for review');

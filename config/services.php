@@ -54,6 +54,9 @@ return [
         'api_secret' => env('MARZPAY_API_SECRET'),
         'auth_header' => env('MARZPAY_AUTH_HEADER'),
         'webhook_secret' => env('MARZPAY_WEBHOOK_SECRET'),
+        // Secret added to the callback URL we give MarzPay. When set, the webhook rejects calls without it,
+        // so nobody can fake a "payment completed" message.
+        'webhook_token' => env('MARZPAY_WEBHOOK_TOKEN'),
     ],
 
 
