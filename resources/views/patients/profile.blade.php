@@ -284,9 +284,6 @@
                             <i class="typcn typcn-document mr-2"></i>Add Medical Note
                         </button>
                         <button class="btn btn-warning mb-2" disabled>
-                            <i class="typcn typcn-info mr-2"></i>Test Edit Modal
-                        </button>
-                        <button class="btn btn-warning mb-2" disabled>
                             <i class="typcn typcn-edit mr-2"></i>Update Profile
                         </button>
                     </div>

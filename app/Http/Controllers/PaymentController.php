@@ -484,6 +484,7 @@ class PaymentController extends Controller
 
         // Change status to confirmed
         $appointment->status = 'confirmed';
+        $appointment->payment_status = 'completed';
         $appointment->save();
 
         // Send confirmation email to doctor

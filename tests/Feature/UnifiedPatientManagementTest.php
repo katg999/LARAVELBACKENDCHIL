@@ -262,8 +262,9 @@ class UnifiedPatientManagementTest extends TestCase
         $this->assertEquals($healthFacility->id, $adultPatient->institution->id);
 
         // Test age calculation (approximate)
-        $this->assertEquals(10, $student->age);
-        $this->assertEquals(45, $adultPatient->age);
+        // Compare against today's date instead of a hard-coded age, which goes stale every year
+        $this->assertEquals(\Carbon\Carbon::parse($student->birth_date)->age, $student->age);
+        $this->assertEquals(\Carbon\Carbon::parse($adultPatient->birth_date)->age, $adultPatient->age);
     }
 
     /** @test */
