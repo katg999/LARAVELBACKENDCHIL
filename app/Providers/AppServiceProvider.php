@@ -10,6 +10,7 @@ use App\Models\Doctor;
 use App\Models\School;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Contracts\PaymentGateway;
 use App\Services\MarzPayService;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,7 +22,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        // Pick the checkout payment provider from config, defaulting to MarzPay.
+        $this->app->bind(PaymentGateway::class, function ($app) {
+            $providers = [
+                'marzpay' => MarzPayService::class,
+            ];
+            $key = config('services.payments.default', 'marzpay');
+
+            return $app->make($providers[$key] ?? MarzPayService::class);
+        });
     }
 
     /**

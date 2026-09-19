@@ -19,6 +19,7 @@ use App\Http\Controllers\OtpController;
 use Illuminate\Http\Request;
 use App\Models\Doctor;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PatientVisitController;
 
 
 
@@ -858,3 +859,7 @@ Route::prefix('test/payments')->group(function () {
     Route::get('/status/{referenceId}', [PaymentController::class, 'paymentStatus'])->name('test.payments.status');
     Route::get('/balance', [PaymentController::class, 'accountBalance'])->name('test.payments.balance');
 });
+
+// Patient pages reached by signed links sent over SMS (no password needed)
+Route::get('/visit/{appointment}', [PatientVisitController::class, 'show'])->middleware('signed')->name('visit.show');
+Route::get('/my-visits/{patient}', [PatientVisitController::class, 'visits'])->middleware('signed')->name('patient.visits');
