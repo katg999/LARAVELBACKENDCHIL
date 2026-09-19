@@ -20,6 +20,9 @@ class VerifyCsrfToken extends Middleware
      */
     protected $except = [
         'marzpay/webhook',
+        // Machine callbacks, authenticated by a shared secret or a request signature instead
+        'ussd',
+        'whatsapp/webhook',
         // 'admin/durations' // Re-enabled CSRF protection for admin/durations routes
     ];
 

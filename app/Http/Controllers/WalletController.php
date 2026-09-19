@@ -7,7 +7,7 @@ use App\Models\Appointment;
 use App\Models\AuditLog;
 use App\Models\Patient;
 use App\Models\Wallet;
-use App\Services\SmsService;
+use App\Services\PatientMessenger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 
@@ -41,7 +41,7 @@ class WalletController extends Controller
     }
 
     /** Text the visit link to another phone so that person can pay. */
-    public function sendPayLink(Request $request, Appointment $appointment, SmsService $sms)
+    public function sendPayLink(Request $request, Appointment $appointment, PatientMessenger $messenger)
     {
         $user = $this->staff($request);
         $this->scopeTo($user, Appointment::query()->whereKey($appointment->id))->firstOrFail();
@@ -50,7 +50,7 @@ class WalletController extends Controller
         $appointment->loadMissing(['doctor', 'patient']);
 
         $link = URL::temporarySignedRoute('visit.show', now()->addDays(3), ['appointment' => $appointment->id]);
-        $sent = $sms->send($data['phone'], "Pay for {$appointment->patient->name}'s appointment with Dr. {$appointment->doctor->name} on "
+        $sent = $messenger->send($data['phone'], "Pay for {$appointment->patient->name}'s appointment with Dr. {$appointment->doctor->name} on "
             . $appointment->appointment_time->format('D j M, g:i A') . ': ' . $link);
         AuditLog::record($user, 'visit.paylink.sent', $appointment);
 

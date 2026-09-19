@@ -26,6 +26,9 @@ use App\Http\Controllers\PatientAuthController;
 use App\Http\Controllers\VisitPaymentController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\EmployerController;
+use App\Http\Controllers\AdoptionMetricsController;
+use App\Http\Controllers\UssdController;
+use App\Http\Controllers\WhatsAppWebhookController;
 use App\Http\Controllers\PatientPrescriptionController;
 
 
@@ -915,3 +918,12 @@ Route::middleware(['auth', 'admin'])->prefix('manage/employers')->group(function
     Route::post('/{employer}/members', [EmployerController::class, 'addMember'])->name('admin.employers.members');
     Route::get('/{employer}/invoice.csv', [EmployerController::class, 'invoice'])->name('admin.employers.invoice');
 });
+
+// Adoption numbers for the pilot
+Route::get('/metrics/adoption', [AdoptionMetricsController::class, 'mine'])->middleware('session.auth')->name('metrics.adoption');
+Route::get('/manage/metrics/adoption', [AdoptionMetricsController::class, 'all'])->middleware(['auth', 'admin'])->name('metrics.adoption.admin');
+
+// Channels: USSD for feature phones, WhatsApp inbound
+Route::post('/ussd', [UssdController::class, 'handle'])->middleware('throttle:60,1')->name('ussd');
+Route::get('/whatsapp/webhook', [WhatsAppWebhookController::class, 'verify'])->name('whatsapp.verify');
+Route::post('/whatsapp/webhook', [WhatsAppWebhookController::class, 'receive'])->middleware('throttle:120,1')->name('whatsapp.receive');

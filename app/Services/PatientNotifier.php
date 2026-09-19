@@ -5,10 +5,10 @@ namespace App\Services;
 use App\Models\Appointment;
 use Illuminate\Support\Facades\URL;
 
-/** Messages sent to patients. Uses SMS today; a WhatsApp sender can be added behind the same methods. */
+/** What we tell patients and when. Delivery (SMS or WhatsApp) is PatientMessenger's job. */
 class PatientNotifier
 {
-    public function __construct(private SmsService $sms)
+    public function __construct(private PatientMessenger $messenger)
     {
     }
 
@@ -29,7 +29,7 @@ class PatientNotifier
             ['appointment' => $appointment->id]
         );
 
-        return $this->sms->send(
+        return $this->messenger->send(
             $number,
             "Your appointment with Dr. {$doctor->name} is confirmed for "
             . $appointment->appointment_time->format('D j M, g:i A')
@@ -46,7 +46,7 @@ class PatientNotifier
             return false;
         }
 
-        return $this->sms->send(
+        return $this->messenger->send(
             $number,
             "We could not confirm your insurance cover for your appointment on "
             . $appointment->appointment_time->format('D j M, g:i A')
@@ -80,6 +80,6 @@ class PatientNotifier
     {
         $number = $patient->contact_number ?? $patient->parent_contact ?? null;
 
-        return $number ? $this->sms->send($number, $message) : false;
+        return $number ? $this->messenger->send($number, $message) : false;
     }
 }
