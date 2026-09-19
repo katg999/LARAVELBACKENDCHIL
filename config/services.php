@@ -67,4 +67,11 @@ return [
         ],
     ],
 
+    'africastalking' => [
+        'username' => env('AFRICASTALKING_USERNAME'),
+        'api_key' => env('AFRICASTALKING_API_KEY'),
+        'sender_id' => env('AFRICASTALKING_SENDER_ID'),
+        'url' => env('AFRICASTALKING_URL', 'https://api.africastalking.com/version1/messaging'),
+    ],
+
 ];
