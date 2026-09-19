@@ -17,7 +17,7 @@ return new class extends Migration
         // Give existing appointments their own private room.
         DB::table('appointments')->whereNull('meeting_room')->orderBy('id')->each(function ($row) {
             DB::table('appointments')->where('id', $row->id)
-                ->update(['meeting_room' => 'ketiai-' . Str::lower(Str::random(24))]);
+                ->update(['meeting_room' => 'easemed-' . Str::lower(Str::random(24))]);
         });
     }
 

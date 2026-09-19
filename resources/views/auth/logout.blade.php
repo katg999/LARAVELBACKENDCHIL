@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Logged Out - KETI AI</title>
+    <title>Logged Out - Easemed</title>
 
     <!-- Pollix Template CSS -->
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
@@ -76,8 +76,8 @@
 <body>
     <div class="logout-container">
         <div class="logout-card">
-            <!-- KETI AI Logo -->
-            <img src="{{ asset('images/logo.png') }}" alt="KETI AI" class="keti-logo" onerror="this.style.display='none'">
+            <!-- Easemed Logo -->
+            <img src="{{ asset('images/easemed-logo-dark.svg') }}" alt="Easemed" class="keti-logo" onerror="this.style.display='none'">
 
             <div class="logout-icon">
                 <i class="fas fa-sign-out-alt"></i>
@@ -87,13 +87,13 @@
 
             <p class="logout-message">
                 You are currently logged out.<br>
-                To access your dashboard again, please contact our chat bot for a new one-time login link.
+                To access your dashboard again, please request a new one-time login link from your Easemed contact.
             </p>
 
             <div class="countdown" id="countdown">10</div>
 
             <p class="redirect-text">
-                Redirecting to KETI AI website in <span id="seconds">10</span> seconds...
+                Taking you back to sign in in <span id="seconds">10</span> seconds...
             </p>
         </div>
     </div>
@@ -114,21 +114,21 @@
 
             if (countdown <= 0) {
                 clearInterval(timer);
-                window.location.href = 'https://ketiai.com';
+                window.location.href = '{{ url('/login') }}';
             }
         }, 1000);
 
         // Allow manual redirect by clicking anywhere
         document.addEventListener('click', () => {
             clearInterval(timer);
-            window.location.href = 'https://ketiai.com';
+            window.location.href = '{{ url('/login') }}';
         });
 
         // Allow redirect with Enter or Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === 'Escape') {
                 clearInterval(timer);
-                window.location.href = 'https://ketiai.com';
+                window.location.href = '{{ url('/login') }}';
             }
         });
     </script>

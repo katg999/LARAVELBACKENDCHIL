@@ -46,12 +46,12 @@
             <p>If you have any questions or need to reschedule, please contact the institution directly.</p>
 
             <p>Best regards,<br>
-            KETI AI Health System</p>
+            Easemed Health System</p>
         </div>
 
         <div class="footer">
             <p>This is an automated message. Please do not reply to this email.</p>
-            <p>&copy; 2025 KETI AI. All rights reserved.</p>
+            <p>&copy; 2025 Easemed. All rights reserved.</p>
         </div>
     </div>
 </body>

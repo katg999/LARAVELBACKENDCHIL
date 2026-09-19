@@ -20,7 +20,7 @@ class Appointment extends Model {
 
     public static function newMeetingRoom(): string
     {
-        return 'ketiai-' . \Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(24));
+        return 'easemed-' . \Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(24));
     }
 
     /**

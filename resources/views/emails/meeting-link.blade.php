@@ -36,7 +36,7 @@
     </div>
 
     <div class="footer">
-        <div>Sent with care by the Ketiai Health Platform</div>
+        <div>Sent with care by the Easemed platform</div>
     </div>
 </div>
 </body>

@@ -18,7 +18,7 @@
 
       <p class="muted">You'll be redirected to the home page in <strong id="count">{{ $seconds }}</strong> seconds.</p>
 
-      <p>If you need a new login link, please ask the KETI AI Bot to request one for you.</p>
+      <p>If you need a new login link, please ask your Easemed contact to send you a new one.</p>
 
       <p style="margin-top:18px">
         <a href="/" class="cta">Go now</a>

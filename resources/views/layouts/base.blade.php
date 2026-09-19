@@ -18,7 +18,7 @@
         @endif
     </title>
     <!-- Favicon icon -->
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/ketiai-logo.svg') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/easemed-mark.svg') }}">
     <link rel="stylesheet" href="{{ asset('pollix/vendors/typicons/typicons.css') }}">
     <link rel="stylesheet" href="{{ asset('pollix/vendors/css/vendor.bundle.base.css') }}">
     <link rel="stylesheet" href="{{ asset('pollix/vendors/mdi/css/materialdesignicons.min.css') }}">
@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="{{ asset('pollix/css/vertical-layout-light/style.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
-    <link rel="shortcut icon" href="{{ asset('images/ketiai-logo.svg') }}" />
+    <link rel="shortcut icon" href="{{ asset('images/easemed-mark.svg') }}" />
 
     {{-- Allow pages to push additional styles (icons, page-level CSS) --}}
     @stack('styles')
@@ -40,8 +40,8 @@
     <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
       <div class="navbar-brand-wrapper d-flex justify-content-center">
         <div class="navbar-brand-inner-wrapper d-flex justify-content-between align-items-center w-100">
-          <a class="navbar-brand brand-logo" href="{{ url('/') }}"><img src="{{ asset('images/emoji-logo-white.svg') }}" alt="KETI AI" style="height:40px; width:auto;"></a>
-          <a class="navbar-brand brand-logo-mini" href="{{ url('/') }}"><img src="{{ asset('images/ketiai-logo.svg') }}" alt="KETI AI" style="height:30px; width:auto;"></a>
+          <a class="navbar-brand brand-logo" href="{{ url('/') }}"><img src="{{ asset('images/easemed-logo-white.svg') }}" alt="Easemed" style="height:40px; width:auto;"></a>
+          <a class="navbar-brand brand-logo-mini" href="{{ url('/') }}"><img src="{{ asset('images/easemed-mark.svg') }}" alt="Easemed" style="height:30px; width:auto;"></a>
           <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
             <span class="typcn typcn-th-menu"></span>
           </button>
@@ -182,7 +182,7 @@
           <div class="card">
             <div class="card-body">
               <div class="d-sm-flex justify-content-center justify-content-sm-between">
-                <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © {{ date('Y') }} <a href="https://www.keti.ai/" class="text-muted" target="_blank">KETI AI</a>. All rights reserved.</span>
+                <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Copyright © {{ date('Y') }} <a href="{{ url('/') }}" class="text-muted">Easemed</a>. All rights reserved.</span>
               </div>
             </div>
           </div>

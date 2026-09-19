@@ -26,7 +26,7 @@
           <!-- Header -->
           <tr>
             <td style="padding:16px 24px; background:#FF00F8; color:#ffffff; text-align:center;">
-              <div style="font-size:20px; font-weight:700; letter-spacing:0.3px;">KETI AI</div>
+              <div style="font-size:20px; font-weight:700; letter-spacing:0.3px;">Easemed</div>
               <div style="opacity:0.9; font-size:13px; margin-top:4px;">Secure Sign-In</div>
             </td>
           </tr>
@@ -65,7 +65,7 @@
           <!-- Button -->
           <tr>
             <td style="padding:0 24px 24px 24px;" align="center">
-              <a href="https://keti.ai"
+              <a href="{{ config('app.url') }}"
                  style="display:inline-block; background:#FF00F8; color:#ffffff; text-decoration:none; padding:10px 16px; border-radius:8px; font-size:14px;">
                 Open Portal
               </a>
@@ -75,7 +75,7 @@
           <!-- Footer -->
           <tr>
             <td style="padding:16px 24px; background:#f8fafc; color:#64748b; font-size:12px; text-align:center;">
-              Sent by KETI AI • <a href="https://keti.ai" style="color:#64748b; text-decoration:none;">keti.ai</a>
+              Sent by Easemed • <a href="{{ config('app.url') }}" style="color:#64748b; text-decoration:none;">{{ parse_url(config('app.url'), PHP_URL_HOST) }}</a>
             </td>
           </tr>
 
