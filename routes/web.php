@@ -22,6 +22,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PatientVisitController;
 use App\Http\Controllers\InsuranceController;
 use App\Http\Controllers\PrescriptionController;
+use App\Http\Controllers\PatientAuthController;
 use App\Http\Controllers\PatientPrescriptionController;
 
 
@@ -865,6 +866,7 @@ Route::prefix('test/payments')->group(function () {
 
 // Patient pages reached by signed links sent over SMS (no password needed)
 Route::get('/visit/{appointment}', [PatientVisitController::class, 'show'])->middleware('signed')->name('visit.show');
+Route::post('/visit/{appointment}/join', [PatientVisitController::class, 'join'])->middleware('signed')->name('visit.join');
 Route::get('/my-visits/{patient}', [PatientVisitController::class, 'visits'])->middleware('signed')->name('patient.visits');
 
 // Insurance handling for clinic and doctor staff
@@ -886,3 +888,10 @@ Route::middleware('session.auth')->prefix('care')->group(function () {
     Route::post('/prescriptions/{prescription}/delivery', [PrescriptionController::class, 'updateDelivery'])->name('care.prescriptions.delivery');
     Route::get('/prescriptions/{prescription}/image', [PrescriptionController::class, 'image'])->name('care.prescriptions.image');
 });
+
+// Patient login by phone and one-time code, then their own records
+Route::get('/patient/login', [PatientAuthController::class, 'showLogin'])->name('patient.login');
+Route::post('/patient/login/code', [PatientAuthController::class, 'requestCode'])->middleware('throttle:10,1')->name('patient.login.code');
+Route::post('/patient/login/verify', [PatientAuthController::class, 'verify'])->middleware('throttle:10,1')->name('patient.login.verify');
+Route::get('/patient/records', [PatientAuthController::class, 'records'])->name('patient.records');
+Route::post('/patient/logout', [PatientAuthController::class, 'logout'])->name('patient.logout');

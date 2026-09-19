@@ -58,7 +58,7 @@ class PatientVisitPagesTest extends TestCase
     public function room_is_revealed_only_inside_the_joining_window_of_a_paid_appointment(): void
     {
         $open = $this->appointment(now()->addMinutes(5));
-        $this->get($this->link($open))->assertOk()->assertSee($open->meeting_room)->assertSee('Join video visit');
+        $this->get($this->link($open))->assertOk()->assertSee('Join video visit')->assertDontSee($open->meeting_room);
 
         $early = $this->appointment(now()->addDay());
         $this->get($this->link($early))->assertOk()->assertDontSee($early->meeting_room)->assertSee('Not open yet');

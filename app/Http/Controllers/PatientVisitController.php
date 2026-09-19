@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
+use App\Models\AuditLog;
+use App\Models\Consent;
+use Illuminate\Http\Request;
 use App\Models\Patient;
 use Illuminate\Support\Facades\URL;
 
@@ -24,6 +27,30 @@ class PatientVisitController extends Controller
         $appointment->loadMissing(['patient', 'doctor', 'duration']);
 
         return view('visit.show', $this->visitState($appointment));
+    }
+
+    /** Record the patient's consent, then send them into the private room (audio only if asked). */
+    public function join(Request $request, Appointment $appointment)
+    {
+        $appointment->loadMissing(['patient', 'doctor', 'duration']);
+        $state = $this->visitState($appointment);
+
+        if ($state['state'] !== 'open') {
+            return redirect(URL::temporarySignedRoute('visit.show', now()->addHour(), ['appointment' => $appointment->id]));
+        }
+
+        Consent::firstOrCreate(
+            ['patient_id' => $appointment->patient_id, 'appointment_id' => $appointment->id, 'type' => 'video_visit'],
+            ['ip' => $request->ip(), 'granted_at' => now()]
+        );
+        AuditLog::record(['type' => 'patient', 'id' => $appointment->patient_id], 'visit.joined', $appointment);
+
+        $url = $appointment->meeting_url;
+        if ($request->boolean('audio_only')) {
+            $url .= '#config.startWithVideoMuted=true&config.startAudioOnly=true';
+        }
+
+        return redirect()->away($url);
     }
 
     public function visits(Patient $patient)
@@ -78,8 +105,10 @@ class PatientVisitController extends Controller
         return [
             'appointment' => $appointment,
             'state' => $state,
-            // The room address is only handed out while joining is open.
-            'joinUrl' => $state === 'open' ? $appointment->meeting_url : null,
+            // The room address is never in the page: joining goes through visit.join, which records consent.
+            'joinUrl' => $state === 'open'
+                ? URL::temporarySignedRoute('visit.join', now()->addMinutes(30), ['appointment' => $appointment->id])
+                : null,
             'opensAt' => $opensAt,
             'closesAt' => $closesAt,
         ];

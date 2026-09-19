@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ChecksStaffAccess;
 use App\Models\Appointment;
+use App\Models\AuditLog;
 use App\Models\Prescription;
 use App\Services\PatientNotifier;
 use Illuminate\Http\Request;
@@ -50,6 +51,8 @@ class PrescriptionController extends Controller
             return $p;
         });
 
+        AuditLog::record($user, 'prescription.issued', $prescription);
+
         return response()->json(['success' => true, 'prescription' => $prescription->load('items')], 201);
     }
 
@@ -81,6 +84,7 @@ class PrescriptionController extends Controller
         }
 
         $prescription->update(['status' => $data['result'], 'review_note' => $data['note'] ?? null]);
+        AuditLog::record($user, 'prescription.' . $data['result'], $prescription);
         $this->notifier->sendPrescriptionReviewed($prescription->fresh('patient'));
 
         return response()->json(['success' => true, 'status' => $prescription->status]);
@@ -102,6 +106,7 @@ class PrescriptionController extends Controller
         }
 
         $prescription->update(['delivery_status' => $data['status']]);
+        AuditLog::record($user, 'prescription.delivery.' . $data['status'], $prescription);
         $this->notifier->sendDeliveryUpdate($prescription->fresh('patient'));
 
         return response()->json(['success' => true, 'delivery_status' => $prescription->delivery_status]);
@@ -114,6 +119,8 @@ class PrescriptionController extends Controller
         $this->authorizePrescription($user, $prescription);
 
         abort_unless($prescription->image_path && Storage::disk('local')->exists($prescription->image_path), 404);
+
+        AuditLog::record($user, 'prescription.image.viewed', $prescription);
 
         return Storage::disk('local')->response($prescription->image_path);
     }

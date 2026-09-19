@@ -33,7 +33,7 @@ class Appointment extends Model {
             $this->saveQuietly();
         }
 
-        return 'https://meet.jit.si/' . $this->meeting_room;
+        return rtrim(config('services.jitsi.base_url', 'https://meet.jit.si'), '/') . '/' . $this->meeting_room;
     }
     protected $fillable = [
         'school_id',

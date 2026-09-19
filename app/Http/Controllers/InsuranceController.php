@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ChecksStaffAccess;
 use App\Models\Appointment;
+use App\Models\AuditLog;
 use App\Models\Insurer;
 use App\Models\MemberPolicy;
 use App\Models\Patient;
@@ -50,6 +51,8 @@ class InsuranceController extends Controller
             return response()->json(['success' => false, 'message' => 'That member number belongs to another patient.'], 422);
         }
 
+        AuditLog::record($user, 'insurance.policy.added', $policy);
+
         return response()->json(['success' => true, 'policy' => $policy->load('insurer')], 201);
     }
 
@@ -87,6 +90,8 @@ class InsuranceController extends Controller
             $this->notifier->sendInsuranceDeclined($appointment->fresh(['patient']));
         }
 
+        AuditLog::record($user, 'insurance.' . $data['result'], $appointment);
+
         return response()->json(['success' => true, 'status' => $appointment->status, 'insurance_status' => $appointment->insurance_status]);
     }
 
@@ -111,6 +116,7 @@ class InsuranceController extends Controller
         }
 
         $rows = $query->get();
+        AuditLog::record($user, 'insurance.export');
 
         return response()->streamDownload(function () use ($rows) {
             $out = fopen('php://output', 'w');
@@ -143,6 +149,8 @@ class InsuranceController extends Controller
             ->whereIn('id', $data['appointment_ids'])
             ->where('insurance_status', 'verified')
             ->update(['insurance_status' => 'submitted']);
+
+        AuditLog::record($user, 'insurance.submitted');
 
         return response()->json(['success' => true, 'submitted' => $count]);
     }

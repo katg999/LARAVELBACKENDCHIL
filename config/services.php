@@ -79,4 +79,9 @@ return [
         'default' => env('PAYMENT_GATEWAY', 'marzpay'),
     ],
 
+    'jitsi' => [
+        // Point this at a self-hosted Jitsi to get lobby/moderator controls.
+        'base_url' => env('JITSI_BASE_URL', 'https://meet.jit.si'),
+    ],
+
 ];
