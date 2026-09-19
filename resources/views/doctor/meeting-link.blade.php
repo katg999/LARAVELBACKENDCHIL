@@ -21,14 +21,14 @@
                 <i class="mdi mdi-video fa-2x text-white" aria-hidden="true"></i>
             </div>
             <div class="card-body text-dark">
-                <label class="form-label small text-muted">Permanent meeting link</label>
+                <label class="form-label small text-muted">Personal room (for quick calls)</label>
                 <div class="input-group mb-2">
                     <input type="text" class="form-control" id="meetingLinkInput" value="{{ $meetingUrl }}" readonly>
                     <button class="btn btn-outline-primary" type="button" id="copyLinkBtn">
                         <i class="mdi mdi-content-copy me-1"></i> Copy
                     </button>
                 </div>
-                <p class="text-muted mb-0">This link is permanent and will be shared with patients when they book appointments with you.</p>
+                <p class="text-muted mb-0">Use this room for quick calls. Each booked appointment has its own private room, opened from the Start button on your dashboard or appointments list.</p>
 
                 <div class="mt-3 d-flex gap-2 flex-wrap align-items-center">
                     <a href="{{ $meetingUrl }}" target="_blank" class="btn btn-success">

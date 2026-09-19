@@ -58,7 +58,7 @@
                 @elseif(isset($doctor))
                   Dr. {{ $doctor->name }}
                 @else
-                  {{ auth()->user()->name ?? 'User' }}
+                  {{ auth()->user()->name ?? session('authenticated_user.name', 'User') }}
                 @endif
               </span>
             </a>
