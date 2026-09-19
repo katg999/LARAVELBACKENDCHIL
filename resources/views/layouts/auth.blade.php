@@ -4,12 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="description" content="KETI AI Admin Portal - Secure login for administrators">
+    <meta name="description" content="Easemed Admin Portal - Secure login for administrators">
     <title>@yield('title', 'Login')</title>
 
     <!-- Favicon icon -->
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/ketiai-logo.svg') }}">
-    <link rel="shortcut icon" href="{{ asset('images/ketiai-logo.svg') }}" />
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/easemed-mark.svg') }}">
+    <link rel="shortcut icon" href="{{ asset('images/easemed-mark.svg') }}" />
 
     <!-- Pollix CSS Files (same as base layout) -->
     <link rel="stylesheet" href="{{ asset('pollix/vendors/typicons/typicons.css') }}">

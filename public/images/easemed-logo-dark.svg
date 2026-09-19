@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" width="200" height="48" role="img" aria-label="Easemed">
+  <rect x="2" y="4" width="40" height="40" rx="11" fill="#C800C4"/>
+  <path d="M19 12h8v9h9v8h-9v9h-8v-9h-9v-8h9z" fill="#FFFFFF"/>
+  <text x="52" y="33" font-family="Poppins, 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="700" fill="#1B1B2F" letter-spacing="0.3">Easemed</text>
+</svg>

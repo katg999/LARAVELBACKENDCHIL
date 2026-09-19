@@ -5,13 +5,13 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Session Expired - {{ config('app.name', 'KETI AI') }}</title>
+    <title>Session Expired - {{ config('app.name', 'Easemed') }}</title>
     <!-- Favicon icon -->
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/ketiai-logo.svg') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/easemed-mark.svg') }}">
     <link rel="stylesheet" href="{{ asset('pollix/vendors/typicons/typicons.css') }}">
     <link rel="stylesheet" href="{{ asset('pollix/vendors/css/vendor.bundle.base.css') }}">
     <link rel="stylesheet" href="{{ asset('pollix/css/vertical-layout-light/style.css') }}">
-    <link rel="shortcut icon" href="{{ asset('images/ketiai-logo.svg') }}" />
+    <link rel="shortcut icon" href="{{ asset('images/easemed-mark.svg') }}" />
 </head>
 
 <body>
@@ -36,7 +36,7 @@
             </div>
             <div class="row mt-5">
               <div class="col-12 mt-xl-2">
-                <p class="text-white font-weight-medium text-center">Copyright &copy; {{ date('Y') }} <a href="https://www.ketiai.com/" class="text-muted" target="_blank">KETI AI</a>. All rights reserved.</p>
+                <p class="text-white font-weight-medium text-center">Copyright &copy; {{ date('Y') }} <a href="{{ url('/') }}" class="text-muted" target="_blank">Easemed</a>. All rights reserved.</p>
               </div>
             </div>
           </div>

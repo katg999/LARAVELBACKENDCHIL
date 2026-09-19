@@ -9,7 +9,7 @@
                     <!-- Header -->
                     <div class="card-header bg-magenta text-white text-center py-4">
                         <div class="mb-3">
-                            <img src="{{ asset('images/emoji-logo-black.svg') }}" alt="KETI AI" class="img-fluid" style="height: 50px; width: auto;">
+                            <img src="{{ asset('images/easemed-logo-dark.svg') }}" alt="Easemed" class="img-fluid" style="height: 50px; width: auto;">
                         </div>
                         <h2 class="h4 mb-0 fw-bold">Admin Portal</h2>
                         <p class="mb-0 opacity-75">Sign in to access your dashboard</p>
@@ -115,7 +115,7 @@
                     <div class="card-footer bg-light text-center py-3">
                         <small class="text-muted">
                             <i class="mdi mdi-shield me-1"></i>
-                            © {{ date('Y') }} KETI AI. Secure admin access only.
+                            © {{ date('Y') }} Easemed. Secure admin access only.
                         </small>
                     </div>
                 </div>

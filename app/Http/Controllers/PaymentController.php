@@ -415,6 +415,25 @@ class PaymentController extends Controller
 
 
 
+    // Text the patient their private video link once payment is confirmed
+    protected function sendPatientJoinLink(Appointment $appointment): void
+    {
+        $patient = $appointment->patient;
+        $doctor = $appointment->doctor;
+        $number = $patient->contact_number ?? $patient->parent_contact ?? null;
+
+        if (!$patient || !$doctor || !$number) {
+            return;
+        }
+
+        app(\App\Services\SmsService::class)->send(
+            $number,
+            "Your appointment with Dr. {$doctor->name} is confirmed for "
+            . $appointment->appointment_time->format('D j M, g:i A')
+            . ". Join your private video room: " . $appointment->meeting_url
+        );
+    }
+
     // Send appointment confirmation email to doctor
     protected function sendAppointmentConfirmationEmail(Appointment $appointment)
     {
@@ -450,6 +469,11 @@ class PaymentController extends Controller
      */
     public function confirmDummyPayment(Appointment $appointment)
     {
+        // Testing shortcut only: in production anyone could mark an appointment paid.
+        if (!app()->environment(['local', 'testing'])) {
+            abort(404);
+        }
+
         // Check if appointment is awaiting payment
         if ($appointment->status !== 'awaiting_payment') {
             return response()->json([
@@ -460,6 +484,7 @@ class PaymentController extends Controller
 
         // Change status to confirmed
         $appointment->status = 'confirmed';
+        $appointment->payment_status = 'completed';
         $appointment->save();
 
         // Send confirmation email to doctor
@@ -512,6 +537,8 @@ class PaymentController extends Controller
                 if ($payment) {
                     $payment->update(['status' => 'completed']);
                 }
+
+                $this->sendPatientJoinLink($appointment);
 
                 // Send confirmation email to doctor
                 if ($appointment->doctor && $appointment->doctor->email) {

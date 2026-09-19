@@ -78,7 +78,7 @@ class AppointmentConfirmationMail extends Mailable
      */
     protected function generateMeetingLink()
     {
-        $meetingSlug = $this->doctor->meeting_slug ?? 'dr-' . strtolower(str_replace(' ', '-', $this->doctor->name));
-        return 'https://meet.jit.si/' . $meetingSlug;
+        // One private room per appointment, not one shared room per doctor.
+        return $this->appointment->meeting_url;
     }
 }

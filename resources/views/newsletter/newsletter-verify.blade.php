@@ -24,7 +24,7 @@
 <body>
   <div class="wrap">
     <div class="card">
-      <div class="header"><div class="brand">KETI AI</div></div>
+      <div class="header"><div class="brand">Easemed</div></div>
       <div class="content">
         @if($status === 'success')
           <h1>You're verified</h1>

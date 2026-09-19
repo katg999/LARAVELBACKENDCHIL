@@ -150,7 +150,7 @@
                                         <small class="text-muted">{{ $time }}</small>
                                     </div>
                                     <div class="d-flex gap-2">
-                                        <a href="{{ $meetingLink }}" target="_blank" class="btn btn-sm btn-success">Start</a>
+                                        <a href="{{ $appt->meeting_url }}" target="_blank" class="btn btn-sm btn-success">Start</a>
                                         <a href="{{ route('doctor.appointments') }}" class="btn btn-sm btn-outline-secondary">View</a>
                                     </div>
                                 </li>

@@ -7,7 +7,7 @@
         <div class="col-lg-5 col-md-7">
             <div class="card shadow-lg border-0 rounded-lg" style="background-color: transparent;">
                 <div class="card-header text-white py-4 d-flex flex-column align-items-center" style="background-color: #CC00C6;">
-                    <img src="{{ asset('images/emoji-logo-white.svg') }}" alt="KETI AI" style="height: 40px; width: auto;">
+                    <img src="{{ asset('images/easemed-logo-white.svg') }}" alt="Easemed" style="height: 40px; width: auto;">
                     <h1 class="mt-2 fw-bold display-7">Reset Password</h1>
                 </div>
 
@@ -51,7 +51,7 @@
                 </div>
 
                 <div class="card-footer text-center py-3 bg-light">
-                    <small class="text-muted">© {{ date('Y') }} KETI AI. All rights reserved.</small>
+                    <small class="text-muted">© {{ date('Y') }} Easemed. All rights reserved.</small>
                 </div>
             </div>
         </div>

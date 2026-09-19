@@ -8,6 +8,33 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Appointment extends Model {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::creating(function (Appointment $appointment) {
+            if (empty($appointment->meeting_room)) {
+                $appointment->meeting_room = static::newMeetingRoom();
+            }
+        });
+    }
+
+    public static function newMeetingRoom(): string
+    {
+        return 'easemed-' . \Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(24));
+    }
+
+    /**
+     * Private video room URL for this appointment only.
+     */
+    public function getMeetingUrlAttribute(): string
+    {
+        if (empty($this->meeting_room)) {
+            $this->meeting_room = static::newMeetingRoom();
+            $this->saveQuietly();
+        }
+
+        return 'https://meet.jit.si/' . $this->meeting_room;
+    }
     protected $fillable = [
         'school_id',
         'patient_id', // Unified patient reference (replaces student_id)
@@ -19,6 +46,7 @@ class Appointment extends Model {
         'status',
         'payment_reference',
         'payment_status',
+        'meeting_room',
         // 'amount', // Removed - amount now comes from duration relationship
     ];
     

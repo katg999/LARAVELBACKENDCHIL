@@ -25,7 +25,7 @@
 	<div class="container">
 		<div class="card">
 					<div class="header">
-						<div class="brand">KETI AI</div>
+						<div class="brand">Easemed</div>
 					</div>
 			<div class="content">
 				<h1>Verify your subscription</h1>
