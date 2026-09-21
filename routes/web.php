@@ -29,6 +29,8 @@ use App\Http\Controllers\EmployerController;
 use App\Http\Controllers\AdoptionMetricsController;
 use App\Http\Controllers\UssdController;
 use App\Http\Controllers\PharmacyController;
+use App\Http\Controllers\ClaimsController;
+use App\Http\Controllers\InsuranceDeskController;
 use App\Http\Controllers\PatientInsuranceController;
 use App\Http\Controllers\WhatsAppWebhookController;
 use App\Http\Controllers\PatientPrescriptionController;
@@ -946,3 +948,13 @@ Route::post('/my-visits/{patient}/prescriptions/{prescription}/pay/mobile-money'
 Route::post('/my-visits/{patient}/prescriptions/{prescription}/pay/wallet', [PatientPrescriptionController::class, 'payWallet'])->middleware('signed')->name('patient.prescriptions.pay.wallet');
 Route::post('/my-visits/{patient}/insurance', [PatientInsuranceController::class, 'store'])->middleware(['signed', 'throttle:10,1'])->name('patient.policies.store');
 Route::post('/patient/insurance/{patient}', [PatientInsuranceController::class, 'portalStore'])->middleware('throttle:10,1')->name('patient.portal.policies.store');
+
+// Follow claims after they go to the insurer
+Route::middleware('session.auth')->prefix('insurance')->group(function () {
+    Route::get('/claims', [ClaimsController::class, 'index'])->name('insurance.claims');
+    Route::post('/appointments/{appointment}/claim-response', [ClaimsController::class, 'visitResponse'])->name('insurance.claims.visit');
+    Route::post('/prescriptions/{prescription}/claim-response', [ClaimsController::class, 'medicineResponse'])->name('insurance.claims.medicine');
+});
+
+// One screen for staff to run the insurance flow
+Route::get('/insurance/desk', [InsuranceDeskController::class, 'index'])->middleware('session.auth')->name('insurance.desk');

@@ -98,7 +98,12 @@ class PharmacyController extends Controller
         $user = $this->staff($request);
         $data = $request->validate(['prescription_ids' => 'required|array|min:1', 'prescription_ids.*' => 'integer']);
 
-        $count = $this->claimsQuery($user, false)->whereIn('id', $data['prescription_ids'])->update(['insurance_status' => 'submitted']);
+        $lifecycle = app(\App\Services\ClaimLifecycle::class);
+        $count = 0;
+        foreach ($this->claimsQuery($user, false)->whereIn('id', $data['prescription_ids'])->get() as $rx) {
+            $lifecycle->submit($rx);
+            $count++;
+        }
         AuditLog::record($user, 'pharmacy.claims.submitted');
 
         return response()->json(['success' => true, 'submitted' => $count]);
@@ -110,6 +115,7 @@ class PharmacyController extends Controller
             ->where('coverage_type', 'insurance')
             ->where('payment_status', 'paid')
             ->where('insurer_amount', '>', 0)
+            ->where(fn ($q) => $q->whereNull('delivery_status')->orWhere('delivery_status', '!=', 'cancelled'))
             ->whereIn('insurance_status', $includeSubmitted ? ['approved', 'submitted'] : ['approved'])
             ->whereHas('patient', function ($q) use ($user) {
                 if ($user['type'] === 'health_facility') {

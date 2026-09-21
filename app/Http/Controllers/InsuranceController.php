@@ -166,6 +166,7 @@ class InsuranceController extends Controller
         $query = $this->scopeTo($user, Appointment::query())
             ->where('coverage_type', 'insurance')
             ->whereIn('insurance_status', $request->boolean('all') ? ['verified', 'submitted'] : ['verified'])
+            ->attended()
             ->with(['patient', 'doctor', 'duration', 'memberPolicy.insurer'])
             ->orderBy('appointment_time');
 
@@ -209,10 +210,12 @@ class InsuranceController extends Controller
         $user = $this->staff($request);
         $data = $request->validate(['appointment_ids' => 'required|array|min:1', 'appointment_ids.*' => 'integer']);
 
-        $count = $this->scopeTo($user, Appointment::query())
-            ->whereIn('id', $data['appointment_ids'])
-            ->where('insurance_status', 'verified')
-            ->update(['insurance_status' => 'submitted']);
+        $lifecycle = app(\App\Services\ClaimLifecycle::class);
+        $count = 0;
+        foreach ($this->scopeTo($user, Appointment::query())->attended()->whereIn('id', $data['appointment_ids'])->where('insurance_status', 'verified')->get() as $a) {
+            $lifecycle->submit($a);
+            $count++;
+        }
 
         AuditLog::record($user, 'insurance.submitted');
 

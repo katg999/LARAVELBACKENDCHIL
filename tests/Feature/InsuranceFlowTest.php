@@ -164,7 +164,7 @@ class InsuranceFlowTest extends TestCase
         $pending = $this->insuredAppointment($this->clinic, $this->patient($this->clinic, 'Pending'), 'M-2');
         $theirs = $this->insuredAppointment($this->otherClinic, $this->patient($this->otherClinic, 'Stranger'), 'M-3');
         foreach ([$mine, $theirs] as $a) {
-            $a->update(['insurance_status' => 'verified', 'status' => 'confirmed']);
+            $a->update(['insurance_status' => 'verified', 'status' => 'completed']);   // attended, so it can be claimed
         }
 
         $csv = $this->asClinic($this->clinic)->get('/insurance/visit-records.csv')->assertOk()->streamedContent();
