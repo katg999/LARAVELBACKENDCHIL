@@ -30,6 +30,7 @@ use App\Http\Controllers\AdoptionMetricsController;
 use App\Http\Controllers\UssdController;
 use App\Http\Controllers\PharmacyController;
 use App\Http\Controllers\ClaimsController;
+use App\Http\Controllers\InsuranceDeskController;
 use App\Http\Controllers\PatientInsuranceController;
 use App\Http\Controllers\WhatsAppWebhookController;
 use App\Http\Controllers\PatientPrescriptionController;
@@ -954,3 +955,6 @@ Route::middleware('session.auth')->prefix('insurance')->group(function () {
     Route::post('/appointments/{appointment}/claim-response', [ClaimsController::class, 'visitResponse'])->name('insurance.claims.visit');
     Route::post('/prescriptions/{prescription}/claim-response', [ClaimsController::class, 'medicineResponse'])->name('insurance.claims.medicine');
 });
+
+// One screen for staff to run the insurance flow
+Route::get('/insurance/desk', [InsuranceDeskController::class, 'index'])->middleware('session.auth')->name('insurance.desk');

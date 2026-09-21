@@ -37,4 +37,14 @@ trait ChecksStaffAccess
 
         return $patient->appointments()->where('doctor_id', $user['id'])->exists();
     }
+
+    /** Limit a patient query to the patients this staff member may see. */
+    protected function restrictToVisiblePatients($q, array $user)
+    {
+        if ($user['type'] === 'health_facility') {
+            return $q->where(fn ($q) => $q->where('health_facility_id', $user['id'])->orWhereHas('healthFacilities', fn ($h) => $h->whereKey($user['id'])));
+        }
+
+        return $q->whereHas('appointments', fn ($a) => $a->where('doctor_id', $user['id']));
+    }
 }

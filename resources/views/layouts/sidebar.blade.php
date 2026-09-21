@@ -150,6 +150,12 @@ Current Path: {{ $currentPath }}
             <span class="menu-title">Transactions</span>
         </a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('insurance/desk*') ? 'active' : '' }}" href="{{ route('insurance.desk') }}">
+            <i class="mdi mdi-shield-check menu-icon"></i>
+            <span class="menu-title">Insurance desk</span>
+        </a>
+    </li>
 </ul>
 @elseif(isset($doctor))
 <ul class="nav">
